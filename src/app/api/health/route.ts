@@ -6,6 +6,13 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     await db.execute(sql`select 1`);
+    let userCount = 0;
+    try {
+      const res = await db.execute(sql`select count(*) as count from users`);
+      userCount = Number((res as any)?.rows?.[0]?.count ?? (res as any)?.[0]?.count ?? 0);
+    } catch (e: any) {
+      userCount = -1;
+    }
     const envKeys = Object.keys(process.env).filter(
       (k) =>
         k.includes("DATABASE") ||
@@ -22,9 +29,10 @@ export async function GET() {
 
     return Response.json({
       ok: true,
-      build: "v2-commit-03958bd",
+      build: "v3-schema-verify",
       driver: dbDriverType,
       isPersistentPostgres: dbDriverType === "postgres",
+      userCount,
       dbEnvKeysFound: envKeys,
       urlLength: dbUrl ? dbUrl.length : 0,
       urlPrefix: dbUrl ? dbUrl.slice(0, 15) : null,
