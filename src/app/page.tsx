@@ -69,30 +69,31 @@ export default async function DashboardPage() {
             13 papers · Test Examination countdown active
           </p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          <div className="card flex items-center gap-3 px-4 py-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-rose-50 text-rose-brand">
-              <AlarmClockCheck className="size-4.5" />
+        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2.5">
+          <div className="card flex items-center gap-2.5 p-3 sm:px-4 sm:py-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-brand sm:size-9">
+              <AlarmClockCheck className="size-4 sm:size-4.5" />
             </span>
-            <div>
-              <p className="font-display text-[19px] font-bold leading-none tabular-nums text-ink">
+            <div className="min-w-0">
+              <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
                 {data.exam.daysToExam}
               </p>
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-ink-faint">
-                days to Test Exam
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+                Days to Exam
               </p>
             </div>
           </div>
-          <div className="card flex items-center gap-3 px-4 py-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-amber-50 text-amber-brand">
-              <Target className="size-4.5" />
+
+          <div className="card flex items-center gap-2.5 p-3 sm:px-4 sm:py-2.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-brand sm:size-9">
+              <Target className="size-4 sm:size-4.5" />
             </span>
-            <div>
-              <p className="font-display text-[19px] font-bold leading-none tabular-nums text-ink">
+            <div className="min-w-0">
+              <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
                 {data.exam.daysToTarget}
               </p>
-              <p className="text-[10.5px] font-semibold uppercase tracking-wider text-ink-faint">
-                days to syllabus target · {data.exam.targetDate}
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+                Days to Target
               </p>
             </div>
           </div>

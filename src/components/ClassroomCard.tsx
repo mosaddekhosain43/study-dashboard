@@ -86,41 +86,44 @@ export default function ClassroomCard({
 
   return (
     <>
-      <section className="card overflow-hidden border border-line bg-card p-6 shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-leaf-soft text-leaf">
-              <BookOpen className="size-5" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-lg font-semibold text-ink">
-                  Class Tasks & Study Notes
+      <section className="card overflow-hidden border border-line bg-card p-4 sm:p-6 shadow-card">
+        <div className="border-b border-line pb-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-leaf-soft text-leaf sm:size-10">
+                <BookOpen className="size-4.5 sm:size-5" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="font-display text-base sm:text-lg font-semibold text-ink leading-tight truncate">
+                  Class Tasks & Notes
                 </h2>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/60 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
-                  <Users className="size-3" />
-                  {batchName}
-                </span>
+                <p className="text-[11px] sm:text-xs text-ink-faint truncate">
+                  Teacher shared assignments and lesson notes
+                </p>
               </div>
-              <p className="text-xs text-ink-faint">
-                Assignments and lesson files shared by your teacher
-              </p>
             </div>
+
+            <span className="inline-flex shrink-0 whitespace-nowrap items-center gap-1 rounded-full bg-emerald-100/70 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200/60">
+              <Users className="size-3" />
+              {batchName}
+            </span>
           </div>
 
-          <button
-            onClick={() => setChatOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-leaf hover:bg-leaf-soft/40"
-          >
-            <MessageSquare className="size-4 text-leaf" />
-            Class Q&A Discussion ({messages.length})
-          </button>
+          <div className="mt-3.5 flex items-center justify-between gap-2">
+            <button
+              onClick={() => setChatOpen(true)}
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-line bg-paper/60 px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-leaf hover:bg-white active:scale-98"
+            >
+              <MessageSquare className="size-3.5 text-leaf" />
+              Class Q&A Discussion ({messages.length})
+            </button>
+          </div>
         </div>
 
         <div className="mt-4">
           {materials.length === 0 ? (
-            <div className="py-6 text-center text-sm text-ink-faint">
-              No tasks or files posted for your batch yet. Check back soon!
+            <div className="py-5 text-center text-xs text-ink-faint">
+              No tasks or study notes posted for your batch yet. Check back soon!
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
