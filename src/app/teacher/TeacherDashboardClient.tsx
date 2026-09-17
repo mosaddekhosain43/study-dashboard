@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   BookOpen,
@@ -12,6 +13,7 @@ import {
   MessageSquare,
   Plus,
   Send,
+  Settings,
   Trash2,
   Users,
   X,
@@ -189,30 +191,42 @@ export default function TeacherDashboardClient({ initialData, user }: Props) {
   return (
     <div className="space-y-6">
       {/* Batch selector navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-line pb-3">
-        {batches.map((b) => (
-          <button
-            key={b.id}
-            onClick={() => setActiveBatchId(b.id)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${
-              b.id === activeBatch.id
-                ? "bg-pine text-white shadow-md shadow-pine/20"
-                : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
-            }`}
-          >
-            <Users className="size-3.5" />
-            {b.name}
-            <span
-              className={`ml-1 rounded-full px-2 py-0.5 text-[10px] ${
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {batches.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setActiveBatchId(b.id)}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${
                 b.id === activeBatch.id
-                  ? "bg-white/20 text-white"
-                  : "bg-paper text-ink-faint"
+                  ? "bg-pine text-white shadow-md shadow-pine/20"
+                  : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
               }`}
             >
-              {b.students.length}
-            </span>
-          </button>
-        ))}
+              <Users className="size-3.5" />
+              {b.name}
+              <span
+                className={`ml-1 rounded-full px-2 py-0.5 text-[10px] ${
+                  b.id === activeBatch.id
+                    ? "bg-white/20 text-white"
+                    : "bg-paper text-ink-faint"
+                }`}
+              >
+                {b.students.length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {user.role === "admin" && (
+          <Link
+            href="/admin"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-card px-3.5 py-2 text-xs font-semibold text-leaf transition hover:border-leaf hover:bg-leaf/5 shadow-xs"
+          >
+            <Settings className="size-3.5" />
+            Manage Batches (Add / Delete)
+          </Link>
+        )}
       </div>
 
       {/* Batch summary cards */}

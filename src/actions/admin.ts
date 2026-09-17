@@ -3,7 +3,7 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { batches, teacherBatches, topics, users } from "@/db/schema";
+import { batches, batchMaterials, batchMessages, teacherBatches, topics, users } from "@/db/schema";
 import { getCurrentUser, hashPassword } from "@/lib/auth";
 
 async function requireAdmin() {
@@ -91,6 +91,8 @@ export async function createBatchAction(formData: FormData) {
   try {
     await db.insert(batches).values({ name, slug, description });
     revalidatePath("/admin");
+    revalidatePath("/teacher");
+    revalidatePath("/register");
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err?.message || "Failed to create batch." };
@@ -100,8 +102,19 @@ export async function createBatchAction(formData: FormData) {
 export async function deleteBatchAction(batchId: number) {
   await requireAdmin();
   try {
+    // Unassign students from this batch
+    await db.update(users).set({ batchId: null }).where(eq(users.batchId, batchId));
+    // Remove teacher mappings
+    await db.delete(teacherBatches).where(eq(teacherBatches.batchId, batchId));
+    // Remove batch materials
+    await db.delete(batchMaterials).where(eq(batchMaterials.batchId, batchId));
+    // Remove batch messages
+    await db.delete(batchMessages).where(eq(batchMessages.batchId, batchId));
+    // Remove batch
     await db.delete(batches).where(eq(batches.id, batchId));
     revalidatePath("/admin");
+    revalidatePath("/teacher");
+    revalidatePath("/register");
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err?.message || "Failed to delete batch." };
