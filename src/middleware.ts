@@ -38,6 +38,7 @@ export function middleware(request: NextRequest) {
   const user = token ? parseSessionToken(token) : null;
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isRelogin = request.nextUrl.searchParams.has("relogin") || request.nextUrl.searchParams.has("logout");
 
   // 1. Unauthenticated users: must be redirected to /login unless on /login or /register
   if (!user) {
@@ -48,8 +49,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Authenticated users trying to access /login or /register: redirect to their respective home
-  if (isAuthPage) {
+  // 2. Authenticated users trying to access /login or /register (unless explicitly relogging in)
+  if (isAuthPage && !isRelogin) {
     if (user.role === "admin") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
@@ -68,16 +69,6 @@ export function middleware(request: NextRequest) {
   // Teacher or Admin on /teacher
   if (pathname.startsWith("/teacher") && user.role !== "teacher" && user.role !== "admin") {
     return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  // Admin navigating to root "/" gets redirected to /admin
-  if (pathname === "/" && user.role === "admin") {
-    return NextResponse.redirect(new URL("/admin", request.url));
-  }
-
-  // Teacher navigating to root "/" gets redirected to /teacher
-  if (pathname === "/" && user.role === "teacher") {
-    return NextResponse.redirect(new URL("/teacher", request.url));
   }
 
   return NextResponse.next();

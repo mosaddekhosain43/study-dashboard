@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
-    redirect("/login");
+    redirect("/login?relogin=1");
   }
 
   const data = await getAdminDataAction();

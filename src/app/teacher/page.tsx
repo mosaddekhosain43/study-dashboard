@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function TeacherPage() {
   const user = await getCurrentUser();
   if (!user || (user.role !== "teacher" && user.role !== "admin")) {
-    redirect("/login");
+    redirect("/login?relogin=1");
   }
 
   const data = await getTeacherDashboardData();
