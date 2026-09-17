@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   Maximize2,
   Minimize2,
-  Minus,
   Pause,
   Play,
-  Plus,
   RotateCcw,
   Sparkles,
+  Square,
   Timer as TimerIcon,
   Volume2,
   VolumeX,
@@ -23,7 +23,7 @@ import {
   timerStopAction,
 } from "@/actions";
 
-// Gentle audio chime using Web Audio API
+// Soothing chime sound using Web Audio API
 function playCelebrationChime() {
   try {
     const AudioContextClass =
@@ -67,7 +67,7 @@ function playCelebrationChime() {
     osc3.start(now + 0.45);
     osc3.stop(now + 1.8);
   } catch {
-    // Ignore audio restrictions if blocked by browser
+    // Ignore audio errors if blocked
   }
 }
 
@@ -84,25 +84,37 @@ function formatSeconds(totalSeconds: number) {
   return `${pad(m)}:${pad(remS)}`;
 }
 
-interface Props {
-  subjects: { id: number; name: string }[];
+function formatTotalFocus(mins: number) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
-export default function FocusTimer({ subjects }: Props) {
-  // Default mode: 'set' (Set Timer is default as requested)
+interface Props {
+  subjects: { id: number; name: string }[];
+  initialTodayMinutes?: number;
+}
+
+export default function FocusTimer({
+  subjects,
+  initialTodayMinutes = 0,
+}: Props) {
+  // Mode: 'set' (Set Timer) vs 'free' (Timer)
   const [timerType, setTimerType] = useState<"set" | "free">("set");
   const [targetMinutes, setTargetMinutes] = useState(25);
 
   // Runtime State
   const [isRunning, setIsRunning] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
   const [freeSeconds, setFreeSeconds] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState<number | "">("");
-  const [sessionNote, setSessionNote] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [todayMinutes, setTodayMinutes] = useState(initialTodayMinutes);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -168,6 +180,7 @@ export default function FocusTimer({ subjects }: Props) {
     if (isRunning) return;
     setTimerType(type);
     setIsCompleted(false);
+    setHasStarted(false);
     setSavedMessage(null);
     if (type === "set") {
       setRemainingSeconds(targetMinutes * 60);
@@ -176,21 +189,32 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  const handleMinutesChange = (newMins: number) => {
-    const valid = Math.max(1, Math.min(720, newMins));
-    setTargetMinutes(valid);
-    if (!isRunning) {
-      setRemainingSeconds(valid * 60);
-      setIsCompleted(false);
-      setSavedMessage(null);
-    }
+  const handleSetTarget = (mins: number) => {
+    if (isRunning) return;
+    setTimerType("set");
+    setTargetMinutes(mins);
+    setRemainingSeconds(mins * 60);
+    setIsCompleted(false);
+    setHasStarted(false);
+    setSavedMessage(null);
   };
 
-  const handleStart = () => {
-    if (timerType === "set" && targetMinutes <= 0) return;
+  const handleAddMinutes = (added: number) => {
+    if (isRunning) return;
+    setTimerType("set");
+    const next = targetMinutes + added;
+    setTargetMinutes(next);
+    setRemainingSeconds(next * 60);
+  };
+
+  const handleStartOrResume = () => {
+    if (timerType === "set" && remainingSeconds <= 0) {
+      setRemainingSeconds(targetMinutes * 60);
+    }
     setSavedMessage(null);
     setIsCompleted(false);
     setIsRunning(true);
+    setHasStarted(true);
     timerStartAction(selectedSubject === "" ? null : selectedSubject).catch(() => {});
   };
 
@@ -201,6 +225,7 @@ export default function FocusTimer({ subjects }: Props) {
 
   const handleReset = () => {
     setIsRunning(false);
+    setHasStarted(false);
     setIsCompleted(false);
     setSavedMessage(null);
     if (timerType === "set") {
@@ -226,16 +251,14 @@ export default function FocusTimer({ subjects }: Props) {
       await saveStudySessionAction({
         subjectId: selectedSubject === "" ? null : selectedSubject,
         minutes: studiedMinutes,
-        note: sessionNote || undefined,
       });
 
+      setTodayMinutes((prev) => prev + studiedMinutes);
       setSavedMessage(
-        `Great job! Saved ${studiedMinutes} minute${
-          studiedMinutes === 1 ? "" : "s"
-        } to today's study log.`
+        `Saved ${studiedMinutes}m to today's log!`
       );
-      setSessionNote("");
       setIsRunning(false);
+      setHasStarted(false);
       setIsCompleted(false);
       if (timerType === "set") {
         setRemainingSeconds(targetMinutes * 60);
@@ -249,410 +272,266 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  const totalTargetSec = targetMinutes * 60;
-  const progressRatio =
-    timerType === "set" && totalTargetSec > 0
-      ? Math.min(1, Math.max(0, (totalTargetSec - remainingSeconds) / totalTargetSec))
-      : 1;
-
   const currentSubjectObj = subjects.find((s) => s.id === selectedSubject);
 
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-col items-center justify-center transition-all duration-300 ${
+      className={`flex items-center justify-center transition-colors duration-300 ${
         isFullscreen
-          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0d1b14] p-4 sm:p-8 text-white"
-          : "mx-auto w-full max-w-xl card border border-line bg-card p-6 sm:p-9 shadow-card text-ink"
+          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0d1b14] p-4 sm:p-6"
+          : "w-full"
       }`}
     >
-      {/* ── Top Bar: Chime & Fullscreen ───────────────────────── */}
-      <div className="mb-5 sm:mb-7 flex w-full items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setSoundEnabled((v) => !v)}
-          title={soundEnabled ? "Sound Chime Enabled" : "Sound Muted"}
-          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-            isFullscreen
-              ? "border border-white/10 bg-[#1a3325] text-emerald-100/70 hover:text-white"
-              : "border border-line bg-paper/60 text-ink-faint hover:text-ink hover:bg-paper"
-          }`}
-        >
-          {soundEnabled ? (
-            <>
-              <Volume2 className={`size-3.5 ${isFullscreen ? "text-glow" : "text-leaf"}`} />
-              <span>Chime On</span>
-            </>
-          ) : (
-            <>
-              <VolumeX className="size-3.5 opacity-50" />
-              <span>Muted</span>
-            </>
-          )}
-        </button>
+      {/* ── Main Timer Card matching the provided reference ──────── */}
+      <div
+        className={`w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl transition-all ${
+          isFullscreen ? "shadow-2xl ring-1 ring-white/10" : ""
+        }`}
+      >
+        {/* ── Top Header Row (Chime, TIMER Pill, Fullscreen) ────── */}
+        <div className="flex items-center justify-between gap-2 pb-2">
+          {/* Chime On / Muted */}
+          <button
+            type="button"
+            onClick={() => setSoundEnabled((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+          >
+            {soundEnabled ? (
+              <>
+                <Volume2 className="size-3.5 text-emerald-600" />
+                <span>Chime On</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="size-3.5 text-slate-400" />
+                <span>Muted</span>
+              </>
+            )}
+          </button>
 
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-            isFullscreen
-              ? "border border-white/10 bg-[#1a3325] text-emerald-100/70 hover:text-white"
-              : "border border-line bg-paper/60 text-ink-faint hover:text-leaf hover:bg-paper"
-          }`}
-        >
-          {isFullscreen ? (
-            <>
-              <Minimize2 className="size-3.5" />
-              <span>Exit Fullscreen</span>
-            </>
-          ) : (
-            <>
-              <Maximize2 className="size-3.5" />
-              <span>Fullscreen</span>
-            </>
-          )}
-        </button>
-      </div>
+          {/* TIMER Status Pill */}
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-slate-700">
+            <TimerIcon className="size-3 text-emerald-600" />
+            <span>TIMER</span>
+          </div>
 
-      {/* ── Main Content Area ─────────────────────────────────── */}
-      <div className="flex w-full flex-col items-center text-center">
-        {/* Status Pill */}
-        <div
-          className={`inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider ${
-            isFullscreen
-              ? "border border-white/10 bg-[#1a3325] text-emerald-100/70"
-              : "border border-line bg-paper/70 text-ink-soft"
-          }`}
-        >
-          {isCompleted ? (
-            <>
-              <Sparkles className={`size-3.5 ${isFullscreen ? "text-glow" : "text-amber-600"} animate-bounce`} />
-              <span className={isFullscreen ? "text-glow font-bold" : "text-amber-700 font-bold"}>
-                Target Reached! Great Job
-              </span>
-            </>
-          ) : isRunning ? (
-            <>
-              <span className="relative flex size-2">
-                <span className={`absolute inline-flex h-full w-full animate-ping rounded-full ${isFullscreen ? "bg-glow" : "bg-leaf"} opacity-75`} />
-                <span className={`relative inline-flex size-2 rounded-full ${isFullscreen ? "bg-glow" : "bg-leaf"}`} />
-              </span>
-              <span className={isFullscreen ? "text-glow font-bold" : "text-leaf font-bold"}>
-                {timerType === "set" ? `Focusing (${targetMinutes} min session)` : "Stopwatch Running"}
-              </span>
-            </>
-          ) : (
-            <>
-              <TimerIcon className="size-3 opacity-60" />
-              <span>
-                {timerType === "set" ? `Study Target: ${targetMinutes} Min` : "Open Timer"}
-              </span>
-            </>
-          )}
+          {/* Fullscreen Toggle */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize2 className="size-3.5" />
+                <span>Exit</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="size-3.5 text-slate-600" />
+                <span>Fullscreen</span>
+              </>
+            )}
+          </button>
         </div>
 
-        {/* ── Big Digital Timer Display ─────────────────────────── */}
-        <div className="my-5 sm:my-7 select-none">
-          <div
-            className={`font-display text-7xl sm:text-8xl md:text-9xl font-extrabold tabular-nums tracking-tight transition-colors duration-200 ${
-              isFullscreen
-                ? isCompleted
-                  ? "text-glow drop-shadow-[0_0_30px_rgba(24,185,129,0.5)] animate-pulse"
-                  : isRunning
-                  ? "text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]"
-                  : "text-emerald-50/80"
-                : isCompleted
-                ? "text-leaf animate-pulse"
-                : isRunning
-                ? "text-leaf drop-shadow-sm"
-                : "text-ink"
+        {/* ── Giant Digital Clock Digits ────────────────────────── */}
+        <div className="my-2 sm:my-3 text-center select-none">
+          <div className="font-display text-[68px] sm:text-[76px] font-black leading-none tabular-nums tracking-tight text-[#0f172a]">
+            {timerType === "set"
+              ? formatSeconds(remainingSeconds)
+              : formatSeconds(freeSeconds)}
+          </div>
+        </div>
+
+        {/* ── Active Subject Pill (Below Digits) ─────────────────── */}
+        <div className="flex justify-center mb-4">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 px-3.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200/70 shadow-2xs">
+            <BookOpen className="size-3 text-emerald-600" />
+            <span className="truncate max-w-[220px]">
+              {currentSubjectObj ? currentSubjectObj.name : "General / Mixed study"}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Mode Switcher: Set Timer vs Timer ──────────────────── */}
+        <div className="mb-3.5 rounded-2xl bg-[#eef3f0] p-1 grid grid-cols-2 gap-1 border border-slate-200/50">
+          <button
+            type="button"
+            disabled={isRunning}
+            onClick={() => handleSwitchType("set")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
+              timerType === "set"
+                ? "bg-[#0c4a34] text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            {timerType === "set" ? formatSeconds(remainingSeconds) : formatSeconds(freeSeconds)}
-          </div>
+            <TimerIcon className="size-3.5" />
+            <span>Set Timer</span>
+          </button>
 
-          {currentSubjectObj && (
-            <p className={`mt-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 ${
-              isFullscreen ? "text-glow" : "text-leaf"
-            }`}>
-              <BookOpen className="size-3.5" />
-              <span>{currentSubjectObj.name}</span>
-            </p>
-          )}
+          <button
+            type="button"
+            disabled={isRunning}
+            onClick={() => handleSwitchType("free")}
+            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
+              timerType === "free"
+                ? "bg-[#0c4a34] text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Play className="size-3.5 fill-current" />
+            <span>Timer</span>
+          </button>
         </div>
 
-        {/* ── Progress Bar (Only for Set Timer mode) ────────────── */}
-        {timerType === "set" && (
-          <div className="mb-5 w-full max-w-xs">
-            <div className={`h-1.5 w-full overflow-hidden rounded-full ${
-              isFullscreen ? "bg-white/10" : "bg-paper-deep border border-line/60"
-            }`}>
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ${
-                  isFullscreen ? "bg-glow shadow-xs shadow-glow/40" : "bg-leaf"
-                }`}
-                style={{ width: `${Math.round(progressRatio * 100)}%` }}
-              />
-            </div>
-            <div className={`mt-1 flex justify-between text-[10.5px] font-mono ${
-              isFullscreen ? "text-emerald-100/40" : "text-ink-faint"
-            }`}>
-              <span>0%</span>
-              <span>{Math.round(progressRatio * 100)}%</span>
-              <span>{targetMinutes}m</span>
-            </div>
-          </div>
-        )}
+        {/* ── Preset Buttons Row (for Set Timer mode) ───────────── */}
+        {timerType === "set" && !isRunning && (
+          <div className="mb-3.5 grid grid-cols-4 gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleAddMinutes(5)}
+              className="rounded-xl border border-slate-200/90 bg-white py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs text-center"
+            >
+              + 5m
+            </button>
 
-        {/* ── 2 OPTIONS: Set Timer vs Open Timer (No crowded presets) ── */}
-        {!isRunning && (
-          <div className="mb-5 w-full space-y-3">
-            {/* 2-Option Segment Toggle */}
-            <div className={`inline-flex items-center rounded-2xl p-1 shadow-2xs ${
-              isFullscreen
-                ? "border border-white/10 bg-[#1a3325]"
-                : "border border-line bg-paper/60"
-            }`}>
-              <button
-                type="button"
-                onClick={() => handleSwitchType("set")}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  timerType === "set"
-                    ? isFullscreen
-                      ? "bg-glow text-pine shadow-sm"
-                      : "bg-leaf text-white shadow-sm"
-                    : isFullscreen
-                    ? "text-emerald-100/60 hover:text-white"
-                    : "text-ink-faint hover:text-ink"
-                }`}
-              >
-                <TimerIcon className="size-3.5" />
-                <span>Set Timer</span>
-              </button>
+            <button
+              type="button"
+              onClick={() => handleAddMinutes(15)}
+              className="rounded-xl border border-slate-200/90 bg-white py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs text-center"
+            >
+              + 15m
+            </button>
 
-              <button
-                type="button"
-                onClick={() => handleSwitchType("free")}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                  timerType === "free"
-                    ? isFullscreen
-                      ? "bg-glow text-pine shadow-sm"
-                      : "bg-leaf text-white shadow-sm"
-                    : isFullscreen
-                    ? "text-emerald-100/60 hover:text-white"
-                    : "text-ink-faint hover:text-ink"
-                }`}
-              >
-                <Play className="size-3.5 fill-current" />
-                <span>Open Timer</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleSetTarget(25)}
+              className={`rounded-xl py-1.5 text-xs font-bold transition shadow-2xs text-center ${
+                targetMinutes === 25
+                  ? "border border-emerald-500 bg-emerald-50 text-emerald-800"
+                  : "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              25m Focus
+            </button>
 
-            {/* Set Timer input: Stepper + Direct Minute Input */}
-            {timerType === "set" && (
-              <div className="flex items-center justify-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleMinutesChange(targetMinutes - 5)}
-                  className={`size-8 rounded-xl transition grid place-items-center ${
-                    isFullscreen
-                      ? "border border-white/10 bg-[#1a3325] text-emerald-50 hover:bg-[#203f2e]"
-                      : "border border-line bg-paper hover:bg-paper-deep text-ink"
-                  }`}
-                  title="Decrease 5 minutes"
-                >
-                  <Minus className="size-3.5" />
-                </button>
-
-                <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 shadow-2xs ${
-                  isFullscreen
-                    ? "border border-white/10 bg-[#1a3325]"
-                    : "border border-line bg-paper/60"
-                }`}>
-                  <input
-                    type="number"
-                    min="1"
-                    max="720"
-                    value={targetMinutes || ""}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val)) {
-                        handleMinutesChange(val);
-                      } else {
-                        setTargetMinutes(0);
-                      }
-                    }}
-                    className={`w-14 bg-transparent text-center font-display text-base font-bold focus:outline-none ${
-                      isFullscreen ? "text-white" : "text-ink"
-                    }`}
-                  />
-                  <span className={`text-xs font-semibold ${
-                    isFullscreen ? "text-emerald-100/70" : "text-ink-faint"
-                  }`}>
-                    min
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleMinutesChange(targetMinutes + 5)}
-                  className={`size-8 rounded-xl transition grid place-items-center ${
-                    isFullscreen
-                      ? "border border-white/10 bg-[#1a3325] text-emerald-50 hover:bg-[#203f2e]"
-                      : "border border-line bg-paper hover:bg-paper-deep text-ink"
-                  }`}
-                  title="Increase 5 minutes"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => handleSetTarget(50)}
+              className={`rounded-xl py-1.5 text-xs font-bold transition shadow-2xs text-center ${
+                targetMinutes === 50
+                  ? "border border-emerald-500 bg-emerald-50 text-emerald-800"
+                  : "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              50m Deep
+            </button>
           </div>
         )}
 
         {/* ── Subject Selection Dropdown ────────────────────────── */}
-        <div className="mb-5 flex items-center justify-center gap-2">
-          <div className="relative inline-flex items-center">
-            <span className={`pointer-events-none absolute left-3 ${
-              isFullscreen ? "text-emerald-100/40" : "text-ink-faint"
-            }`}>
-              <BookOpen className="size-3.5" />
-            </span>
-            <select
-              value={selectedSubject}
-              disabled={isRunning}
-              onChange={(e) =>
-                setSelectedSubject(e.target.value ? Number(e.target.value) : "")
-              }
-              className={`rounded-xl py-2 pl-8 pr-8 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none disabled:opacity-60 ${
-                isFullscreen
-                  ? "border border-white/10 bg-[#1a3325] text-emerald-50/90 hover:border-white/20 focus:border-glow"
-                  : "border border-line bg-paper/50 text-ink hover:border-leaf/40 focus:border-leaf focus:bg-white"
-              }`}
-            >
-              <option value="" className={isFullscreen ? "bg-[#12251b] text-emerald-50" : ""}>
-                General / Mixed study
+        <div className="relative mb-3.5">
+          <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600">
+            <BookOpen className="size-4" />
+          </div>
+          <select
+            value={selectedSubject}
+            disabled={isRunning}
+            onChange={(e) =>
+              setSelectedSubject(e.target.value ? Number(e.target.value) : "")
+            }
+            className="w-full appearance-none rounded-2xl border border-slate-200/90 bg-white py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold text-slate-800 shadow-2xs transition hover:border-slate-300 focus:border-[#0c4a34] focus:outline-none disabled:opacity-60 cursor-pointer"
+          >
+            <option value="">General / Mixed study</option>
+            {subjects.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
               </option>
-              {subjects.map((s) => (
-                <option
-                  key={s.id}
-                  value={s.id}
-                  className={isFullscreen ? "bg-[#12251b] text-emerald-50" : ""}
-                >
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+            <ChevronDown className="size-4" />
           </div>
         </div>
 
-        {/* ── Action Buttons ────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* ── Main Action Controls ──────────────────────────────── */}
+        <div className="flex items-center gap-2 mb-3">
           {!isRunning ? (
             <button
-              onClick={handleStart}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3 text-xs sm:text-sm font-bold shadow-sm transition active:scale-98 ${
-                isFullscreen
-                  ? "bg-glow text-pine hover:brightness-105"
-                  : "bg-leaf text-white hover:bg-leaf-deep"
-              }`}
+              type="button"
+              onClick={handleStartOrResume}
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
             >
-              <Play className="size-4 fill-current" />
+              <Play className="size-4 fill-white" />
               <span>
                 {isCompleted
                   ? "Start Again"
-                  : timerType === "set" && remainingSeconds < totalTargetSec
-                  ? "Resume Session"
+                  : hasStarted
+                  ? "Resume"
                   : "Start"}
               </span>
             </button>
           ) : (
             <button
+              type="button"
               onClick={handlePause}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-8 py-3 text-xs sm:text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-200 active:scale-98"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
             >
-              <Pause className="size-4 fill-current" />
+              <Pause className="size-4 fill-white" />
               <span>Pause</span>
             </button>
           )}
 
-          {/* Stop & Save */}
-          {(isRunning ||
-            (timerType === "set" && remainingSeconds < totalTargetSec) ||
-            (timerType === "free" && freeSeconds > 0) ||
-            isCompleted) && (
-            <button
-              disabled={isSaving}
-              onClick={handleSaveSession}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs sm:text-sm font-semibold shadow-2xs transition active:scale-98 disabled:opacity-50 ${
-                isFullscreen
-                  ? "border border-white/10 bg-white/5 text-emerald-50/90 hover:bg-white/10"
-                  : "border border-line bg-paper hover:bg-emerald-50 hover:text-leaf hover:border-emerald-200 text-ink"
-              }`}
-              title="Stop and save session to today's log"
-            >
-              <CheckCircle2 className={`size-4 ${isFullscreen ? "text-glow" : "text-leaf"}`} />
-              <span>{isSaving ? "Saving..." : "Stop & Save"}</span>
-            </button>
-          )}
-
-          {/* Reset */}
-          {!isRunning &&
-            ((timerType === "set" && remainingSeconds < totalTargetSec) ||
-              (timerType === "free" && freeSeconds > 0)) && (
-              <button
-                onClick={handleReset}
-                className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-3 text-xs font-semibold transition active:scale-98 ${
-                  isFullscreen
-                    ? "border border-white/10 bg-white/5 text-emerald-100/50 hover:bg-white/10 hover:text-white"
-                    : "border border-line bg-paper text-ink-faint hover:text-ink"
-                }`}
-                title="Reset timer"
-              >
-                <RotateCcw className="size-3.5" />
-                <span>Reset</span>
-              </button>
-            )}
+          {/* Reset button (as shown in reference screenshot) */}
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={!hasStarted && !isRunning}
+            className="size-12 rounded-2xl border border-slate-200/90 bg-white grid place-items-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-2xs disabled:opacity-40"
+            title="Reset timer"
+          >
+            <RotateCcw className="size-4.5" />
+          </button>
         </div>
 
-        {/* Optional Study Note */}
-        {(isRunning ||
-          (timerType === "set" && remainingSeconds < totalTargetSec) ||
-          (timerType === "free" && freeSeconds > 0) ||
-          isCompleted) && (
-          <div className="mt-4 w-full max-w-xs transition-all">
-            <input
-              type="text"
-              value={sessionNote}
-              onChange={(e) => setSessionNote(e.target.value)}
-              placeholder="Topic or note for today's log (optional)..."
-              className={`w-full rounded-xl px-3.5 py-2 text-xs shadow-2xs focus:outline-none ${
-                isFullscreen
-                  ? "border border-white/10 bg-[#1a3325] text-emerald-50 placeholder:text-emerald-100/30 focus:border-glow"
-                  : "border border-line bg-paper/50 text-ink placeholder:text-ink-faint/70 focus:border-leaf focus:bg-white"
-              }`}
-            />
-          </div>
+        {/* Save Session button (if timer has been run) */}
+        {(hasStarted || isCompleted) && (
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={handleSaveSession}
+            className="w-full mb-3 inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300/80 bg-emerald-50 py-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"
+          >
+            <CheckCircle2 className="size-3.5 text-emerald-600" />
+            <span>{isSaving ? "Saving..." : "Stop & Save to Daily Log"}</span>
+          </button>
         )}
 
-        {/* Saved Toast */}
+        {/* Saved feedback toast */}
         {savedMessage && (
-          <div className={`mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-2xs ${
-            isFullscreen
-              ? "border border-glow/30 bg-glow/10 text-glow"
-              : "border border-emerald-200 bg-emerald-50 text-emerald-800"
-          }`}>
-            <CheckCircle2 className="size-4 shrink-0" />
-            <span>{savedMessage}</span>
+          <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-center text-xs font-semibold text-emerald-800">
+            {savedMessage}
           </div>
         )}
 
-        {/* Footer text */}
-        <p className={`mt-5 text-[11px] ${
-          isFullscreen ? "text-emerald-100/40" : "text-ink-faint"
-        }`}>
-          Stop saves the session to today&apos;s log.
+        {/* ── Helper Notice with Checkmark ──────────────────────── */}
+        <p className="flex items-center justify-center gap-1.5 text-[11.5px] font-medium text-emerald-800/80 mb-3.5">
+          <CheckCircle2 className="size-3.5 text-emerald-600" />
+          <span>Stopping saves automatically to today&apos;s log.</span>
         </p>
+
+        {/* ── Today's Total Focus Summary Row ───────────────────── */}
+        <div className="rounded-2xl border border-slate-100 bg-slate-50/90 px-4 py-2.5 flex items-center justify-between text-xs">
+          <span className="flex items-center gap-2 text-slate-600 font-medium">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            Today&apos;s Total Focus
+          </span>
+          <span className="font-bold text-slate-900">
+            {formatTotalFocus(todayMinutes)}
+          </span>
+        </div>
       </div>
     </div>
   );
