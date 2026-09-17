@@ -183,10 +183,10 @@ export default function AdminClient({ initialData }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-line pb-3">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-line pb-3">
         <button
           onClick={() => setActiveTab("batches")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === "batches"
               ? "bg-pine text-white shadow-md shadow-pine/20"
               : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
@@ -196,7 +196,7 @@ export default function AdminClient({ initialData }: Props) {
         </button>
         <button
           onClick={() => setActiveTab("teachers")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === "teachers"
               ? "bg-pine text-white shadow-md shadow-pine/20"
               : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
@@ -206,7 +206,7 @@ export default function AdminClient({ initialData }: Props) {
         </button>
         <button
           onClick={() => setActiveTab("students")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+          className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
             activeTab === "students"
               ? "bg-pine text-white shadow-md shadow-pine/20"
               : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
@@ -219,27 +219,64 @@ export default function AdminClient({ initialData }: Props) {
       {/* TAB 1: Batches */}
       {activeTab === "batches" && (
         <section className="card overflow-hidden border border-line bg-card shadow-card">
-          <div className="flex items-center justify-between border-b border-line px-6 py-4 bg-paper/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 sm:px-6 py-4 bg-paper/30">
             <div>
               <h2 className="font-display text-base font-semibold text-ink">
                 Class Batches
               </h2>
               <p className="text-xs text-ink-faint">
-                Manage your academic batches (e.g. Alim 2027, Dakhil 2027, Class 8)
+                Manage your academic batches
               </p>
             </div>
             <button
               onClick={() => setShowBatchModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-leaf-deep"
             >
               <Plus className="size-3.5" />
               Create Batch
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft">
+          {/* Mobile Card List (sm:hidden) */}
+          <div className="divide-y divide-line/60 sm:hidden">
+            {data.batches.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-ink-faint">
+                No batches created yet. Click "Create Batch" above.
+              </div>
+            ) : (
+              data.batches.map((b) => (
+                <div key={b.id} className="p-4 space-y-2.5 hover:bg-paper/30 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-sm text-ink">{b.name}</span>
+                    <button
+                      onClick={() => handleDeleteBatch(b.id)}
+                      className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 shadow-xs transition hover:bg-rose-50 shrink-0"
+                      title="Delete batch"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded bg-paper px-2 py-0.5 font-mono text-[11px] text-ink-faint border border-line/60">
+                      {b.slug}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800 border border-emerald-200/60 whitespace-nowrap">
+                      <Users className="size-3" />
+                      {b.studentCount} students
+                    </span>
+                  </div>
+                  {b.description && (
+                    <p className="text-xs text-ink-soft leading-relaxed">{b.description}</p>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full min-w-[650px] text-left text-xs">
+              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft whitespace-nowrap">
                 <tr>
                   <th className="px-6 py-3">Batch Name</th>
                   <th className="px-6 py-3">Identifier (Slug)</th>
@@ -251,16 +288,16 @@ export default function AdminClient({ initialData }: Props) {
               <tbody className="divide-y divide-line/70">
                 {data.batches.map((b) => (
                   <tr key={b.id} className="hover:bg-paper/30 transition">
-                    <td className="px-6 py-4 font-semibold text-ink">{b.name}</td>
-                    <td className="px-6 py-4 font-mono text-[11px] text-ink-faint">{b.slug}</td>
+                    <td className="px-6 py-4 font-semibold text-ink whitespace-nowrap">{b.name}</td>
+                    <td className="px-6 py-4 font-mono text-[11px] text-ink-faint whitespace-nowrap">{b.slug}</td>
                     <td className="px-6 py-4 text-ink-soft">{b.description || "—"}</td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200/60">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 border border-emerald-200/60 whitespace-nowrap">
                         <Users className="size-3" />
                         {b.studentCount} students
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right whitespace-nowrap">
                       <button
                         onClick={() => handleDeleteBatch(b.id)}
                         className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 transition hover:bg-rose-50 ml-auto"
@@ -280,10 +317,10 @@ export default function AdminClient({ initialData }: Props) {
       {/* TAB 2: Teachers */}
       {activeTab === "teachers" && (
         <section className="card overflow-hidden border border-line bg-card shadow-card">
-          <div className="flex items-center justify-between border-b border-line px-6 py-4 bg-paper/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 sm:px-6 py-4 bg-paper/30">
             <div>
               <h2 className="font-display text-base font-semibold text-ink">
-                Teacher Accounts & Batch Assignments
+                Teacher Accounts
               </h2>
               <p className="text-xs text-ink-faint">
                 Add teacher credentials and assign them to specific class batches
@@ -291,16 +328,56 @@ export default function AdminClient({ initialData }: Props) {
             </div>
             <button
               onClick={() => setShowTeacherModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep"
+              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-leaf-deep"
             >
               <Plus className="size-3.5" />
               Add Teacher
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft">
+          {/* Mobile Card View (sm:hidden) */}
+          <div className="divide-y divide-line/60 sm:hidden">
+            {data.teachers.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-ink-faint">
+                No teacher accounts created yet. Click "Add Teacher" above.
+              </div>
+            ) : (
+              data.teachers.map((t) => (
+                <div key={t.id} className="p-4 space-y-2.5 hover:bg-paper/30 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-sm text-ink">{t.name}</span>
+                    <button
+                      onClick={() => handleDeleteUser(t.id, "teacher")}
+                      className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 shadow-xs transition hover:bg-rose-50 shrink-0"
+                      title="Delete teacher"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-ink-faint font-mono">{t.email}</p>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    {t.assignedBatches.length === 0 ? (
+                      <span className="text-xs text-ink-faint italic">No batches assigned</span>
+                    ) : (
+                      t.assignedBatches.map((name) => (
+                        <span
+                          key={name}
+                          className="rounded-md bg-paper px-2 py-0.5 text-[11px] font-medium text-ink-soft border border-line"
+                        >
+                          {name}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full min-w-[650px] text-left text-xs">
+              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft whitespace-nowrap">
                 <tr>
                   <th className="px-6 py-3">Teacher Name</th>
                   <th className="px-6 py-3">Login Email</th>
@@ -318,8 +395,8 @@ export default function AdminClient({ initialData }: Props) {
                 ) : (
                   data.teachers.map((t) => (
                     <tr key={t.id} className="hover:bg-paper/30 transition">
-                      <td className="px-6 py-4 font-semibold text-ink">{t.name}</td>
-                      <td className="px-6 py-4 text-ink-soft">{t.email}</td>
+                      <td className="px-6 py-4 font-semibold text-ink whitespace-nowrap">{t.name}</td>
+                      <td className="px-6 py-4 text-ink-soft whitespace-nowrap">{t.email}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1.5">
                           {t.assignedBatches.length === 0 ? (
@@ -336,7 +413,7 @@ export default function AdminClient({ initialData }: Props) {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => handleDeleteUser(t.id, "teacher")}
                           className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 transition hover:bg-rose-50 ml-auto"
@@ -357,7 +434,7 @@ export default function AdminClient({ initialData }: Props) {
       {/* TAB 3: Students */}
       {activeTab === "students" && (
         <section className="card overflow-hidden border border-line bg-card shadow-card">
-          <div className="border-b border-line px-6 py-4 bg-paper/30">
+          <div className="border-b border-line px-4 sm:px-6 py-4 bg-paper/30">
             <h2 className="font-display text-base font-semibold text-ink">
               All Registered Students ({data.students.length})
             </h2>
@@ -366,9 +443,59 @@ export default function AdminClient({ initialData }: Props) {
             </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft">
+          {/* Mobile Card View (sm:hidden) */}
+          <div className="divide-y divide-line/60 sm:hidden">
+            {data.students.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-ink-faint">
+                No students registered yet.
+              </div>
+            ) : (
+              data.students.map((s) => (
+                <div key={s.id} className="p-4 space-y-2.5 hover:bg-paper/30 transition">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-sm text-ink truncate">{s.name}</h3>
+                      <p className="text-xs text-ink-faint font-mono truncate">{s.email}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteUser(s.id, "student")}
+                      className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 shadow-xs transition hover:bg-rose-50 shrink-0"
+                      title="Delete student"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                    <span className="rounded-md bg-paper px-2.5 py-0.5 text-[11px] font-semibold text-ink-soft border border-line">
+                      {s.batchName}
+                    </span>
+                    <span className="text-ink-soft">
+                      <span className="font-semibold text-leaf">{s.completedTopics}</span> / {s.totalTopics} topics
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 pt-1">
+                    <div className="flex items-center justify-between text-[11px] text-ink-faint">
+                      <span>Syllabus Progress</span>
+                      <span className="font-semibold text-leaf">{s.progressPercent}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-line">
+                      <div
+                        className="h-full bg-leaf rounded-full transition-all duration-300"
+                        style={{ width: `${s.progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden sm:block) */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full min-w-[650px] text-left text-xs">
+              <thead className="border-b border-line bg-paper/40 font-semibold text-ink-soft whitespace-nowrap">
                 <tr>
                   <th className="px-6 py-3">Student Name</th>
                   <th className="px-6 py-3">Batch</th>
@@ -387,16 +514,16 @@ export default function AdminClient({ initialData }: Props) {
                 ) : (
                   data.students.map((s) => (
                     <tr key={s.id} className="hover:bg-paper/30 transition">
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-semibold text-ink">{s.name}</div>
-                        <div className="text-[11px] text-ink-faint">{s.email}</div>
+                        <div className="text-[11px] text-ink-faint font-mono">{s.email}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className="rounded-md bg-paper px-2.5 py-1 text-xs font-semibold text-ink-soft border border-line">
                           {s.batchName}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-24 overflow-hidden rounded-full bg-line">
                             <div
@@ -409,13 +536,13 @@ export default function AdminClient({ initialData }: Props) {
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-ink-soft">
+                      <td className="px-6 py-4 text-ink-soft whitespace-nowrap">
                         <span className="font-semibold text-leaf">
                           {s.completedTopics}
                         </span>{" "}
                         / {s.totalTopics}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => handleDeleteUser(s.id, "student")}
                           className="grid size-8 place-items-center rounded-lg border border-line bg-white text-rose-600 transition hover:bg-rose-50 ml-auto"
