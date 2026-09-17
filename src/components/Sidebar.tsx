@@ -22,10 +22,10 @@ import {
   Settings,
   ShieldCheck,
   SquarePen,
+  Timer,
   Users,
   X,
 } from "lucide-react";
-import TimerWidget from "@/components/TimerWidget";
 import { logoutAction } from "@/actions/auth";
 import type { SessionUser } from "@/lib/auth";
 
@@ -59,6 +59,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       label: "Track",
       items: [
         { href: "/", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/timer", label: "Study Timer", icon: Timer },
         { href: "/update", label: "Study Update", icon: SquarePen },
         { href: "/subjects", label: "Subjects", icon: LibraryBig },
         { href: "/remaining", label: "Still Remaining", icon: Hourglass },
@@ -184,9 +185,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="border-t border-white/8 px-4 py-4 space-y-3">
-        <TimerWidget subjects={subjects} />
-
+      <div className="border-t border-white/8 px-4 py-3 space-y-3">
         {user ? (
           <div className="flex items-center justify-between rounded-xl bg-white/5 p-2.5">
             <div className="min-w-0 flex-1 pr-2">
