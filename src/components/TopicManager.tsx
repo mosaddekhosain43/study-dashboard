@@ -93,12 +93,12 @@ export default function TopicManager({
   return (
     <div>
       {/* filters + add */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap">
         {(Object.keys(FILTER_LABELS) as Filter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition ${
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition ${
               filter === f
                 ? "border-leaf bg-leaf text-white"
                 : "border-line bg-white text-ink-soft hover:border-leaf hover:text-leaf"
@@ -110,18 +110,18 @@ export default function TopicManager({
             </span>
           </button>
         ))}
-        <div className="flex-1" />
+        <div className="hidden sm:block flex-1" />
         <button
           onClick={() => setBulkOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-[12px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf"
         >
-          <ListPlus className="size-4" /> Bulk add
+          <ListPlus className="size-3.5" /> Bulk add
         </button>
       </div>
 
       {/* add form */}
-      <div className="card mb-4 flex items-center gap-2 p-2.5">
-        <Plus className="ml-1 size-4 text-leaf" />
+      <div className="card mb-4 flex items-center gap-2 p-2 sm:p-2.5">
+        <Plus className="ml-1 size-4 text-leaf shrink-0" />
         <input
           value={quickName}
           onChange={(e) => setQuickName(e.target.value)}
@@ -132,7 +132,7 @@ export default function TopicManager({
         <button
           onClick={addQuick}
           disabled={pending || !quickName.trim()}
-          className="rounded-lg bg-leaf px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+          className="shrink-0 rounded-lg bg-leaf px-3.5 py-2 text-[12px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
         >
           Add topic
         </button>
@@ -163,72 +163,159 @@ export default function TopicManager({
       {msg && <p className="mb-3 text-[12.5px] font-medium text-leaf">{msg}</p>}
 
       {/* topic list */}
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {filtered.map((t, idx) => {
           const editing = editingId === t.id;
           return (
-            <li key={t.id} className="card group flex items-center gap-3 px-3.5 py-3">
-              <span className="hidden w-6 text-right text-[11px] font-semibold tabular-nums text-ink-faint sm:block">
-                {idx + 1}
-              </span>
-              <StatusIcon status={t.status} className="size-5 shrink-0" />
-
-              <div className="min-w-0 flex-1">
-                {editing ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      autoFocus
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter")
-                          startTransition(async () => {
-                            await renameTopicAction(t.id, editName);
-                            setEditingId(null);
-                            refresh();
-                          });
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      className="font-bengali min-w-0 flex-1 rounded-lg border border-leaf bg-white px-2 py-1 text-[13.5px]"
-                    />
-                    <button
-                      onClick={() =>
-                        startTransition(async () => {
-                          await renameTopicAction(t.id, editName);
-                          setEditingId(null);
-                          refresh();
-                        })
-                      }
-                      className="grid size-7 place-items-center rounded-lg bg-leaf text-white"
-                    >
-                      <Check className="size-3.5" />
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="grid size-7 place-items-center rounded-lg bg-slate-200 text-slate-600">
-                      <X className="size-3.5" />
-                    </button>
+            <li key={t.id} className="card group p-3.5 sm:py-3 sm:px-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                  <span className="hidden w-5 text-right text-[11px] font-semibold tabular-nums text-ink-faint sm:block pt-0.5">
+                    {idx + 1}
+                  </span>
+                  <div className="pt-0.5">
+                    <StatusIcon status={t.status} className="size-4.5 shrink-0" />
                   </div>
-                ) : (
-                  <>
-                    <p className={`font-bengali truncate text-[14px] font-semibold ${t.status === "completed" ? "text-ink-soft" : "text-ink"}`}>
-                      {t.name}
-                    </p>
-                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10.5px] text-ink-faint">
-                      {t.completedAt && <span>completed {t.completedAt}</span>}
-                      {!t.completedAt && <span>updated {t.updatedAt.slice(0, 10)}</span>}
-                      {t.notes && <span className="font-bengali italic">note: {t.notes}</span>}
-                    </div>
-                  </>
-                )}
+
+                  <div className="min-w-0 flex-1">
+                    {editing ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              startTransition(async () => {
+                                await renameTopicAction(t.id, editName);
+                                setEditingId(null);
+                                refresh();
+                              });
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          className="min-w-0 flex-1 rounded-lg border border-leaf bg-white px-2 py-1 text-[13.5px]"
+                        />
+                        <button
+                          onClick={() =>
+                            startTransition(async () => {
+                              await renameTopicAction(t.id, editName);
+                              setEditingId(null);
+                              refresh();
+                            })
+                          }
+                          className="grid size-7 place-items-center rounded-lg bg-leaf text-white shrink-0"
+                        >
+                          <Check className="size-3.5" />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="grid size-7 place-items-center rounded-lg bg-slate-200 text-slate-600 shrink-0">
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`text-[14px] font-semibold leading-snug break-words ${t.status === "completed" ? "text-ink-soft opacity-75" : "text-ink"}`}>
+                          {t.name}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-ink-faint">
+                          {t.completedAt ? (
+                            <span>completed {t.completedAt}</span>
+                          ) : (
+                            <span>updated {t.updatedAt.slice(0, 10)}</span>
+                          )}
+                          {t.notes && <span className="italic text-ink-soft">note: {t.notes}</span>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="shrink-0">
+                  <select
+                    value={t.status}
+                    onChange={(e) =>
+                      startTransition(async () => {
+                        await setTopicStatusAction(t.id, e.target.value);
+                        refresh();
+                      })
+                    }
+                    className={`rounded-lg border-0 px-2.5 py-1.5 text-[11px] font-bold ring-1 transition ${STATUS_META[t.status].bg} ${STATUS_META[t.status].text} ${STATUS_META[t.status].ring}`}
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_META[s].label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Action buttons: accessible on touch/mobile, neat on desktop */}
+              <div className="mt-2 pt-2 border-t border-line/50 flex items-center justify-between sm:border-0 sm:pt-0 sm:mt-1 sm:justify-end sm:gap-1">
+                <div className="flex items-center gap-1">
+                  <button
+                    title="Rename"
+                    onClick={() => { setEditingId(t.id); setEditName(t.name); }}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-faint hover:bg-paper hover:text-leaf transition"
+                  >
+                    <Pencil className="size-3" /> Edit
+                  </button>
+                  <button
+                    title="Add note"
+                    onClick={() => { setNoteId(noteId === t.id ? null : t.id); setNoteText(t.notes ?? ""); }}
+                    className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-faint hover:bg-paper hover:text-amber-600 transition"
+                  >
+                    <StickyNote className="size-3" /> Note
+                  </button>
+                  <button
+                    title="Move up"
+                    onClick={() => startTransition(async () => { await moveTopicAction(t.id, "up"); refresh(); })}
+                    className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper"
+                  >
+                    <ChevronUp className="size-3.5" />
+                  </button>
+                  <button
+                    title="Move down"
+                    onClick={() => startTransition(async () => { await moveTopicAction(t.id, "down"); refresh(); })}
+                    className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper"
+                  >
+                    <ChevronDown className="size-3.5" />
+                  </button>
+                </div>
+
+                <div>
+                  {confirmDeleteId === t.id ? (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-rose-600">
+                      Sure?
+                      <button
+                        onClick={() => startTransition(async () => { await deleteTopicAction(t.id); refresh(); })}
+                        className="rounded-md bg-rose-600 px-2 py-0.5 text-white text-[11px]"
+                      >
+                        Yes
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="rounded-md bg-slate-200 px-2 py-0.5 text-slate-600 text-[11px]">
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      title="Delete topic"
+                      onClick={() => setConfirmDeleteId(t.id)}
+                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-faint hover:bg-rose-50 hover:text-rose-600 transition"
+                    >
+                      <Trash2 className="size-3" /> Delete
+                    </button>
+                  )}
+                </div>
               </div>
 
               {noteId === t.id && (
-                <div className="flex items-center gap-1.5">
+                <div className="mt-2 flex items-center gap-2 rounded-xl bg-paper p-2">
                   <input
                     autoFocus
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Write notes…"
-                    className="w-40 rounded-lg border border-line bg-paper px-2 py-1.5 text-[12px]"
+                    placeholder="Write note for this topic…"
+                    className="flex-1 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-leaf"
                   />
                   <button
                     onClick={() =>
@@ -238,82 +325,18 @@ export default function TopicManager({
                         refresh();
                       })
                     }
-                    className="grid size-7 place-items-center rounded-lg bg-leaf text-white"
+                    className="rounded-lg bg-leaf px-3 py-1.5 text-xs font-semibold text-white"
                   >
-                    <Check className="size-3.5" />
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setNoteId(null)}
+                    className="rounded-lg bg-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600"
+                  >
+                    Cancel
                   </button>
                 </div>
               )}
-
-              <select
-                value={t.status}
-                onChange={(e) =>
-                  startTransition(async () => {
-                    await setTopicStatusAction(t.id, e.target.value);
-                    refresh();
-                  })
-                }
-                className={`rounded-lg border-0 px-2 py-1.5 text-[11.5px] font-bold ring-1 ${STATUS_META[t.status].bg} ${STATUS_META[t.status].text} ${STATUS_META[t.status].ring}`}
-              >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_META[s].label}
-                  </option>
-                ))}
-              </select>
-
-              <span className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                <button
-                  title="Move up"
-                  onClick={() => startTransition(async () => { await moveTopicAction(t.id, "up"); refresh(); })}
-                  className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper"
-                >
-                  <ChevronUp className="size-3.5" />
-                </button>
-                <button
-                  title="Move down"
-                  onClick={() => startTransition(async () => { await moveTopicAction(t.id, "down"); refresh(); })}
-                  className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper"
-                >
-                  <ChevronDown className="size-3.5" />
-                </button>
-                <button
-                  title="Note"
-                  onClick={() => { setNoteId(noteId === t.id ? null : t.id); setNoteText(t.notes ?? ""); }}
-                  className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper hover:text-amber-600"
-                >
-                  <StickyNote className="size-3.5" />
-                </button>
-                <button
-                  title="Rename"
-                  onClick={() => { setEditingId(t.id); setEditName(t.name); }}
-                  className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-paper hover:text-leaf"
-                >
-                  <Pencil className="size-3.5" />
-                </button>
-                {confirmDeleteId === t.id ? (
-                  <span className="flex items-center gap-1 pl-1 text-[10.5px] font-bold text-rose-600">
-                    Sure?
-                    <button
-                      onClick={() => startTransition(async () => { await deleteTopicAction(t.id); refresh(); })}
-                      className="rounded-md bg-rose-600 px-1.5 py-0.5 text-white"
-                    >
-                      Yes
-                    </button>
-                    <button onClick={() => setConfirmDeleteId(null)} className="rounded-md bg-slate-200 px-1.5 py-0.5 text-slate-600">
-                      No
-                    </button>
-                  </span>
-                ) : (
-                  <button
-                    title="Delete topic"
-                    onClick={() => setConfirmDeleteId(t.id)}
-                    className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-rose-50 hover:text-rose-600"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                )}
-              </span>
             </li>
           );
         })}

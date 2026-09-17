@@ -32,14 +32,14 @@ export default async function SubjectDetailPage({
   const progress = total > 0 ? byStatus.completed / total : 0;
 
   return (
-    <div className="space-y-6">
-      <Link href="/subjects" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-faint transition hover:text-leaf">
+    <div className="space-y-4 sm:space-y-6">
+      <Link href="/subjects" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-faint transition hover:text-leaf py-1">
         <ArrowLeft className="size-4" /> All subjects
       </Link>
 
-      <header className="card rise relative overflow-hidden p-6">
+      <header className="card rise relative overflow-hidden p-4 sm:p-6">
         <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
-        <div className="flex flex-wrap items-center gap-6">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <Donut
             size={118}
             stroke={13}

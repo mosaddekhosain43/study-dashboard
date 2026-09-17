@@ -63,9 +63,11 @@ export default async function RemainingPage() {
               </Link>
               <ul className="max-h-[340px] divide-y divide-line overflow-y-auto">
                 {g.items.map((t) => (
-                  <li key={t.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                    <StatusChip status={t.status} small />
-                    <span className="font-bengali flex-1 truncate text-[13px] font-medium text-ink">{t.name}</span>
+                  <li key={t.id} className="flex items-start gap-2.5 px-4 py-2.5">
+                    <div className="pt-0.5">
+                      <StatusChip status={t.status} small />
+                    </div>
+                    <span className="flex-1 text-[13px] font-medium text-ink break-words leading-snug">{t.name}</span>
                   </li>
                 ))}
               </ul>

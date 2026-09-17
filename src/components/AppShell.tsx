@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
@@ -26,7 +26,7 @@ export default function AppShell({ subjects, user, children }: AppShellProps) {
     <>
       <Sidebar subjects={subjects} user={user} />
       <div className="lg:pl-[272px]">
-        <main className="mx-auto w-full max-w-[1380px] px-4 pb-16 pt-20 sm:px-7 lg:pt-8">
+        <main className="mx-auto w-full max-w-[1380px] px-3.5 pb-20 pt-4 sm:px-7 sm:pt-8 sm:pb-16">
           {children}
         </main>
       </div>

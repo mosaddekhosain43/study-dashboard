@@ -183,16 +183,16 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
   return (
     <>
       {/* Mobile top bar */}
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-line bg-paper/85 px-4 py-3 backdrop-blur-md lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-line bg-paper px-4 py-3 shadow-xs lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-leaf to-leaf-deep text-white">
+          <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-leaf to-leaf-deep text-white shadow-sm shadow-leaf/20">
             <BookOpenCheck className="size-4" strokeWidth={2.2} />
           </span>
-          <span className="font-display text-sm font-semibold">Alim Study</span>
+          <span className="font-display text-sm font-semibold tracking-tight text-ink">Alim Study</span>
         </Link>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="grid size-9 place-items-center rounded-lg border border-line bg-white text-ink"
+          className="grid size-9 place-items-center rounded-lg border border-line bg-white text-ink active:scale-95 transition"
           aria-label="Toggle menu"
         >
           {open ? <X className="size-4.5" /> : <Menu className="size-4.5" />}
