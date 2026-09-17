@@ -23,6 +23,7 @@ import {
 import { addDays, dateKey, todayKey } from "@/lib/dates";
 import { canonicalTopic, parseStudyUpdate, type ParseResult } from "@/lib/parser";
 import { ensureSeeded } from "@/lib/queries";
+import { getCurrentUser } from "@/lib/auth";
 
 function refresh() {
   revalidatePath("/", "layout");
@@ -81,6 +82,8 @@ async function applyStatusToTopic(topicId: number, status: StudyStatus, date: st
 
 export async function saveUpdateAction(payload: SavePayload) {
   await ensureSeeded();
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(payload.date) ? payload.date : todayKey();
   const items = (payload.items ?? []).filter(
     (i) => i.subjectId !== null || i.topicText.trim().length > 0,
@@ -89,7 +92,7 @@ export async function saveUpdateAction(payload: SavePayload) {
 
   const [upd] = await db
     .insert(updates)
-    .values({ rawText: payload.rawText.trim() || "(manual entry)", date })
+    .values({ userId, rawText: payload.rawText.trim() || "(manual entry)", date })
     .returning();
 
   const allTopics = await db.select().from(topics);
@@ -109,7 +112,7 @@ export async function saveUpdateAction(payload: SavePayload) {
       } else {
         const [created] = await db
           .insert(topics)
-          .values({ subjectId: raw.subjectId, name: topicText, status })
+          .values({ userId, subjectId: raw.subjectId, name: topicText, status })
           .returning();
         created.sortOrder = created.id;
         await db.update(topics).set({ sortOrder: created.id }).where(eq(topics.id, created.id));
@@ -122,6 +125,7 @@ export async function saveUpdateAction(payload: SavePayload) {
     const [item] = await db
       .insert(updateItems)
       .values({
+        userId,
         updateId: upd.id,
         subjectId: raw.subjectId,
         topicId,
@@ -201,6 +205,8 @@ export async function setTopicStatusAction(topicId: number, status: string) {
 }
 
 export async function addTopicAction(subjectId: number, name: string, chapter?: string) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
   const clean = name.trim();
   if (!clean) return fail("Topic name is empty.");
   const max = await db
@@ -208,6 +214,7 @@ export async function addTopicAction(subjectId: number, name: string, chapter?: 
     .from(topics)
     .where(eq(topics.subjectId, subjectId));
   await db.insert(topics).values({
+    userId,
     subjectId,
     name: clean,
     chapter: chapter?.trim() || null,
@@ -218,6 +225,8 @@ export async function addTopicAction(subjectId: number, name: string, chapter?: 
 }
 
 export async function bulkAddTopicsAction(subjectId: number, text: string) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
   const lines = text
     .split(/\r?\n/)
     .map((l) => l.trim())
@@ -230,7 +239,7 @@ export async function bulkAddTopicsAction(subjectId: number, text: string) {
   let created = 0;
   for (const line of lines) {
     if (canon.has(canonicalTopic(line))) continue;
-    await db.insert(topics).values({ subjectId, name: line, sortOrder: ++maxOrder });
+    await db.insert(topics).values({ userId, subjectId, name: line, sortOrder: ++maxOrder });
     canon.add(canonicalTopic(line));
     created++;
   }
@@ -337,6 +346,8 @@ export async function timerResumeAction() {
 }
 
 export async function timerStopAction(note?: string) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
   const t = await readTimer();
   if (!t) return fail("No timer running.");
   const now = Date.now();
@@ -345,6 +356,7 @@ export async function timerStopAction(note?: string) {
   if (totalMs >= 30_000) {
     const minutes = Math.max(1, Math.round(totalMs / 60_000));
     await db.insert(sessions).values({
+      userId,
       subjectId: t.subjectId,
       startedAt: new Date(now - totalMs),
       endedAt: new Date(now),
@@ -700,9 +712,16 @@ export async function getTopicsForComposer(): Promise<
   { id: number; subjectId: number; name: string }[]
 > {
   await ensureSeeded();
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
+  const whereCond = userId
+    ? sql`(${topics.userId} = ${userId} OR ${topics.userId} IS NULL)`
+    : sql`${topics.userId} IS NULL`;
+
   const rows = await db
     .select({ id: topics.id, subjectId: topics.subjectId, name: topics.name })
     .from(topics)
+    .where(whereCond)
     .orderBy(topics.sortOrder, topics.id);
   return rows;
 }

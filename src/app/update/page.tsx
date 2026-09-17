@@ -2,6 +2,8 @@ import { CheckCircle2, CircleDashed, Languages, Lightbulb, XCircle, Circle } fro
 import StudyComposer from "@/components/StudyComposer";
 import UpdateFeed from "@/components/UpdateFeed";
 import { SectionHeader } from "@/components/ui";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 import { getRecentUpdates, getSubjects } from "@/lib/queries";
 import { getTopicsForComposer } from "@/actions";
 import { todayKey } from "@/lib/dates";
@@ -34,6 +36,11 @@ const PHRASEBOOK: { icon: typeof CheckCircle2; title: string; phrases: string[] 
 ];
 
 export default async function UpdatePage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   const [subjects, syllabus, recent] = await Promise.all([
     getSubjects(),
     getTopicsForComposer(),

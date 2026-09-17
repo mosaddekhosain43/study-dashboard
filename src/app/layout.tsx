@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter, Noto_Sans_Bengali, Sora } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import AppShell from "@/components/AppShell";
 import { getSubjects } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -47,12 +47,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className={`${sora.variable} ${inter.variable} ${bengali.variable}`}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        <Sidebar subjects={subjects.map((s) => ({ id: s.id, name: s.name }))} user={user} />
-        <div className="lg:pl-[272px]">
-          <main className="mx-auto w-full max-w-[1380px] px-4 pb-16 pt-20 sm:px-7 lg:pt-8">
-            {children}
-          </main>
-        </div>
+        <AppShell subjects={subjects.map((s) => ({ id: s.id, name: s.name }))} user={user}>
+          {children}
+        </AppShell>
       </body>
     </html>
   );

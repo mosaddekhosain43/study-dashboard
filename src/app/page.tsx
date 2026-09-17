@@ -27,14 +27,27 @@ import {
   StatTile,
   StatusDot,
 } from "@/components/ui";
+import { redirect } from "next/navigation";
 import { formatLong, formatMinutes, relativeDay, todayKey } from "@/lib/dates";
 import { getDashboardData, getStudentClassroomData, getSubjects } from "@/lib/queries";
 import { getTopicsForComposer } from "@/actions";
 import { STATUS_META } from "@/lib/constants";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.role === "admin") {
+    redirect("/admin");
+  }
+  if (user.role === "teacher") {
+    redirect("/teacher");
+  }
+
   const [data, subjects, syllabus, classroom] = await Promise.all([
     getDashboardData(),
     getSubjects(),
