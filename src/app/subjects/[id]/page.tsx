@@ -39,24 +39,28 @@ export default async function SubjectDetailPage({
 
       <header className="card rise relative overflow-hidden p-4 sm:p-6">
         <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
-        {/* Top: Donut and Subject Details */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Donut
-            size={118}
-            stroke={13}
-            segments={[
-              { value: byStatus.completed, color: STATUS_META.completed.color },
-              { value: byStatus.in_progress, color: STATUS_META.in_progress.color },
-              { value: byStatus.not_completed, color: STATUS_META.not_completed.color },
-              { value: byStatus.not_started, color: STATUS_META.not_started.color },
-            ]}
-            centerLabel={`${Math.round(progress * 100)}%`}
-            centerSub="done"
-          />
-          <div className="min-w-[220px] flex-1">
-            <p className="font-bengali text-[13px] text-ink-faint">{subject.nameBn}</p>
-            <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">{subject.name}</h1>
-            <div className="mt-3 max-w-md">
+        {/* Top: Donut and Subject Details (Always side-by-side) */}
+        <div className="flex flex-row items-center gap-3.5 sm:gap-6">
+          <div className="shrink-0">
+            <Donut
+              size={114}
+              stroke={13}
+              segments={[
+                { value: byStatus.completed, color: STATUS_META.completed.color },
+                { value: byStatus.in_progress, color: STATUS_META.in_progress.color },
+                { value: byStatus.not_completed, color: STATUS_META.not_completed.color },
+                { value: byStatus.not_started, color: STATUS_META.not_started.color },
+              ]}
+              centerLabel={`${Math.round(progress * 100)}%`}
+              centerSub="done"
+            />
+          </div>
+          <div className="min-w-0 flex-1 text-left">
+            <p className="font-bengali text-[13px] text-ink-faint truncate">{subject.nameBn}</p>
+            <h1 className="font-display text-[22px] sm:text-[26px] font-bold tracking-tight text-ink leading-tight">
+              {subject.name}
+            </h1>
+            <div className="mt-2.5 max-w-md">
               <div className="mb-1 flex justify-between text-[11px] font-semibold tabular-nums text-ink-faint">
                 <span>{byStatus.completed}/{total} topics completed</span>
                 <span>{total - byStatus.completed} remaining</span>
