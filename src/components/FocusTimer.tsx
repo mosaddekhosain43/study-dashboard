@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  Award,
   BarChart2,
   BookOpen,
   Calendar,
@@ -11,14 +10,11 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
-  Coffee,
   Flame,
   Maximize2,
   Minimize2,
-  Minus,
   Pause,
   Play,
-  Plus,
   RotateCcw,
   Sparkles,
   Square,
@@ -113,13 +109,11 @@ export default function FocusTimer({
   initialTodayMinutes = 0,
   initialStreak = 1,
 }: Props) {
-  // Mode: 'set' (Set Timer) vs 'free' (Timer)
-  const [timerType, setTimerType] = useState<"set" | "free">("set");
+  // Mode: Default is 'free' (Timer) as requested by user
+  const [timerType, setTimerType] = useState<"free" | "set">("free");
   const [targetMinutes, setTargetMinutes] = useState(25);
-  const [showCustomModal, setShowCustomModal] = useState(false);
-  const [customInputMins, setCustomInputMins] = useState("35");
 
-  // Flow States: 'ready' (Image 1) | 'running' (Image 2) | 'completed' (Image 3)
+  // Flow States: 'ready' | 'running' | 'completed'
   const [flowState, setFlowState] = useState<"ready" | "running" | "completed">("ready");
 
   // Timer internals
@@ -179,7 +173,7 @@ export default function FocusTimer({
               if (typeof navigator !== "undefined" && navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);
               }
-              // Automatically save session to database when countdown finishes!
+              // Automatically save session to database when countdown finishes
               saveStudySessionAction({
                 subjectId: selectedSubject === "" ? null : selectedSubject,
                 minutes: targetMinutes,
@@ -203,7 +197,7 @@ export default function FocusTimer({
   }, [isRunning, timerType, soundEnabled, targetMinutes, selectedSubject]);
 
   // Mode change
-  const handleSwitchType = (type: "set" | "free") => {
+  const handleSwitchType = (type: "free" | "set") => {
     if (isRunning) return;
     setTimerType(type);
     if (type === "set") {
@@ -213,27 +207,11 @@ export default function FocusTimer({
     }
   };
 
-  const handleSetTarget = (mins: number) => {
-    if (isRunning) return;
-    setTimerType("set");
-    setTargetMinutes(mins);
-    setRemainingSeconds(mins * 60);
-  };
-
-  const handleAddMinutes = (added: number) => {
+  const handleTargetChange = (mins: number) => {
+    const clamped = Math.max(1, Math.min(720, mins));
+    setTargetMinutes(clamped);
     if (timerType === "set") {
-      const next = targetMinutes + added;
-      setTargetMinutes(next);
-      setRemainingSeconds((prev) => prev + added * 60);
-    }
-  };
-
-  const handleApplyCustomMinutes = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseInt(customInputMins, 10);
-    if (!isNaN(val) && val > 0) {
-      handleSetTarget(Math.min(720, val));
-      setShowCustomModal(false);
+      setRemainingSeconds(clamped * 60);
     }
   };
 
@@ -297,15 +275,6 @@ export default function FocusTimer({
     }
   };
 
-  // Break timer (5 min break from Image 3)
-  const handleStartBreak = () => {
-    setTimerType("set");
-    setTargetMinutes(5);
-    setRemainingSeconds(5 * 60);
-    setFlowState("running");
-    setIsRunning(true);
-  };
-
   // Back to timer
   const handleReturnToTimer = () => {
     setFlowState("ready");
@@ -320,7 +289,7 @@ export default function FocusTimer({
   const currentSubjectObj = subjects.find((s) => s.id === selectedSubject);
   const subjectDisplayName = currentSubjectObj ? currentSubjectObj.name : "General / Mixed study";
 
-  // Progress calculations for Circular Ring (Image 2)
+  // Progress calculations for Circular Ring
   const totalTargetSec = targetMinutes * 60;
   const progressRatio =
     timerType === "set" && totalTargetSec > 0
@@ -341,53 +310,8 @@ export default function FocusTimer({
           : "w-full"
       }`}
     >
-      {/* ── Custom Minutes Modal ───────────────────────────────── */}
-      {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-xs rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95">
-            <h3 className="font-display text-base font-bold text-slate-800">
-              Set Custom Duration
-            </h3>
-            <p className="mt-1 text-xs text-slate-500">
-              How many minutes do you want to study?
-            </p>
-
-            <form onSubmit={handleApplyCustomMinutes} className="mt-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="720"
-                  autoFocus
-                  value={customInputMins}
-                  onChange={(e) => setCustomInputMins(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-xl font-bold text-slate-900 focus:border-[#0c4a34] focus:outline-none"
-                />
-                <span className="text-sm font-semibold text-slate-600">min</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCustomModal(false)}
-                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-[#0c4a34] py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#093a29] transition"
-                >
-                  Set Timer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* ════════════════════════════════════════════════════════════
-          STATE 1: READY / IDLE (Image 1)
+          STATE 1: READY / IDLE
          ════════════════════════════════════════════════════════════ */}
       {flowState === "ready" && (
         <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl">
@@ -450,21 +374,8 @@ export default function FocusTimer({
             </div>
           </div>
 
-          {/* Mode Switcher: Set Timer vs Timer */}
+          {/* Mode Switcher: Timer (Default) vs Set Timer */}
           <div className="mb-3.5 rounded-2xl bg-[#eef3f0] p-1 grid grid-cols-2 gap-1 border border-slate-200/50">
-            <button
-              type="button"
-              onClick={() => handleSwitchType("set")}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
-                timerType === "set"
-                  ? "bg-[#0c4a34] text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <TimerIcon className="size-3.5" />
-              <span>Set Timer</span>
-            </button>
-
             <button
               type="button"
               onClick={() => handleSwitchType("free")}
@@ -477,64 +388,41 @@ export default function FocusTimer({
               <Play className="size-3.5 fill-current" />
               <span>Timer</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => handleSwitchType("set")}
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
+                timerType === "set"
+                  ? "bg-[#0c4a34] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <TimerIcon className="size-3.5" />
+              <span>Set Timer</span>
+            </button>
           </div>
 
-          {/* Quick Presets + Custom Option (when Set Timer is active) */}
+          {/* Custom Duration Input when "Set Timer" is selected */}
           {timerType === "set" && (
-            <div className="mb-3.5 grid grid-cols-5 gap-1">
-              <button
-                type="button"
-                onClick={() => handleAddMinutes(5)}
-                className="rounded-xl border border-slate-200/90 bg-white py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs text-center"
-              >
-                +5m
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleAddMinutes(15)}
-                className="rounded-xl border border-slate-200/90 bg-white py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs text-center"
-              >
-                +15m
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSetTarget(25)}
-                className={`rounded-xl py-1.5 text-xs font-bold transition shadow-2xs text-center ${
-                  targetMinutes === 25
-                    ? "border border-emerald-500 bg-emerald-50 text-emerald-800"
-                    : "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                25m Focus
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSetTarget(50)}
-                className={`rounded-xl py-1.5 text-xs font-bold transition shadow-2xs text-center ${
-                  targetMinutes === 50
-                    ? "border border-emerald-500 bg-emerald-50 text-emerald-800"
-                    : "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                50m Deep
-              </button>
-
-              {/* Custom Duration Button */}
-              <button
-                type="button"
-                onClick={() => setShowCustomModal(true)}
-                className={`rounded-xl py-1.5 text-xs font-bold transition shadow-2xs text-center ${
-                  targetMinutes !== 25 && targetMinutes !== 50
-                    ? "border border-emerald-500 bg-emerald-50 text-emerald-800"
-                    : "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50"
-                }`}
-                title="Set custom minutes"
-              >
-                {targetMinutes !== 25 && targetMinutes !== 50 ? `${targetMinutes}m` : "Custom"}
-              </button>
+            <div className="mb-3.5 flex items-center justify-between rounded-2xl border border-emerald-200/80 bg-emerald-50/50 px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200">
+              <span className="text-xs font-bold text-emerald-950">Set Duration:</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="720"
+                  value={targetMinutes}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val)) {
+                      handleTargetChange(val);
+                    }
+                  }}
+                  className="w-16 rounded-xl border border-emerald-300 bg-white py-1.5 px-2 text-center text-sm font-bold text-slate-900 shadow-2xs focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34] focus:outline-none"
+                />
+                <span className="text-xs font-semibold text-emerald-900">min</span>
+              </div>
             </div>
           )}
 
@@ -618,7 +506,7 @@ export default function FocusTimer({
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          STATE 2: ACTIVE RUNNING FOCUS SESSION (Image 2)
+          STATE 2: ACTIVE RUNNING FOCUS SESSION
          ════════════════════════════════════════════════════════════ */}
       {flowState === "running" && (
         <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl">
@@ -639,7 +527,11 @@ export default function FocusTimer({
                 onClick={() => setSoundEnabled((v) => !v)}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-700"
               >
-                {soundEnabled ? <Volume2 className="size-3 text-emerald-600" /> : <VolumeX className="size-3 text-slate-400" />}
+                {soundEnabled ? (
+                  <Volume2 className="size-3 text-emerald-600" />
+                ) : (
+                  <VolumeX className="size-3 text-slate-400" />
+                )}
               </button>
 
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
@@ -695,7 +587,7 @@ export default function FocusTimer({
                   : formatSeconds(freeSeconds)}
               </span>
               <span className="text-xs font-semibold text-slate-400">
-                {timerType === "set" ? `remaining of ${targetMinutes}m` : "session in progress"}
+                {timerType === "set" ? `target ${targetMinutes}m` : "session in progress"}
               </span>
             </div>
           </div>
@@ -708,17 +600,8 @@ export default function FocusTimer({
             </div>
           </div>
 
-          {/* Control Buttons Row (Like Image 2: +5m, Central Big Pause, Stop & Finish) */}
+          {/* Clean Controls: Central Big Pause/Play & Finish */}
           <div className="flex items-center justify-center gap-4 mb-4">
-            {/* Quick +5m Button */}
-            <button
-              type="button"
-              onClick={() => handleAddMinutes(5)}
-              className="rounded-2xl border border-slate-200/90 bg-slate-50 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-100 transition shadow-2xs"
-            >
-              ⏱️ +5m
-            </button>
-
             {/* Central Giant Play/Pause Circle Button */}
             {isRunning ? (
               <button
@@ -745,7 +628,7 @@ export default function FocusTimer({
               type="button"
               disabled={isSaving}
               onClick={handleStopAndSave}
-              className="rounded-2xl border border-slate-200/90 bg-slate-50 px-4 py-3 text-xs font-bold text-rose-700 hover:bg-rose-50 transition shadow-2xs flex items-center gap-1.5"
+              className="rounded-2xl border border-rose-200 bg-rose-50/80 px-5 py-3.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs flex items-center gap-1.5"
               title="Finish and save to log"
             >
               <Square className="size-3.5 fill-rose-600 text-rose-600" />
@@ -755,7 +638,7 @@ export default function FocusTimer({
 
           {/* Subtle info notice */}
           <p className="text-center text-[11px] text-slate-400 mb-4">
-            Stopping or finishing saves this session to your study log.
+            Finishing saves this session directly to your study log.
           </p>
 
           {/* Today's Target / Progress Card */}
@@ -778,7 +661,7 @@ export default function FocusTimer({
       )}
 
       {/* ════════════════════════════════════════════════════════════
-          STATE 3: SESSION ACCOMPLISHED (Image 3)
+          STATE 3: SESSION ACCOMPLISHED (Real Data Only)
          ════════════════════════════════════════════════════════════ */}
       {flowState === "completed" && (
         <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl text-center">
@@ -802,7 +685,7 @@ export default function FocusTimer({
             <strong className="font-semibold text-slate-800">{subjectDisplayName}</strong>.
           </p>
 
-          {/* 4-Grid Stats Summary (Image 3) */}
+          {/* 4-Grid Stats Summary (User's Real Database Data) */}
           <div className="my-5 grid grid-cols-2 gap-2.5">
             <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left">
               <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
@@ -841,35 +724,20 @@ export default function FocusTimer({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-2 mb-4">
-            <button
-              type="button"
-              onClick={handleStartBreak}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
-            >
-              <Coffee className="size-4" />
-              <span>Start 5m Short Break</span>
-            </button>
-
+          {/* Action Button: Return to Timer */}
+          <div className="mt-6 mb-2">
             <button
               type="button"
               onClick={handleReturnToTimer}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition active:scale-98"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
             >
-              <RotateCcw className="size-3.5" />
+              <RotateCcw className="size-4" />
               <span>Return to Timer</span>
             </button>
-          </div>
-
-          {/* Motivational Quote Box */}
-          <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 p-3 text-center">
-            <p className="text-[11.5px] italic text-emerald-900 font-medium">
-              &ldquo;Rest is the foundation of mindful mastery.&rdquo;
-            </p>
           </div>
         </div>
       )}
     </div>
   );
 }
+
