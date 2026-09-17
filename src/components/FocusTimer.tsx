@@ -683,7 +683,7 @@ export default function FocusTimer({
           className={`w-full transition-all duration-300 ${
             isFullscreen
               ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
-              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
+              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
           }`}
         >
           {/* Top Header Row: PUSHED TO TOP IN FULLSCREEN */}
@@ -851,7 +851,7 @@ export default function FocusTimer({
 
             {/* Today's Target / Progress Card */}
             <div className={`rounded-2xl p-3 sm:p-3.5 border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50"
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
             }`}>
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className={`flex items-center gap-1.5 font-bold ${
@@ -885,7 +885,7 @@ export default function FocusTimer({
           className={`w-full text-center transition-all duration-300 ${
             isFullscreen
               ? "my-auto max-w-md flex flex-col items-center justify-center text-white p-4"
-              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl"
+              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
           }`}
         >
           {/* Top Big Emerald Celebration Badge */}
@@ -938,7 +938,7 @@ export default function FocusTimer({
           <div className="my-5 w-full grid grid-cols-2 gap-2.5">
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
               }`}
             >
               <span
@@ -955,7 +955,7 @@ export default function FocusTimer({
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
               }`}
             >
               <span
@@ -976,7 +976,7 @@ export default function FocusTimer({
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
               }`}
             >
               <span
@@ -993,7 +993,7 @@ export default function FocusTimer({
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
               }`}
             >
               <span
