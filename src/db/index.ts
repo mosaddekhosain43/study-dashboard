@@ -7,14 +7,18 @@ import { PGlite } from "@electric-sql/pglite";
 import * as schema from "./schema";
 import { runInitAndSeed } from "./init";
 
-const databaseUrl = process.env.DATABASE_URL;
+import os from "os";
+
+const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const isVercel = Boolean(process.env.VERCEL);
 
 // Determine if we should use remote PostgreSQL or local embedded PGlite
 const shouldUsePg =
-  Boolean(databaseUrl) &&
-  !databaseUrl?.includes("127.0.0.1:5432") &&
-  !databaseUrl?.includes("localhost:5432") &&
-  process.env.USE_PGLITE !== "true";
+  isVercel ||
+  (Boolean(databaseUrl) &&
+    !databaseUrl?.includes("127.0.0.1:5432") &&
+    !databaseUrl?.includes("localhost:5432") &&
+    process.env.USE_PGLITE !== "true");
 
 let dbInstance: any;
 let rawQueryFn: (sqlText: string, params?: any[]) => Promise<any>;
@@ -29,9 +33,7 @@ if (shouldUsePg && databaseUrl) {
     globalForDb.__arenaNextJsPostgresqlPool ??
     new Pool({
       connectionString: databaseUrl,
-      ssl: databaseUrl.includes("neon.tech") || databaseUrl.includes("supabase.co")
-        ? { rejectUnauthorized: false }
-        : undefined,
+      ssl: { rejectUnauthorized: false },
     });
 
   if (process.env.NODE_ENV !== "production") {
@@ -51,15 +53,22 @@ if (shouldUsePg && databaseUrl) {
     __pgliteInstance?: PGlite;
   };
 
-  const dataDir = path.join(process.cwd(), "data", "pgdata");
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+  const dataDir = isVercel
+    ? path.join(os.tmpdir(), "pgdata")
+    : path.join(process.cwd(), "data", "pgdata");
+
+  if (!isBuildPhase && !fs.existsSync(dataDir)) {
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+    } catch {
+      // ignore
+    }
   }
 
-  const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
   const pglite =
     globalForPglite.__pgliteInstance ??
-    (isBuildPhase ? new PGlite() : new PGlite(dataDir));
+    (isBuildPhase || isVercel ? new PGlite() : new PGlite(dataDir));
 
   if (process.env.NODE_ENV !== "production") {
     globalForPglite.__pgliteInstance = pglite;
