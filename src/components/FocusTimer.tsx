@@ -120,6 +120,8 @@ export default function FocusTimer({
   const [isSetTimeModalOpen, setIsSetTimeModalOpen] = useState(false);
   const [modalHours, setModalHours] = useState(0);
   const [modalMinutes, setModalMinutes] = useState(25);
+  const [modalHoursInput, setModalHoursInput] = useState("0");
+  const [modalMinutesInput, setModalMinutesInput] = useState("25");
 
   // Flow States: 'ready' | 'running' | 'completed'
   const [flowState, setFlowState] = useState<"ready" | "running" | "completed">("ready");
@@ -291,9 +293,37 @@ export default function FocusTimer({
   };
 
   const openSetTimeModal = () => {
-    setModalHours(Math.floor(targetMinutes / 60));
-    setModalMinutes(targetMinutes % 60);
+    const h = Math.floor(targetMinutes / 60);
+    const m = targetMinutes % 60;
+    setModalHours(h);
+    setModalMinutes(m);
+    setModalHoursInput(String(h));
+    setModalMinutesInput(String(m));
     setIsSetTimeModalOpen(true);
+  };
+
+  const handleHoursInputChange = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (clean === "") {
+      setModalHoursInput("");
+      setModalHours(0);
+      return;
+    }
+    const num = Math.min(12, parseInt(clean, 10));
+    setModalHours(num);
+    setModalHoursInput(String(num));
+  };
+
+  const handleMinutesInputChange = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (clean === "") {
+      setModalMinutesInput("");
+      setModalMinutes(0);
+      return;
+    }
+    const num = Math.min(59, parseInt(clean, 10));
+    setModalMinutes(num);
+    setModalMinutesInput(String(num));
   };
 
   const handleConfirmDuration = () => {
@@ -1041,26 +1071,39 @@ export default function FocusTimer({
                   <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => setModalHours((h) => Math.max(0, h - 1))}
+                      onClick={() => {
+                        const newH = Math.max(0, modalHours - 1);
+                        setModalHours(newH);
+                        setModalHoursInput(String(newH));
+                      }}
                       className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
                       aria-label="Decrease hour"
                     >
                       <Minus className="size-4" />
                     </button>
                     <input
-                      type="number"
-                      min="0"
-                      max="12"
-                      value={modalHours}
-                      onChange={(e) => {
-                        const v = parseInt(e.target.value, 10);
-                        setModalHours(isNaN(v) ? 0 : Math.max(0, Math.min(12, v)));
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={modalHoursInput}
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onBlur={() => {
+                        if (!modalHoursInput || modalHoursInput === "0") {
+                          setModalHoursInput("0");
+                          setModalHours(0);
+                        }
                       }}
-                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none"
+                      onChange={(e) => handleHoursInputChange(e.target.value)}
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-300"
                     />
                     <button
                       type="button"
-                      onClick={() => setModalHours((h) => Math.min(12, h + 1))}
+                      onClick={() => {
+                        const newH = Math.min(12, modalHours + 1);
+                        setModalHours(newH);
+                        setModalHoursInput(String(newH));
+                      }}
                       className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
                       aria-label="Increase hour"
                     >
@@ -1079,26 +1122,39 @@ export default function FocusTimer({
                   <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => setModalMinutes((m) => Math.max(0, m - 5))}
+                      onClick={() => {
+                        const newM = Math.max(0, modalMinutes - 5);
+                        setModalMinutes(newM);
+                        setModalMinutesInput(String(newM));
+                      }}
                       className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
                       aria-label="Decrease minute"
                     >
                       <Minus className="size-4" />
                     </button>
                     <input
-                      type="number"
-                      min="0"
-                      max="59"
-                      value={modalMinutes}
-                      onChange={(e) => {
-                        const v = parseInt(e.target.value, 10);
-                        setModalMinutes(isNaN(v) ? 0 : Math.max(0, Math.min(59, v)));
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={modalMinutesInput}
+                      placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      onBlur={() => {
+                        if (!modalMinutesInput || modalMinutesInput === "0") {
+                          setModalMinutesInput("0");
+                          setModalMinutes(0);
+                        }
                       }}
-                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none"
+                      onChange={(e) => handleMinutesInputChange(e.target.value)}
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-300"
                     />
                     <button
                       type="button"
-                      onClick={() => setModalMinutes((m) => Math.min(59, m + 5))}
+                      onClick={() => {
+                        const newM = Math.min(59, modalMinutes + 5);
+                        setModalMinutes(newM);
+                        setModalMinutesInput(String(newM));
+                      }}
                       className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
                       aria-label="Increase minute"
                     >
@@ -1132,6 +1188,8 @@ export default function FocusTimer({
                         onClick={() => {
                           setModalHours(preset.h);
                           setModalMinutes(preset.m);
+                          setModalHoursInput(String(preset.h));
+                          setModalMinutesInput(String(preset.m));
                         }}
                         className={`rounded-xl py-1.5 text-xs font-bold transition active:scale-95 ${
                           isSelected
