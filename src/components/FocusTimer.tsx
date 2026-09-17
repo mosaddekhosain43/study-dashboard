@@ -13,14 +13,17 @@ import {
   Flame,
   Maximize2,
   Minimize2,
+  Minus,
   Pause,
   Play,
+  Plus,
   RotateCcw,
   Sparkles,
   Square,
   Timer as TimerIcon,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import {
   saveStudySessionAction,
@@ -112,6 +115,11 @@ export default function FocusTimer({
   // Mode: Default is 'free' (Timer) as requested by user
   const [timerType, setTimerType] = useState<"free" | "set">("free");
   const [targetMinutes, setTargetMinutes] = useState(25);
+
+  // Set Timer Modal state (Hours and Minutes selection)
+  const [isSetTimeModalOpen, setIsSetTimeModalOpen] = useState(false);
+  const [modalHours, setModalHours] = useState(0);
+  const [modalMinutes, setModalMinutes] = useState(25);
 
   // Flow States: 'ready' | 'running' | 'completed'
   const [flowState, setFlowState] = useState<"ready" | "running" | "completed">("ready");
@@ -280,6 +288,21 @@ export default function FocusTimer({
     if (timerType === "set") {
       setRemainingSeconds(clamped * 60);
     }
+  };
+
+  const openSetTimeModal = () => {
+    setModalHours(Math.floor(targetMinutes / 60));
+    setModalMinutes(targetMinutes % 60);
+    setIsSetTimeModalOpen(true);
+  };
+
+  const handleConfirmDuration = () => {
+    const total = modalHours * 60 + modalMinutes;
+    const clamped = Math.max(1, Math.min(720, total));
+    setTargetMinutes(clamped);
+    setTimerType("set");
+    setRemainingSeconds(clamped * 60);
+    setIsSetTimeModalOpen(false);
   };
 
   // Start / Resume session: enters Fullscreen and changes color!
@@ -455,7 +478,10 @@ export default function FocusTimer({
 
               <button
                 type="button"
-                onClick={() => handleSwitchType("set")}
+                onClick={() => {
+                  handleSwitchType("set");
+                  openSetTimeModal();
+                }}
                 className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
                   timerType === "set"
                     ? isFullscreen
@@ -471,41 +497,37 @@ export default function FocusTimer({
               </button>
             </div>
 
-            {/* Custom Duration Input when "Set Timer" is selected */}
+            {/* Custom Duration Banner when "Set Timer" is selected */}
             {timerType === "set" && (
-              <div
-                className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 ${
+              <button
+                type="button"
+                onClick={openSetTimeModal}
+                className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs border transition-all animate-in fade-in slide-in-from-top-1 duration-200 text-left ${
                   isFullscreen
-                    ? "border border-[#265342] bg-[#143226] text-emerald-100"
-                    : "border border-emerald-200/90 bg-emerald-50/70 text-slate-800"
+                    ? "border-[#265342] bg-[#143226] text-emerald-100 hover:bg-[#193d2f]"
+                    : "border-emerald-200/90 bg-emerald-50/70 text-slate-800 hover:bg-emerald-100/60"
                 }`}
               >
-                <span className={`text-xs font-bold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
-                  Set Duration:
-                </span>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    max="720"
-                    value={targetMinutes}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val)) {
-                        handleTargetChange(val);
-                      }
-                    }}
-                    className={`w-16 rounded-xl py-1.5 px-2 text-center text-sm font-bold shadow-2xs focus:outline-none ${
-                      isFullscreen
-                        ? "bg-[#0e261d] border border-[#2d5f4c] text-white focus:border-[#10b981]"
-                        : "border border-emerald-300 bg-white text-slate-900 focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34]"
-                    }`}
-                  />
-                  <span className={`text-xs font-semibold ${isFullscreen ? "text-emerald-300" : "text-emerald-900"}`}>
-                    min
+                  <Clock className={`size-4 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+                  <span className={`text-xs font-semibold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
+                    Set Time:{" "}
+                    <strong className="font-bold text-sm">
+                      {Math.floor(targetMinutes / 60) > 0 ? `${Math.floor(targetMinutes / 60)}h ` : ""}
+                      {targetMinutes % 60 > 0 ? `${targetMinutes % 60}m` : Math.floor(targetMinutes / 60) === 0 ? "0m" : ""}
+                    </strong>
                   </span>
                 </div>
-              </div>
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-xl shadow-2xs border transition ${
+                    isFullscreen
+                      ? "bg-[#0e261d] border-[#2d5f4c] text-emerald-300 hover:text-white"
+                      : "bg-white border-emerald-200 text-emerald-800 hover:bg-emerald-50"
+                  }`}
+                >
+                  Change Time
+                </span>
+              </button>
             )}
 
             {/* Subject Dropdown */}
@@ -971,6 +993,195 @@ export default function FocusTimer({
               <RotateCcw className="size-4" />
               <span>Return to Timer</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════
+          SET TIMER MODAL (Hours and Minutes Picker Popup)
+         ════════════════════════════════════════════════════════════ */}
+      {isSetTimeModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          onClick={() => setIsSetTimeModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 text-slate-800 animate-in zoom-in-95 duration-200 select-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <Clock className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                    Set Timer Duration
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    ঘণ্টা ও মিনিট নির্ধারণ করুন
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSetTimeModalOpen(false)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Hour & Minute Pickers */}
+            <div className="py-4 sm:py-5">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
+                {/* Hours Column */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Hours (ঘণ্টা)
+                  </span>
+                  <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setModalHours((h) => Math.max(0, h - 1))}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      aria-label="Decrease hour"
+                    >
+                      <Minus className="size-4" />
+                    </button>
+                    <input
+                      type="number"
+                      min="0"
+                      max="12"
+                      value={modalHours}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        setModalHours(isNaN(v) ? 0 : Math.max(0, Math.min(12, v)));
+                      }}
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setModalHours((h) => Math.min(12, h + 1))}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      aria-label="Increase hour"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="font-display text-2xl font-black text-slate-300 pt-5">:</div>
+
+                {/* Minutes Column */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Minutes (মিনিট)
+                  </span>
+                  <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => setModalMinutes((m) => Math.max(0, m - 5))}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      aria-label="Decrease minute"
+                    >
+                      <Minus className="size-4" />
+                    </button>
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={modalMinutes}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value, 10);
+                        setModalMinutes(isNaN(v) ? 0 : Math.max(0, Math.min(59, v)));
+                      }}
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setModalMinutes((m) => Math.min(59, m + 5))}
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      aria-label="Increase minute"
+                    >
+                      <Plus className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Presets */}
+              <div className="mt-4">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">
+                  Quick Presets
+                </span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { label: "15m", h: 0, m: 15 },
+                    { label: "25m", h: 0, m: 25 },
+                    { label: "30m", h: 0, m: 30 },
+                    { label: "45m", h: 0, m: 45 },
+                    { label: "1 hr", h: 1, m: 0 },
+                    { label: "1h 30m", h: 1, m: 30 },
+                    { label: "2 hr", h: 2, m: 0 },
+                    { label: "3 hr", h: 3, m: 0 },
+                  ].map((preset) => {
+                    const isSelected = modalHours === preset.h && modalMinutes === preset.m;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          setModalHours(preset.h);
+                          setModalMinutes(preset.m);
+                        }}
+                        className={`rounded-xl py-1.5 text-xs font-bold transition active:scale-95 ${
+                          isSelected
+                            ? "bg-[#0c4a34] text-white shadow-xs"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Total Summary Preview */}
+              <div className="mt-4 rounded-xl bg-emerald-50/70 border border-emerald-200/60 py-2 px-3 text-center">
+                <span className="text-xs font-semibold text-emerald-950">
+                  Total Duration:{" "}
+                  <strong>
+                    {modalHours > 0 ? `${modalHours} hr ` : ""}
+                    {modalMinutes > 0 ? `${modalMinutes} min` : modalHours === 0 ? "0 min" : ""}
+                  </strong>{" "}
+                  <span className="text-emerald-700 font-normal">
+                    ({modalHours * 60 + modalMinutes} min)
+                  </span>
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsSetTimeModalOpen(false)}
+                className="flex-1 rounded-xl py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={modalHours === 0 && modalMinutes === 0}
+                onClick={handleConfirmDuration}
+                className="flex-[2] rounded-xl py-2.5 text-xs font-bold bg-[#0c4a34] text-white hover:bg-[#093a29] transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+              >
+                Set Duration
+              </button>
+            </div>
           </div>
         </div>
       )}
