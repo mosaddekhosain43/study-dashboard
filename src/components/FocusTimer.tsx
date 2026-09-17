@@ -1019,9 +1019,6 @@ export default function FocusTimer({
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
                     Set Timer Duration
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    ঘণ্টা ও মিনিট নির্ধারণ করুন
-                  </p>
                 </div>
               </div>
               <button
@@ -1039,7 +1036,7 @@ export default function FocusTimer({
                 {/* Hours Column */}
                 <div className="flex flex-col items-center">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Hours (ঘণ্টা)
+                    Hours
                   </span>
                   <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
                     <button
@@ -1077,7 +1074,7 @@ export default function FocusTimer({
                 {/* Minutes Column */}
                 <div className="flex flex-col items-center">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Minutes (মিনিট)
+                    Minutes
                   </span>
                   <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
                     <button
