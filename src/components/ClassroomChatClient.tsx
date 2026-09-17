@@ -142,19 +142,19 @@ export default function ClassroomChatClient({
   return (
     <div className="card overflow-hidden border border-line bg-card shadow-card">
       {/* ── Tab Switcher Header ─────────────────────────────────── */}
-      <div className="flex border-b border-line bg-paper/40 p-2 gap-2">
+      <div className="flex border-b border-line bg-paper/40 p-1.5 sm:p-2 gap-1.5 sm:gap-2">
         <button
           type="button"
           onClick={() => handleTabChange("notices")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 sm:px-4 text-xs transition-all ${
             activeTab === "notices"
               ? "bg-white text-pine shadow-xs border border-line font-bold"
-              : "text-ink-faint hover:text-ink hover:bg-white/50"
+              : "text-ink-faint hover:text-ink hover:bg-white/50 font-medium"
           }`}
         >
-          <Bell className="size-4 text-leaf" />
-          <span>Notices & Study Materials</span>
-          <span className="ml-1 rounded-full bg-leaf-soft px-2 py-0.5 text-[10.5px] font-bold text-leaf">
+          <Bell className="size-3.5 text-leaf shrink-0" />
+          <span className="whitespace-nowrap">Notices & Files</span>
+          <span className="rounded-full bg-leaf-soft px-1.5 py-0.2 text-[10px] font-bold text-leaf shrink-0">
             {teacherNotices.length + materials.length}
           </span>
         </button>
@@ -162,15 +162,15 @@ export default function ClassroomChatClient({
         <button
           type="button"
           onClick={() => handleTabChange("chat")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-semibold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 sm:px-4 text-xs transition-all ${
             activeTab === "chat"
               ? "bg-white text-pine shadow-xs border border-line font-bold"
-              : "text-ink-faint hover:text-ink hover:bg-white/50"
+              : "text-ink-faint hover:text-ink hover:bg-white/50 font-medium"
           }`}
         >
-          <MessageSquare className="size-4 text-leaf" />
-          <span>Batch Discussion</span>
-          <span className="ml-1 rounded-full bg-paper px-2 py-0.5 text-[10.5px] font-bold text-ink-faint">
+          <MessageSquare className="size-3.5 text-leaf shrink-0" />
+          <span className="whitespace-nowrap">Class Chat</span>
+          <span className="rounded-full bg-paper px-1.5 py-0.2 text-[10px] font-bold text-ink-faint shrink-0">
             {messages.length}
           </span>
         </button>
@@ -178,36 +178,34 @@ export default function ClassroomChatClient({
 
       {/* ── Tab 1: Notices & Study Materials ──────────────────── */}
       {activeTab === "notices" && (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-5 space-y-5">
           {/* Section: Teacher Notices */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-line/60 pb-2">
-              <h3 className="font-display text-sm font-bold text-ink flex items-center gap-2">
-                <Bell className="size-4 text-amber-700" />
-                Teacher Announcements & Notices ({teacherNotices.length})
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between border-b border-line/60 pb-1.5">
+              <h3 className="font-display text-xs sm:text-[13px] font-bold text-ink flex items-center gap-1.5">
+                <Bell className="size-3.5 text-amber-700" />
+                <span>Teacher Notices</span>
+                <span className="text-ink-faint font-semibold">({teacherNotices.length})</span>
               </h3>
-              <span className="text-[11px] text-ink-faint">
-                Official notices for {batchName}
-              </span>
             </div>
 
             {teacherNotices.length === 0 ? (
-              <div className="rounded-xl border border-line/60 bg-paper/30 py-8 text-center text-xs text-ink-faint">
-                <Bell className="mx-auto size-8 text-ink-faint/30 mb-2" />
-                No teacher notices have been posted for this batch yet.
+              <div className="flex items-center gap-2 rounded-xl border border-line/60 bg-paper/30 py-3.5 px-4 text-xs text-ink-faint">
+                <Bell className="size-3.5 text-ink-faint/60 shrink-0" />
+                <span>No teacher notices posted yet.</span>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {teacherNotices.map((notice) => (
                   <div
                     key={notice.id}
-                    className={`rounded-xl border p-4 shadow-2xs transition ${
+                    className={`rounded-xl border p-3.5 shadow-2xs transition ${
                       notice.isPinned
                         ? "border-amber-300/80 bg-amber-50/70"
                         : "border-line bg-white"
                     }`}
                   >
-                    <div className="flex items-center justify-between border-b border-line/50 pb-2 mb-2">
+                    <div className="flex items-center justify-between border-b border-line/50 pb-1.5 mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-ink">
                           {notice.senderName}
@@ -242,7 +240,7 @@ export default function ClassroomChatClient({
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-[13px] text-ink leading-relaxed whitespace-pre-wrap">
+                    <p className="text-xs sm:text-[12.5px] text-ink leading-relaxed whitespace-pre-wrap">
                       {notice.content}
                     </p>
                   </div>
@@ -252,21 +250,19 @@ export default function ClassroomChatClient({
           </div>
 
           {/* Section: Shared Files & Study Materials */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between border-b border-line/60 pb-2">
-              <h3 className="font-display text-sm font-bold text-ink flex items-center gap-2">
-                <FileText className="size-4 text-leaf" />
-                Lesson Files & Study Notes ({materials.length})
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center justify-between border-b border-line/60 pb-1.5">
+              <h3 className="font-display text-xs sm:text-[13px] font-bold text-ink flex items-center gap-1.5">
+                <FileText className="size-3.5 text-leaf" />
+                <span>Study Files</span>
+                <span className="text-ink-faint font-semibold">({materials.length})</span>
               </h3>
-              <span className="text-[11px] text-ink-faint">
-                Course attachments & assignments
-              </span>
             </div>
 
             {materials.length === 0 ? (
-              <div className="rounded-xl border border-line/60 bg-paper/30 py-8 text-center text-xs text-ink-faint">
-                <FolderDown className="mx-auto size-8 text-ink-faint/30 mb-2" />
-                No shared files or lesson attachments uploaded yet.
+              <div className="flex items-center gap-2 rounded-xl border border-line/60 bg-paper/30 py-3.5 px-4 text-xs text-ink-faint">
+                <FolderDown className="size-3.5 text-ink-faint/60 shrink-0" />
+                <span>No study files uploaded yet.</span>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">

@@ -56,29 +56,31 @@ export default function ClassroomCard({
   return (
     <section className="card overflow-hidden border border-line bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-card-hover">
       {/* ── Header: Title, Batch Badge & File Count Badge ────── */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-line/70">
+      <div className="flex items-center justify-between gap-2.5 pb-3 border-b border-line/70">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="grid size-8 sm:size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-leaf to-leaf-deep text-white shadow-sm shadow-leaf/25">
             <GraduationCap className="size-4 sm:size-4.5" strokeWidth={2.2} />
           </span>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <h2 className="font-display text-[15px] sm:text-base font-bold text-ink tracking-tight">
-                Classroom Updates
-              </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 border border-emerald-200/60">
-                <Users className="size-3" />
-                {batchName}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200/60">
-                <FileText className="size-3" />
-                {fileCount} {fileCount === 1 ? "file" : "files"}
-              </span>
-            </div>
-            <p className="text-[11px] sm:text-[11.5px] text-ink-faint mt-0.5">
-              Latest teacher notice & batch study materials
+            <h2 className="font-display text-[15px] sm:text-base font-bold text-ink tracking-tight">
+              Classroom
+            </h2>
+            <p className="text-[11px] text-ink-faint truncate">
+              Teacher updates & study materials
             </p>
           </div>
+        </div>
+
+        {/* Batch name and file count badges aligned side by side */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 border border-emerald-200/60 whitespace-nowrap">
+            <Users className="size-3 text-emerald-600" />
+            {batchName}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200/60 whitespace-nowrap">
+            <FileText className="size-3 text-blue-600" />
+            {fileCount} {fileCount === 1 ? "file" : "files"}
+          </span>
         </div>
       </div>
 
@@ -124,22 +126,22 @@ export default function ClassroomCard({
         )}
       </div>
 
-      {/* ── Bottom Action Buttons: Open Chat & Open Notice ─────── */}
+      {/* ── Bottom Action Buttons: Open Chat & Open Notices ─────── */}
       <div className="pt-3 border-t border-line/70 grid grid-cols-2 gap-2.5 sm:gap-3">
         <Link
           href="/classroom?tab=chat"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/80 px-3 py-2 text-xs font-semibold text-ink-soft transition hover:bg-emerald-50 hover:text-leaf hover:border-emerald-200 active:scale-[0.99]"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/80 px-3 py-2 text-xs font-semibold text-ink-soft transition hover:bg-emerald-50 hover:text-leaf hover:border-emerald-200 active:scale-[0.99] whitespace-nowrap"
         >
-          <MessageSquare className="size-3.5 text-leaf" />
+          <MessageSquare className="size-3.5 text-leaf shrink-0" />
           <span>Open Chat</span>
         </Link>
 
         <Link
           href="/classroom?tab=notices"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pine px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-pine/20 transition hover:bg-pine/90 active:scale-[0.99]"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pine px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-pine/20 transition hover:bg-pine/90 active:scale-[0.99] whitespace-nowrap"
         >
-          <Bell className="size-3.5 text-glow" />
-          <span>Open Notice & Files</span>
+          <Bell className="size-3.5 text-glow shrink-0" />
+          <span>Open Notices</span>
         </Link>
       </div>
     </section>

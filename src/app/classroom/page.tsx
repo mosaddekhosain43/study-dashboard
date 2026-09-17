@@ -8,7 +8,7 @@ import ClassroomChatClient from "@/components/ClassroomChatClient";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Classroom & Notes — Study Dashboard" };
+export const metadata = { title: "Classroom — Study Dashboard" };
 
 export default async function ClassroomPage() {
   const user = await getCurrentUser();
@@ -59,10 +59,10 @@ export default async function ClassroomPage() {
             </span>
           </div>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            Classroom & Notes
+            Classroom
           </h1>
           <p className="mt-1 text-xs text-ink-faint">
-            Batch updates, lesson materials, teacher notes & student discussion for {data.batch.name}.
+            Teacher notices, study files & discussion for {data.batch.name}.
           </p>
         </div>
       </header>

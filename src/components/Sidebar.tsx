@@ -86,7 +86,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                     },
                     {
                       href: "/classroom?tab=chat",
-                      label: "Batch Discussion",
+                      label: "Class Chat",
                       icon: MessageSquare,
                     },
                   ]
