@@ -369,6 +369,33 @@ export async function timerStopAction(note?: string) {
   return ok({ minutes: Math.round(totalMs / 60_000) });
 }
 
+export async function saveStudySessionAction(payload: {
+  subjectId: number | null;
+  minutes: number;
+  note?: string;
+}) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
+  const now = Date.now();
+  const minutes = Math.max(1, Math.round(payload.minutes));
+  const totalMs = minutes * 60_000;
+
+  await writeTimer(null);
+
+  await db.insert(sessions).values({
+    userId,
+    subjectId: payload.subjectId,
+    startedAt: new Date(now - totalMs),
+    endedAt: new Date(now),
+    minutes,
+    date: dateKey(new Date()),
+    note: payload.note?.trim() || null,
+  });
+
+  refresh();
+  return ok({ minutes });
+}
+
 // ── Settings ────────────────────────────────────────────────────────────────
 
 async function upsertSetting(key: string, value: string) {
