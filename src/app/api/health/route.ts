@@ -29,14 +29,9 @@ export async function GET() {
 
     return Response.json({
       ok: true,
-      build: "v3-schema-verify",
       driver: dbDriverType,
       isPersistentPostgres: dbDriverType === "postgres",
       userCount,
-      dbEnvKeysFound: envKeys,
-      urlLength: dbUrl ? dbUrl.length : 0,
-      urlPrefix: dbUrl ? dbUrl.slice(0, 15) : null,
-      rawDatabaseUrlEnv: typeof process.env.DATABASE_URL,
     });
   } catch (err: any) {
     return Response.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
