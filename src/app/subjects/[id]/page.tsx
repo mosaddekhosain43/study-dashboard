@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CircleDashed, Timer, XCircle } from "lucide-react";
-import TopicManager from "@/components/TopicManager";
+import LessonManager from "@/components/LessonManager";
 import { Donut, ProgressBar } from "@/components/ui";
 import { formatMinutes } from "@/lib/dates";
 import { getSubjectDetail } from "@/lib/queries";
@@ -21,7 +21,7 @@ export default async function SubjectDetailPage({
   const detail = await getSubjectDetail(subjectId);
   if (!detail) notFound();
 
-  const { subject, topics, recentItems, totalMinutes } = detail;
+  const { subject, lessons, topics, recentItems, totalMinutes } = detail;
   const total = topics.length;
   const byStatus = {
     completed: topics.filter((t) => t.status === "completed").length,
@@ -89,9 +89,11 @@ export default async function SubjectDetailPage({
         </div>
       </header>
 
-      <section className="rise rise-1">
-        <TopicManager subjectId={subject.id} topics={topics} />
-      </section>
+        <LessonManager
+          subjectId={subject.id}
+          subjectName={subject.name}
+          lessons={lessons}
+        />
 
       {recentItems.length > 0 && (
         <section className="rise rise-2">

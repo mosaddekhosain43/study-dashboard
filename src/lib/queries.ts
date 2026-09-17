@@ -4,6 +4,7 @@ import {
   batches,
   batchMaterials,
   batchMessages,
+  lessons,
   sessions,
   settings,
   subjects,
@@ -94,12 +95,25 @@ export interface TopicDto {
   id: number;
   subjectId: number;
   subjectName: string;
+  lessonId?: number | null;
+  lessonName?: string | null;
   name: string;
   chapter: string | null;
   status: StudyStatus;
   notes: string | null;
   completedAt: string | null;
   updatedAt: string;
+}
+
+export interface LessonDto {
+  id: number;
+  subjectId: number;
+  name: string;
+  sortOrder: number;
+  topics: TopicDto[];
+  totalTopics: number;
+  completedTopics: number;
+  progress: number;
 }
 
 export interface ItemDto {
@@ -563,18 +577,72 @@ export async function getSubjectDetail(subjectId: number) {
   await ensureSeeded();
   const sub = await db.select().from(subjects).where(eq(subjects.id, subjectId));
   if (sub.length === 0) return null;
-  const tops = await db
-    .select()
-    .from(topics)
-    .where(eq(topics.subjectId, subjectId))
-    .orderBy(topics.sortOrder, topics.id);
+  const [less, tops] = await Promise.all([
+    db.select().from(lessons).where(eq(lessons.subjectId, subjectId)).orderBy(lessons.sortOrder, lessons.id),
+    db.select().from(topics).where(eq(topics.subjectId, subjectId)).orderBy(topics.sortOrder, topics.id),
+  ]);
   const subjectName = sub[0].name;
+
+  const mappedTopics: TopicDto[] = tops.map((t) => {
+    const parentLesson = less.find((l) => l.id === t.lessonId);
+    return {
+      id: t.id,
+      subjectId: t.subjectId,
+      subjectName,
+      lessonId: t.lessonId,
+      lessonName: parentLesson ? parentLesson.name : t.chapter || null,
+      name: t.name,
+      chapter: t.chapter,
+      status: toStatus(t.status),
+      notes: t.notes,
+      completedAt: t.completedAt,
+      updatedAt: t.updatedAt.toISOString(),
+    };
+  });
+
+  const lessonDtos: LessonDto[] = less.map((l) => {
+    const lessonTopics = mappedTopics.filter((t) => t.lessonId === l.id);
+    const totalTopics = lessonTopics.length;
+    const completedTopics = lessonTopics.filter((t) => t.status === "completed").length;
+    return {
+      id: l.id,
+      subjectId: l.subjectId,
+      name: l.name,
+      sortOrder: l.sortOrder,
+      topics: lessonTopics,
+      totalTopics,
+      completedTopics,
+      progress: totalTopics > 0 ? completedTopics / totalTopics : 0,
+    };
+  });
+
+  const orphanTopics = mappedTopics.filter((t) => !t.lessonId);
+  if (orphanTopics.length > 0) {
+    const totalTopics = orphanTopics.length;
+    const completedTopics = orphanTopics.filter((t) => t.status === "completed").length;
+    lessonDtos.push({
+      id: 0,
+      subjectId,
+      name: "Other Topics / সাধারণ পাঠ",
+      sortOrder: 9999,
+      topics: orphanTopics,
+      totalTopics,
+      completedTopics,
+      progress: totalTopics > 0 ? completedTopics / totalTopics : 0,
+    });
+  }
+
   const items = await db
     .select({
-      id: updateItems.id, updateId: updateItems.updateId,
-      subjectId: updateItems.subjectId, topicId: updateItems.topicId,
-      topicText: updateItems.topicText, status: updateItems.status,
-      minutes: updateItems.minutes, notes: updateItems.notes, date: updateItems.date,
+      id: updateItems.id,
+      updateId: updateItems.updateId,
+      subjectId: updateItems.subjectId,
+      topicId: updateItems.topicId,
+      topicText: updateItems.topicText,
+      status: updateItems.status,
+      minutes: updateItems.minutes,
+      notes: updateItems.notes,
+      date: updateItems.date,
       topicName: topics.name,
     })
     .from(updateItems)
@@ -589,12 +657,8 @@ export async function getSubjectDetail(subjectId: number) {
 
   return {
     subject: sub[0] as SubjectDto,
-    topics: tops.map((t): TopicDto => ({
-      id: t.id, subjectId: t.subjectId, subjectName,
-      name: t.name, chapter: t.chapter, status: toStatus(t.status),
-      notes: t.notes, completedAt: t.completedAt,
-      updatedAt: t.updatedAt.toISOString(),
-    })),
+    lessons: lessonDtos,
+    topics: mappedTopics,
     recentItems: items.map((r) => itemToDto({ ...r, subjectName })),
     totalMinutes: Number(mins[0]?.m ?? 0),
   };

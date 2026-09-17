@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
+  lessons,
   sessions,
   settings,
   subjects,
@@ -196,6 +197,96 @@ export async function deleteItemAction(itemId: number) {
   return ok();
 }
 
+// ── Lesson Management ───────────────────────────────────────────────────────
+
+export async function addLessonAction(subjectId: number, name: string) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
+  const clean = name.trim();
+  if (!clean) return fail("Lesson name cannot be empty.");
+
+  const max = await db
+    .select({ m: sql<number>`coalesce(max(${lessons.sortOrder}), 0)` })
+    .from(lessons)
+    .where(eq(lessons.subjectId, subjectId));
+
+  const [created] = await db
+    .insert(lessons)
+    .values({
+      userId,
+      subjectId,
+      name: clean,
+      sortOrder: Number(max[0]?.m ?? 0) + 1,
+    })
+    .returning();
+
+  refresh();
+  return ok({ lesson: created });
+}
+
+export async function renameLessonAction(lessonId: number, name: string) {
+  const clean = name.trim();
+  if (!clean) return fail("Lesson name cannot be empty.");
+  await db
+    .update(lessons)
+    .set({ name: clean, updatedAt: new Date() })
+    .where(eq(lessons.id, lessonId));
+  refresh();
+  return ok();
+}
+
+export async function deleteLessonAction(lessonId: number) {
+  await db.delete(lessons).where(eq(lessons.id, lessonId));
+  refresh();
+  return ok();
+}
+
+// ── Custom Subject Management ──────────────────────────────────────────────
+
+export async function createCustomSubjectAction(name: string, nameBn?: string) {
+  const user = await getCurrentUser();
+  const userId = user?.id ?? null;
+  const clean = name.trim();
+  if (!clean) return fail("Subject name is required.");
+
+  const slug = clean
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "") + `-${Date.now().toString(36)}`;
+
+  const max = await db
+    .select({ m: sql<number>`coalesce(max(${subjects.sortOrder}), 0)` })
+    .from(subjects);
+
+  const [created] = await db
+    .insert(subjects)
+    .values({
+      userId,
+      name: clean,
+      nameBn: nameBn?.trim() || null,
+      slug,
+      sortOrder: Number(max[0]?.m ?? 0) + 1,
+    })
+    .returning();
+
+  // Create default first lesson for this subject
+  await db.insert(lessons).values({
+    userId,
+    subjectId: created.id,
+    name: "Lesson 1 / অধ্যায় ১",
+    sortOrder: 1,
+  });
+
+  refresh();
+  return ok({ subject: created });
+}
+
+export async function deleteCustomSubjectAction(subjectId: number) {
+  await db.delete(subjects).where(eq(subjects.id, subjectId));
+  refresh();
+  return ok();
+}
+
 // ── Topics / syllabus ───────────────────────────────────────────────────────
 
 export async function setTopicStatusAction(topicId: number, status: string) {
@@ -204,18 +295,50 @@ export async function setTopicStatusAction(topicId: number, status: string) {
   return ok();
 }
 
-export async function addTopicAction(subjectId: number, name: string, chapter?: string) {
+export async function addTopicAction(
+  subjectId: number,
+  name: string,
+  lessonId?: number | null,
+  chapter?: string
+) {
   const user = await getCurrentUser();
   const userId = user?.id ?? null;
   const clean = name.trim();
   if (!clean) return fail("Topic name is empty.");
+
+  let finalLessonId = lessonId ?? null;
+  if (!finalLessonId) {
+    const firstLesson = await db
+      .select({ id: lessons.id })
+      .from(lessons)
+      .where(eq(lessons.subjectId, subjectId))
+      .orderBy(lessons.sortOrder)
+      .limit(1);
+    if (firstLesson[0]) {
+      finalLessonId = firstLesson[0].id;
+    } else {
+      const [newLesson] = await db
+        .insert(lessons)
+        .values({
+          userId,
+          subjectId,
+          name: chapter?.trim() || "Lesson 1 / অধ্যায় ১",
+          sortOrder: 1,
+        })
+        .returning();
+      finalLessonId = newLesson.id;
+    }
+  }
+
   const max = await db
     .select({ m: sql<number>`coalesce(max(${topics.sortOrder}), 0)` })
     .from(topics)
     .where(eq(topics.subjectId, subjectId));
+
   await db.insert(topics).values({
     userId,
     subjectId,
+    lessonId: finalLessonId,
     name: clean,
     chapter: chapter?.trim() || null,
     sortOrder: Number(max[0]?.m ?? 0) + 1,
@@ -224,7 +347,11 @@ export async function addTopicAction(subjectId: number, name: string, chapter?: 
   return ok();
 }
 
-export async function bulkAddTopicsAction(subjectId: number, text: string) {
+export async function bulkAddTopicsAction(
+  subjectId: number,
+  text: string,
+  lessonId?: number | null
+) {
   const user = await getCurrentUser();
   const userId = user?.id ?? null;
   const lines = text
@@ -233,13 +360,44 @@ export async function bulkAddTopicsAction(subjectId: number, text: string) {
     .filter((l) => l.length > 0)
     .slice(0, 200);
   if (lines.length === 0) return fail("No topics found.");
+
+  let finalLessonId = lessonId ?? null;
+  if (!finalLessonId) {
+    const firstLesson = await db
+      .select({ id: lessons.id })
+      .from(lessons)
+      .where(eq(lessons.subjectId, subjectId))
+      .orderBy(lessons.sortOrder)
+      .limit(1);
+    if (firstLesson[0]) {
+      finalLessonId = firstLesson[0].id;
+    } else {
+      const [newLesson] = await db
+        .insert(lessons)
+        .values({
+          userId,
+          subjectId,
+          name: "Lesson 1 / অধ্যায় ১",
+          sortOrder: 1,
+        })
+        .returning();
+      finalLessonId = newLesson.id;
+    }
+  }
+
   const existing = await db.select().from(topics).where(eq(topics.subjectId, subjectId));
   const canon = new Set(existing.map((t) => canonicalTopic(t.name)));
   let maxOrder = existing.reduce((a, t) => Math.max(a, t.sortOrder), 0);
   let created = 0;
   for (const line of lines) {
     if (canon.has(canonicalTopic(line))) continue;
-    await db.insert(topics).values({ userId, subjectId, name: line, sortOrder: ++maxOrder });
+    await db.insert(topics).values({
+      userId,
+      subjectId,
+      lessonId: finalLessonId,
+      name: line,
+      sortOrder: ++maxOrder,
+    });
     canon.add(canonicalTopic(line));
     created++;
   }

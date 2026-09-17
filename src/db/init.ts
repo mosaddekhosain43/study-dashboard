@@ -51,17 +51,29 @@ CREATE TABLE IF NOT EXISTS batch_messages (
 
 CREATE TABLE IF NOT EXISTS subjects (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  slug TEXT NOT NULL UNIQUE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
   name_bn TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS lessons (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS topics (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  lesson_id INTEGER REFERENCES lessons(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   chapter TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
@@ -124,6 +136,43 @@ export async function runInitAndSeed(
       await rawExec(
         "ALTER TABLE batch_messages ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT FALSE;"
       );
+      await rawExec(
+        "ALTER TABLE subjects ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;"
+      );
+      await rawExec(
+        "CREATE TABLE IF NOT EXISTS lessons (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE, name TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
+      );
+      await rawExec(
+        "ALTER TABLE topics ADD COLUMN IF NOT EXISTS lesson_id INTEGER REFERENCES lessons(id) ON DELETE CASCADE;"
+      );
+    } catch {
+      // ignore
+    }
+
+    // Auto-migrate topics that do not have a lesson_id yet
+    try {
+      const unlinked = await rawQuery(
+        "SELECT id, subject_id, chapter, user_id FROM topics WHERE lesson_id IS NULL"
+      );
+      const rows = unlinked.rows || unlinked || [];
+      for (const row of rows) {
+        const lessonName = (row.chapter || "Lesson 1 / অধ্যায় ১").trim();
+        const existingLesson = await rawQuery(
+          "SELECT id FROM lessons WHERE subject_id = $1 AND name = $2 LIMIT 1",
+          [row.subject_id, lessonName]
+        );
+        let lessonId = existingLesson.rows?.[0]?.id || existingLesson[0]?.id;
+        if (!lessonId) {
+          const inserted = await rawQuery(
+            "INSERT INTO lessons (subject_id, user_id, name, sort_order) VALUES ($1, $2, $3, 1) RETURNING id",
+            [row.subject_id, row.user_id || null, lessonName]
+          );
+          lessonId = inserted.rows?.[0]?.id || inserted[0]?.id;
+        }
+        if (lessonId) {
+          await rawQuery("UPDATE topics SET lesson_id = $1 WHERE id = $2", [lessonId, row.id]);
+        }
+      }
     } catch {
       // ignore
     }

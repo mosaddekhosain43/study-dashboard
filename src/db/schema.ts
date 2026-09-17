@@ -124,8 +124,11 @@ export const batchMessages = pgTable(
  */
 export const subjects = pgTable("subjects", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
+  userId: integer("user_id").references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
   nameBn: text("name_bn"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -134,7 +137,35 @@ export const subjects = pgTable("subjects", {
 });
 
 /**
- * Syllabus topics — scoped to student (or fallback global)
+ * Lessons / Chapters inside a Subject
+ */
+export const lessons = pgTable(
+  "lessons",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    subjectId: integer("subject_id")
+      .notNull()
+      .references(() => subjects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("lessons_subject_idx").on(t.subjectId),
+    index("lessons_user_idx").on(t.userId),
+  ]
+);
+
+/**
+ * Syllabus topics — scoped to student and lesson
  */
 export const topics = pgTable(
   "topics",
@@ -146,6 +177,9 @@ export const topics = pgTable(
     subjectId: integer("subject_id")
       .notNull()
       .references(() => subjects.id, { onDelete: "cascade" }),
+    lessonId: integer("lesson_id").references(() => lessons.id, {
+      onDelete: "cascade",
+    }),
     name: text("name").notNull(),
     chapter: text("chapter"),
     sortOrder: integer("sort_order").notNull().default(0),
@@ -161,6 +195,7 @@ export const topics = pgTable(
   },
   (t) => [
     index("topics_subject_idx").on(t.subjectId),
+    index("topics_lesson_idx").on(t.lessonId),
     index("topics_user_idx").on(t.userId),
   ]
 );

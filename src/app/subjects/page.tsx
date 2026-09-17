@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ChevronRight, CircleDashed, ListChecks, Timer, XCircle } from "lucide-react";
 import { EmptyState, ProgressBar } from "@/components/ui";
+import AddSubjectButton from "@/components/AddSubjectButton";
 import { formatMinutes, relativeDay } from "@/lib/dates";
 import { getSubjectStats } from "@/lib/queries";
 
@@ -21,9 +22,12 @@ export default async function SubjectsPage() {
           </h1>
           <p className="mt-1 text-[13.5px] text-ink-faint">All 13 papers. Click any subject for chapter-level detail.</p>
         </div>
-        <Link href="/syllabus" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf">
-          Manage syllabus <ArrowRight className="size-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <AddSubjectButton />
+          <Link href="/syllabus" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf">
+            Manage syllabus <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
       </header>
 
       {!anyTopics && (
