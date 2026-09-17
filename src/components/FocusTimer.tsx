@@ -822,115 +822,139 @@ export default function FocusTimer({
         <div
           className={`w-full text-center transition-all duration-300 ${
             isFullscreen
-              ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
+              ? "my-auto max-w-md flex flex-col items-center justify-center text-white p-4"
               : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl"
           }`}
         >
-          {/* Top Section in Fullscreen */}
-          <div className="pt-2">
-            {/* Top Big Emerald Celebration Badge */}
-            <div className={`mx-auto grid size-16 place-items-center rounded-full mb-3 shadow-inner ${
+          {/* Top Big Emerald Celebration Badge */}
+          <div
+            className={`mx-auto grid size-16 place-items-center rounded-full mb-3 shadow-inner ${
               isFullscreen
                 ? "bg-[#18382c] border border-[#265342] text-emerald-400"
                 : "bg-emerald-100/90 text-emerald-700"
-            }`}>
-              <Check className="size-8" strokeWidth={3} />
-            </div>
+            }`}
+          >
+            <Check className="size-8" strokeWidth={3} />
+          </div>
 
-            {/* Pill Badge */}
-            <div className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-bold mb-2 ${
+          {/* Pill Badge */}
+          <div
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-bold mb-2.5 ${
               isFullscreen
                 ? "bg-[#18382c] border border-[#265342] text-emerald-300"
                 : "bg-emerald-50 border border-emerald-200/70 text-emerald-800"
-            }`}>
-              <Sparkles className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-              <span>SESSION ACCOMPLISHED</span>
-            </div>
+            }`}
+          >
+            <Sparkles className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+            <span>SESSION ACCOMPLISHED</span>
           </div>
 
-          {/* Middle Section in Fullscreen */}
-          <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-4" : ""}>
-            {/* Big Heading */}
-            <h2 className={`font-display text-2xl font-black tracking-tight ${
+          {/* Big Heading */}
+          <h2
+            className={`font-display text-2xl font-black tracking-tight ${
               isFullscreen ? "text-white" : "text-slate-900"
-            }`}>
-              Session Complete!
-            </h2>
-            <p className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
+            }`}
+          >
+            Session Complete!
+          </h2>
+          <p
+            className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
               isFullscreen ? "text-emerald-200/80" : "text-slate-500"
-            }`}>
-              <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
-                {lastLoggedMinutes} minutes
-              </strong> of deep focus logged for{" "}
-              <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+            }`}
+          >
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+              {lastLoggedMinutes} minutes
+            </strong>{" "}
+            logged for{" "}
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+              {subjectDisplayName}
+            </strong>
+            .
+          </p>
+
+          {/* 4-Grid Stats Summary (User's Real Database Data) */}
+          <div className="my-5 w-full grid grid-cols-2 gap-2.5">
+            <div
+              className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+              }`}
+            >
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}
+              >
+                <Clock className="size-3.5 text-emerald-400" /> Focus Time
+              </span>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                {lastLoggedMinutes}m
+              </p>
+            </div>
+
+            <div
+              className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+              }`}
+            >
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}
+              >
+                <BookOpen className="size-3.5 text-emerald-400" /> Subject
+              </span>
+              <p
+                className={`mt-1 font-display text-sm font-bold truncate ${
+                  isFullscreen ? "text-white" : "text-slate-900"
+                }`}
+              >
                 {subjectDisplayName}
-              </strong>.
-            </p>
+              </p>
+            </div>
 
-            {/* 4-Grid Stats Summary (User's Real Database Data) */}
-            <div className="my-5 w-full grid grid-cols-2 gap-2.5">
-              <div className={`rounded-2xl p-3 text-left border ${
+            <div
+              className={`rounded-2xl p-3 text-left border ${
                 isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-              }`}>
-                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+              }`}
+            >
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-semibold ${
                   isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-                }`}>
-                  <Clock className="size-3.5 text-emerald-400" /> Focus Time
-                </span>
-                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                  {lastLoggedMinutes}m
-                </p>
-              </div>
+                }`}
+              >
+                <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
+              </span>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                {formatTotalFocus(todayMinutes)}
+              </p>
+            </div>
 
-              <div className={`rounded-2xl p-3 text-left border ${
+            <div
+              className={`rounded-2xl p-3 text-left border ${
                 isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-              }`}>
-                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+              }`}
+            >
+              <span
+                className={`flex items-center gap-1.5 text-[11px] font-semibold ${
                   isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-                }`}>
-                  <BookOpen className="size-3.5 text-emerald-400" /> Subject
-                </span>
-                <p className={`mt-1 font-display text-sm font-bold truncate ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                  {subjectDisplayName}
-                </p>
-              </div>
-
-              <div className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-              }`}>
-                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-                }`}>
-                  <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
-                </span>
-                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                  {formatTotalFocus(todayMinutes)}
-                </p>
-              </div>
-
-              <div className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-              }`}>
-                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-                }`}>
-                  <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
-                </span>
-                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                  {streak} Days
-                </p>
-              </div>
+                }`}
+              >
+                <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
+              </span>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                {streak} Days
+              </p>
             </div>
           </div>
 
-          {/* Bottom Action Button: PUSHED TO BOTTOM IN FULLSCREEN */}
-          <div className="w-full pb-2">
+          {/* Action Button: Return to Timer placed cleanly together */}
+          <div className="w-full mt-1">
             <button
               type="button"
               onClick={handleReturnToTimer}
               className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
                 isFullscreen
-                  ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black"
+                  ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
                   : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
               }`}
             >
