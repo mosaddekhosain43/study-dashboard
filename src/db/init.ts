@@ -161,6 +161,11 @@ export async function runInitAndSeed(
         ["Super Admin", "admin@alim.edu", hash]
       );
     }
+
+    // 4. Ensure owner/developer email always has Admin role
+    await rawQuery(
+      "UPDATE users SET role = 'admin' WHERE LOWER(email) = 'mosaddekhosain43@gmail.com'"
+    );
   } catch (err) {
     console.error("Database initialization error:", err);
   }

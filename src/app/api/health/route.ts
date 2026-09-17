@@ -20,7 +20,6 @@ export async function GET() {
       driver: dbDriverType,
       isPersistentPostgres: dbDriverType === "postgres",
       userCount: usersList.length,
-      users: usersList,
     });
   } catch (err: any) {
     return Response.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
