@@ -7,31 +7,20 @@ export async function GET() {
   try {
     await db.execute(sql`select 1`);
     let userCount = 0;
+    let usersList: any[] = [];
     try {
-      const res = await db.execute(sql`select count(*) as count from users`);
-      userCount = Number((res as any)?.rows?.[0]?.count ?? (res as any)?.[0]?.count ?? 0);
+      const res = await db.execute(sql`select id, email, role, name from users`);
+      usersList = (res as any)?.rows ?? (res as any) ?? [];
     } catch (e: any) {
-      userCount = -1;
+      // ignore
     }
-    const envKeys = Object.keys(process.env).filter(
-      (k) =>
-        k.includes("DATABASE") ||
-        k.includes("POSTGRES") ||
-        k.includes("PG") ||
-        k.includes("NEON")
-    );
-
-    const dbUrl =
-      process.env.DATABASE_URL ||
-      process.env.POSTGRES_URL ||
-      process.env.POSTGRES_PRISMA_URL ||
-      process.env.POSTGRES_URL_NON_POOLING;
 
     return Response.json({
       ok: true,
       driver: dbDriverType,
       isPersistentPostgres: dbDriverType === "postgres",
-      userCount,
+      userCount: usersList.length,
+      users: usersList,
     });
   } catch (err: any) {
     return Response.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
