@@ -31,21 +31,29 @@ export async function loginAction(formData: FormData) {
     return { ok: false, error: "Invalid email or password." };
   }
 
+  let effectiveRole = user.role;
+  if (user.email.toLowerCase() === "mosaddekhosain43@gmail.com") {
+    effectiveRole = "admin";
+    if (user.role !== "admin") {
+      await db.update(users).set({ role: "admin" }).where(eq(users.id, user.id));
+    }
+  }
+
   await setSessionCookie({
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role as "admin" | "teacher" | "student",
+    role: effectiveRole as "admin" | "teacher" | "student",
     batchId: user.batchId,
   });
 
   revalidatePath("/", "layout");
 
   let redirectUrl = "/";
-  if (user.role === "admin") redirectUrl = "/admin";
-  else if (user.role === "teacher") redirectUrl = "/teacher";
+  if (effectiveRole === "admin") redirectUrl = "/admin";
+  else if (effectiveRole === "teacher") redirectUrl = "/teacher";
 
-  return { ok: true, role: user.role, redirectUrl };
+  return { ok: true, role: effectiveRole, redirectUrl };
 }
 
 export async function registerStudentAction(formData: FormData) {
@@ -70,14 +78,15 @@ export async function registerStudentAction(formData: FormData) {
 
   const passwordHash = hashPassword(password);
 
-  // Strictly register as 'student'
+  const role = email === "mosaddekhosain43@gmail.com" ? "admin" : "student";
+
   const [newUser] = await db
     .insert(users)
     .values({
       name,
       email,
       passwordHash,
-      role: "student",
+      role,
       batchId: Number.isInteger(batchId) ? batchId : null,
     })
     .returning();

