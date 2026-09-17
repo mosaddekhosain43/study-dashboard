@@ -9,7 +9,13 @@ import { runInitAndSeed } from "./init";
 
 import os from "os";
 
-const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.NEON_DATABASE_URL;
+
 const isVercel = Boolean(process.env.VERCEL);
 
 // Determine if we should use remote PostgreSQL or local embedded PGlite
@@ -19,6 +25,15 @@ const shouldUsePg =
     !databaseUrl?.includes("127.0.0.1:5432") &&
     !databaseUrl?.includes("localhost:5432") &&
     process.env.USE_PGLITE !== "true");
+
+export const dbDriverType: "postgres" | "pglite" =
+  shouldUsePg && databaseUrl ? "postgres" : "pglite";
+
+if (isVercel && !databaseUrl) {
+  console.warn(
+    "⚠️ CRITICAL: Running on Vercel without DATABASE_URL / POSTGRES_URL! Serverless Lambda container will use ephemeral in-memory database and data will not persist. Please configure Neon / Postgres on Vercel."
+  );
+}
 
 let dbInstance: any;
 let rawQueryFn: (sqlText: string, params?: any[]) => Promise<any>;
