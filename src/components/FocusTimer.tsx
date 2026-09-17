@@ -400,63 +400,6 @@ export default function FocusTimer({
               : "max-w-[420px] p-3 sm:p-4 text-slate-800"
           }`}
         >
-          {/* Top Header Row */}
-          <div className="flex items-center justify-between gap-2 pt-1 pb-2">
-            <button
-              type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-                isFullscreen
-                  ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
-                  : "border border-slate-300/80 bg-white/90 text-slate-700 hover:bg-white shadow-2xs"
-              }`}
-            >
-              {soundEnabled ? (
-                <>
-                  <Volume2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-                  <span>Chime On</span>
-                </>
-              ) : (
-                <>
-                  <VolumeX className="size-3.5 text-slate-400" />
-                  <span>Muted</span>
-                </>
-              )}
-            </button>
-
-            <div
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider ${
-                isFullscreen
-                  ? "border border-[#265342] bg-[#18382c] text-emerald-200"
-                  : "border border-slate-300/80 bg-white/90 text-slate-700 shadow-2xs"
-              }`}
-            >
-              <TimerIcon className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-              <span>TIMER</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
-                isFullscreen
-                  ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
-                  : "border border-slate-300/80 bg-white/90 text-slate-700 hover:bg-white shadow-2xs"
-              }`}
-            >
-              {isFullscreen ? (
-                <>
-                  <Minimize2 className="size-3.5" />
-                  <span>Exit</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="size-3.5 text-slate-600" />
-                  <span>Fullscreen</span>
-                </>
-              )}
-            </button>
-          </div>
 
           {/* Middle Body */}
           <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-4 space-y-3" : ""}>
