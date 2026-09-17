@@ -708,11 +708,6 @@ export default function FocusTimer({
 
               {/* Content Inside Circle */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-                  isFullscreen ? "text-emerald-300/70" : "text-slate-400"
-                }`}>
-                  DEEP WORK
-                </span>
                 <span className={`font-display text-5xl sm:text-6xl font-black tabular-nums tracking-tight my-1 ${
                   isFullscreen ? "text-white" : "text-[#0f172a]"
                 }`}>
