@@ -23,7 +23,7 @@ import {
   timerStopAction,
 } from "@/actions";
 
-// Sound chime using Web Audio API (no external file dependencies)
+// Gentle audio chime using Web Audio API
 function playCelebrationChime() {
   try {
     const AudioContextClass =
@@ -34,7 +34,6 @@ function playCelebrationChime() {
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
 
-    // Tone 1 (D5)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = "sine";
@@ -46,7 +45,6 @@ function playCelebrationChime() {
     osc1.start(now);
     osc1.stop(now + 0.9);
 
-    // Tone 2 (A5)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = "sine";
@@ -58,7 +56,6 @@ function playCelebrationChime() {
     osc2.start(now + 0.2);
     osc2.stop(now + 1.4);
 
-    // Tone 3 (D6)
     const osc3 = ctx.createOscillator();
     const gain3 = ctx.createGain();
     osc3.type = "sine";
@@ -70,7 +67,7 @@ function playCelebrationChime() {
     osc3.start(now + 0.45);
     osc3.stop(now + 1.8);
   } catch {
-    // Ignore audio autoplay restrictions
+    // Ignore audio restrictions if blocked
   }
 }
 
@@ -92,7 +89,7 @@ interface Props {
 }
 
 export default function FocusTimer({ subjects }: Props) {
-  // 2 Options: 'set' (User sets how many minutes) OR 'free' (No limit, count up)
+  // 2 Options: 'set' (Set Target Time) OR 'free' (Open Timer / No Limit)
   const [timerType, setTimerType] = useState<"set" | "free">("set");
   const [targetMinutes, setTargetMinutes] = useState(25);
 
@@ -111,7 +108,6 @@ export default function FocusTimer({ subjects }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Listen for fullscreen change
   useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -136,7 +132,6 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  // Main tick interval
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
@@ -254,7 +249,6 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  // Progress ratio for countdown
   const totalTargetSec = targetMinutes * 60;
   const progressRatio =
     timerType === "set" && totalTargetSec > 0
@@ -268,40 +262,27 @@ export default function FocusTimer({ subjects }: Props) {
       ref={containerRef}
       className={`relative flex min-h-[82vh] flex-col items-center justify-center transition-colors duration-500 ${
         isFullscreen
-          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#070f0c] p-4 sm:p-8"
-          : "w-full rounded-3xl bg-gradient-to-b from-[#0a1510] via-[#07110d] to-[#050b08] p-6 sm:p-10 shadow-2xl border border-emerald-900/30"
+          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0d1b14] p-4 sm:p-8"
+          : "w-full rounded-3xl bg-[#12251b] p-6 sm:p-10 shadow-2xl border border-white/8"
       }`}
     >
-      {/* Ambient glow behind timer */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-        <div
-          className={`size-[380px] sm:size-[560px] rounded-full blur-[100px] transition-all duration-1000 ${
-            isCompleted
-              ? "bg-emerald-400/25 scale-110"
-              : isRunning
-              ? "bg-emerald-500/18 scale-100"
-              : "bg-emerald-900/10 scale-90"
-          }`}
-        />
-      </div>
-
       {/* Top Bar: Sound toggle & Fullscreen button */}
-      <div className="relative z-20 mb-4 sm:mb-6 flex w-full max-w-xl items-center justify-between gap-3 text-white/70">
+      <div className="relative z-20 mb-4 sm:mb-6 flex w-full max-w-xl items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setSoundEnabled((v) => !v)}
             title={soundEnabled ? "Sound Alert Enabled" : "Sound Alert Muted"}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1a3325] px-3 py-1.5 text-xs text-emerald-100/70 transition hover:text-white"
           >
             {soundEnabled ? (
               <>
-                <Volume2 className="size-3.5 text-emerald-400" />
+                <Volume2 className="size-3.5 text-glow" />
                 <span>Chime On</span>
               </>
             ) : (
               <>
-                <VolumeX className="size-3.5 text-white/40" />
+                <VolumeX className="size-3.5 text-emerald-100/40" />
                 <span>Muted</span>
               </>
             )}
@@ -311,7 +292,7 @@ export default function FocusTimer({ subjects }: Props) {
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1a3325] px-3 py-1.5 text-xs font-medium text-emerald-100/70 transition hover:text-white"
         >
           {isFullscreen ? (
             <>
@@ -329,22 +310,22 @@ export default function FocusTimer({ subjects }: Props) {
 
       {/* Main Container */}
       <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center text-center">
-        {/* Status Pill */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 shadow-sm backdrop-blur-md">
+        {/* Status Pill matching sidebar Study Timer header */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#1a3325] px-4 py-1.5 shadow-2xs">
           {isCompleted ? (
             <>
-              <Sparkles className="size-3.5 text-emerald-400 animate-bounce" />
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+              <Sparkles className="size-3.5 text-glow animate-bounce" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-glow">
                 Target Reached! Great Job
               </span>
             </>
           ) : isRunning ? (
             <>
-              <span className="relative flex size-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400" />
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-glow opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-glow" />
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-glow">
                 {timerType === "set"
                   ? `Focusing (${targetMinutes} min session)`
                   : "Free Study Running"}
@@ -352,11 +333,11 @@ export default function FocusTimer({ subjects }: Props) {
             </>
           ) : (
             <>
-              <TimerIcon className="size-3.5 text-white/60" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
+              <TimerIcon className="size-3.5 text-emerald-100/50" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100/50">
                 {timerType === "set"
-                  ? `Set Target: ${targetMinutes} Minutes`
-                  : "Free Study (No Time Limit)"}
+                  ? `Study Target: ${targetMinutes} Min`
+                  : "Study Timer (No Limit)"}
               </span>
             </>
           )}
@@ -365,12 +346,12 @@ export default function FocusTimer({ subjects }: Props) {
         {/* ── Giant Digital Clock Display ──────────────────────── */}
         <div className="my-6 sm:my-8 select-none">
           <div
-            className={`font-display text-7xl sm:text-8xl md:text-9xl font-extrabold tabular-nums tracking-tighter transition-all duration-300 ${
+            className={`font-display text-7xl sm:text-8xl md:text-9xl font-bold tabular-nums tracking-tight transition-colors duration-200 ${
               isCompleted
-                ? "text-emerald-300 drop-shadow-[0_0_40px_rgba(52,211,153,0.6)] animate-pulse"
+                ? "text-glow drop-shadow-[0_0_25px_rgba(24,185,129,0.5)] animate-pulse"
                 : isRunning
-                ? "text-white drop-shadow-[0_0_35px_rgba(52,211,153,0.4)]"
-                : "text-white/85 drop-shadow-md"
+                ? "text-white"
+                : "text-emerald-50/80"
             }`}
           >
             {timerType === "set"
@@ -378,9 +359,9 @@ export default function FocusTimer({ subjects }: Props) {
               : formatSeconds(freeSeconds)}
           </div>
 
-          {/* Active subject indicator */}
+          {/* Active subject indication */}
           {currentSubjectObj && (
-            <p className="mt-2 text-xs sm:text-sm font-semibold text-emerald-400 flex items-center justify-center gap-1.5">
+            <p className="mt-2 text-xs sm:text-sm font-semibold text-glow flex items-center justify-center gap-1.5">
               <BookOpen className="size-3.5" />
               <span>{currentSubjectObj.name}</span>
             </p>
@@ -392,11 +373,11 @@ export default function FocusTimer({ subjects }: Props) {
           <div className="mb-6 w-full max-w-xs sm:max-w-sm">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-1000 shadow-sm shadow-emerald-500/50"
+                className="h-full rounded-full bg-glow transition-all duration-1000 shadow-xs shadow-glow/40"
                 style={{ width: `${Math.round(progressRatio * 100)}%` }}
               />
             </div>
-            <div className="mt-1.5 flex justify-between text-[11px] text-white/40 font-mono">
+            <div className="mt-1.5 flex justify-between text-[11px] text-emerald-100/40 font-mono">
               <span>0%</span>
               <span>{Math.round(progressRatio * 100)}% completed</span>
               <span>{targetMinutes}m</span>
@@ -404,18 +385,18 @@ export default function FocusTimer({ subjects }: Props) {
           </div>
         )}
 
-        {/* ── EXACTLY 2 OPTIONS: Set Time vs Free Timer ─────────── */}
+        {/* ── EXACTLY 2 OPTIONS: Set Time vs Open Timer ─────────── */}
         {!isRunning && (
           <div className="mb-6 w-full space-y-3.5">
-            {/* 2-Option Toggle */}
-            <div className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 p-1 backdrop-blur-md shadow-sm">
+            {/* 2-Option Segment Toggle in Pine-3 */}
+            <div className="inline-flex items-center rounded-2xl border border-white/10 bg-[#1a3325] p-1 shadow-2xs">
               <button
                 type="button"
                 onClick={() => handleSwitchType("set")}
                 className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                   timerType === "set"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-                    : "text-white/60 hover:text-white"
+                    ? "bg-glow text-pine shadow-sm"
+                    : "text-emerald-100/60 hover:text-white"
                 }`}
               >
                 <TimerIcon className="size-3.5" />
@@ -427,8 +408,8 @@ export default function FocusTimer({ subjects }: Props) {
                 onClick={() => handleSwitchType("free")}
                 className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                   timerType === "free"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-                    : "text-white/60 hover:text-white"
+                    ? "bg-glow text-pine shadow-sm"
+                    : "text-emerald-100/60 hover:text-white"
                 }`}
               >
                 <Play className="size-3.5 fill-current" />
@@ -442,13 +423,13 @@ export default function FocusTimer({ subjects }: Props) {
                 <button
                   type="button"
                   onClick={() => handleMinutesChange(targetMinutes - 5)}
-                  className="size-8 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition grid place-items-center"
+                  className="size-8 rounded-xl border border-white/10 bg-[#1a3325] text-emerald-50 hover:bg-[#203f2e] transition grid place-items-center"
                   title="Decrease 5 minutes"
                 >
                   <Minus className="size-3.5" />
                 </button>
 
-                <div className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 shadow-xs">
+                <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#1a3325] px-3.5 py-1.5 shadow-2xs">
                   <input
                     type="number"
                     min="1"
@@ -464,13 +445,13 @@ export default function FocusTimer({ subjects }: Props) {
                     }}
                     className="w-14 bg-transparent text-center font-display text-base font-bold text-white focus:outline-none"
                   />
-                  <span className="text-xs font-semibold text-white/70">minutes</span>
+                  <span className="text-xs font-semibold text-emerald-100/70">minutes</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => handleMinutesChange(targetMinutes + 5)}
-                  className="size-8 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition grid place-items-center"
+                  className="size-8 rounded-xl border border-white/10 bg-[#1a3325] text-emerald-50 hover:bg-[#203f2e] transition grid place-items-center"
                   title="Increase 5 minutes"
                 >
                   <Plus className="size-3.5" />
@@ -480,10 +461,10 @@ export default function FocusTimer({ subjects }: Props) {
           </div>
         )}
 
-        {/* ── Subject Selection ───────────────────────────────── */}
+        {/* ── Subject Selection (Styled exactly like original sidebar dropdown) ── */}
         <div className="mb-6 flex items-center justify-center gap-2">
           <div className="relative inline-flex items-center">
-            <span className="pointer-events-none absolute left-3 text-white/50">
+            <span className="pointer-events-none absolute left-3 text-emerald-100/40">
               <BookOpen className="size-3.5" />
             </span>
             <select
@@ -492,16 +473,16 @@ export default function FocusTimer({ subjects }: Props) {
               onChange={(e) =>
                 setSelectedSubject(e.target.value ? Number(e.target.value) : "")
               }
-              className="rounded-xl border border-white/15 bg-white/10 py-2 pl-8 pr-8 text-xs sm:text-[13px] font-semibold text-white shadow-xs backdrop-blur-md transition hover:border-white/30 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20 disabled:opacity-60"
+              className="rounded-xl border border-white/10 bg-[#1a3325] py-2 pl-8 pr-8 text-xs sm:text-[13px] font-semibold text-emerald-50/90 shadow-2xs transition hover:border-white/20 focus:border-glow focus:outline-none disabled:opacity-60"
             >
-              <option value="" className="bg-[#0b1612] text-white">
-                General / Mixed Study
+              <option value="" className="bg-[#12251b] text-emerald-50">
+                General / Mixed study
               </option>
               {subjects.map((s) => (
                 <option
                   key={s.id}
                   value={s.id}
-                  className="bg-[#0b1612] text-white"
+                  className="bg-[#12251b] text-emerald-50"
                 >
                   {s.name}
                 </option>
@@ -510,28 +491,28 @@ export default function FocusTimer({ subjects }: Props) {
           </div>
         </div>
 
-        {/* ── Action Buttons ──────────────────────────────────── */}
+        {/* ── Action Buttons (Matching original vibrant glow button) ── */}
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           {!isRunning ? (
             <button
               onClick={handleStart}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 sm:px-10 py-3.5 text-sm sm:text-base font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:brightness-110 hover:shadow-xl hover:shadow-emerald-500/40 active:scale-98"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-glow px-8 sm:px-10 py-3 text-xs sm:text-sm font-bold text-pine shadow-sm transition hover:brightness-105 active:scale-98"
             >
-              <Play className="size-5 fill-white" />
+              <Play className="size-4 fill-current" />
               <span>
                 {isCompleted
                   ? "Start Again"
                   : timerType === "set" && remainingSeconds < totalTargetSec
                   ? "Resume Session"
-                  : "Start Studying"}
+                  : "Start"}
               </span>
             </button>
           ) : (
             <button
               onClick={handlePause}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-amber-400 px-8 sm:px-10 py-3.5 text-sm sm:text-base font-bold text-amber-950 shadow-lg shadow-amber-400/30 transition-all hover:bg-amber-300 active:scale-98"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-8 sm:px-10 py-3 text-xs sm:text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-200 active:scale-98"
             >
-              <Pause className="size-5 fill-amber-950" />
+              <Pause className="size-4 fill-current" />
               <span>Pause</span>
             </button>
           )}
@@ -544,11 +525,11 @@ export default function FocusTimer({ subjects }: Props) {
             <button
               disabled={isSaving}
               onClick={handleSaveSession}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 px-6 py-3.5 text-sm sm:text-base font-bold text-emerald-300 shadow-sm transition-all hover:bg-emerald-500/25 hover:border-emerald-400 active:scale-98 disabled:opacity-50"
-              title="Save completed study session to today's log"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-xs sm:text-sm font-semibold text-emerald-50/90 shadow-2xs transition hover:bg-white/10 active:scale-98 disabled:opacity-50"
+              title="Stop and save session to today's log"
             >
-              <CheckCircle2 className="size-4.5 text-emerald-400" />
-              <span>{isSaving ? "Saving..." : "Save Session"}</span>
+              <CheckCircle2 className="size-4 text-glow" />
+              <span>{isSaving ? "Saving..." : "Stop & Save"}</span>
             </button>
           )}
 
@@ -557,10 +538,10 @@ export default function FocusTimer({ subjects }: Props) {
               (timerType === "free" && freeSeconds > 0)) && (
               <button
                 onClick={handleReset}
-                className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-xs sm:text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white transition active:scale-98"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold text-emerald-100/50 hover:bg-white/10 hover:text-white transition active:scale-98"
                 title="Reset timer"
               >
-                <RotateCcw className="size-4" />
+                <RotateCcw className="size-3.5" />
                 <span>Reset</span>
               </button>
             )}
@@ -571,28 +552,28 @@ export default function FocusTimer({ subjects }: Props) {
           (timerType === "set" && remainingSeconds < totalTargetSec) ||
           (timerType === "free" && freeSeconds > 0) ||
           isCompleted) && (
-          <div className="mt-5 w-full max-w-xs transition-all">
+          <div className="mt-4 w-full max-w-xs transition-all">
             <input
               type="text"
               value={sessionNote}
               onChange={(e) => setSessionNote(e.target.value)}
               placeholder="Topic or note for today's log (optional)..."
-              className="w-full rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-xs text-white placeholder:text-white/35 shadow-2xs focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+              className="w-full rounded-xl border border-white/10 bg-[#1a3325] px-3.5 py-2 text-xs text-emerald-50 placeholder:text-emerald-100/30 shadow-2xs focus:border-glow focus:outline-none"
             />
           </div>
         )}
 
-        {/* Saved Success Notification Toast */}
+        {/* Saved Success Notification */}
         {savedMessage && (
-          <div className="mt-5 inline-flex items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-500/20 px-4 py-2 text-xs font-semibold text-emerald-200 shadow-sm">
-            <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+          <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-glow/30 bg-glow/10 px-4 py-2 text-xs font-semibold text-glow shadow-2xs">
+            <CheckCircle2 className="size-4 text-glow shrink-0" />
             <span>{savedMessage}</span>
           </div>
         )}
 
-        {/* Motivational Distraction-Free Subtitle */}
-        <p className="mt-8 text-xs text-white/40 max-w-sm leading-relaxed">
-          Keep this screen open in front of you while studying. Phone away, full concentration.
+        {/* Subtitle matching original screenshot */}
+        <p className="mt-5 text-[11px] text-emerald-100/40">
+          Stop saves the session to today&apos;s log.
         </p>
       </div>
     </div>
