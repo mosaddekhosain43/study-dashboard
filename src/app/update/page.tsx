@@ -10,7 +10,7 @@ import { todayKey } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Study Update — Alim Study Dashboard" };
+export const metadata = { title: "Study Update — Study Dashboard" };
 
 const PHRASEBOOK: { icon: typeof CheckCircle2; title: string; phrases: string[] }[] = [
   {

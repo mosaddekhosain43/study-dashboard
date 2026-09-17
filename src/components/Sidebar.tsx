@@ -96,10 +96,10 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         </span>
         <span className="leading-tight">
           <span className="block font-display text-[15px] font-semibold tracking-tight text-white">
-            Alim Study
+            Study Dashboard
           </span>
           <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200/50">
-            2nd Year Dashboard
+            Progress Tracker
           </span>
         </span>
       </Link>
@@ -202,7 +202,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
           <span className="grid size-8 place-items-center rounded-lg bg-gradient-to-br from-leaf to-leaf-deep text-white shadow-sm shadow-leaf/20">
             <BookOpenCheck className="size-4" strokeWidth={2.2} />
           </span>
-          <span className="font-display text-sm font-semibold tracking-tight text-ink">Alim Study</span>
+          <span className="font-display text-sm font-semibold tracking-tight text-ink">Study Dashboard</span>
         </Link>
         <button
           onClick={() => setOpen((v) => !v)}

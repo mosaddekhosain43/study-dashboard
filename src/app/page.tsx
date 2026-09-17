@@ -63,10 +63,10 @@ export default async function DashboardPage() {
             {today}
           </p>
           <h1 className="mt-1 font-display text-[30px] font-bold leading-none tracking-tight text-ink sm:text-[34px]">
-            Alim Study Dashboard
+            Study Dashboard
           </h1>
           <p className="mt-1.5 text-[13.5px] text-ink-faint">
-            Alim 2nd Year · 13 papers · Test Examination countdown active
+            13 papers · Test Examination countdown active
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">

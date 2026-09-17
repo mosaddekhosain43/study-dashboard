@@ -6,7 +6,7 @@ import { getWeekReview } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Weekly Review — Alim Study Dashboard" };
+export const metadata = { title: "Weekly Review — Study Dashboard" };
 
 const DAY_NAMES = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
 

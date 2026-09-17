@@ -6,7 +6,7 @@ import { getExamConfig } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Settings — Alim Study Dashboard" };
+export const metadata = { title: "Settings — Study Dashboard" };
 
 export default async function SettingsPage() {
   const cfg = await getExamConfig();

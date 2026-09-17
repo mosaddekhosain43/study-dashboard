@@ -7,7 +7,7 @@ import { getAnalytics, getExamConfig } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Analytics — Alim Study Dashboard" };
+export const metadata = { title: "Analytics — Study Dashboard" };
 
 export default async function AnalyticsPage() {
   const [a, exam] = await Promise.all([getAnalytics(), getExamConfig()]);

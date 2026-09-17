@@ -3,7 +3,7 @@ import { getSubjects } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Search — Alim Study Dashboard" };
+export const metadata = { title: "Search — Study Dashboard" };
 
 export default async function SearchPage() {
   const subjects = await getSubjects();

@@ -6,7 +6,7 @@ import { getSubjectStats } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Subjects — Alim Study Dashboard" };
+export const metadata = { title: "Subjects — Study Dashboard" };
 
 export default async function SubjectsPage() {
   const stats = await getSubjectStats();
@@ -16,8 +16,10 @@ export default async function SubjectsPage() {
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">Subjects</h1>
-          <p className="mt-1 text-[13.5px] text-ink-faint">All 13 Alim 2nd-year papers. Click any subject for chapter-level detail.</p>
+          <h1 className="font-display text-[30px] font-bold leading-none tracking-tight text-ink sm:text-[34px]">
+            Subjects & Papers
+          </h1>
+          <p className="mt-1 text-[13.5px] text-ink-faint">All 13 papers. Click any subject for chapter-level detail.</p>
         </div>
         <Link href="/syllabus" className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-[12.5px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf">
           Manage syllabus <ArrowRight className="size-3.5" />

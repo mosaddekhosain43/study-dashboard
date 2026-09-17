@@ -6,7 +6,7 @@ import { getActiveDatesLastNDays, getDayLog, getSubjects } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Daily Log — Alim Study Dashboard" };
+export const metadata = { title: "Daily Log — Study Dashboard" };
 
 export default async function DailyLogPage({
   searchParams,

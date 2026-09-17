@@ -7,7 +7,7 @@ import type { StudyStatus } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Syllabus Setup — Alim Study Dashboard" };
+export const metadata = { title: "Syllabus Setup — Study Dashboard" };
 
 function toStatus(s: string): StudyStatus {
   return s === "completed" || s === "in_progress" || s === "not_completed" ? s : "not_started";

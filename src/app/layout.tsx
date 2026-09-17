@@ -30,9 +30,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Alim Study Dashboard — 2nd Year",
+  title: "Study Dashboard",
   description:
-    "Personal Alim 2nd-year study tracker: natural-language study updates, syllabus progress, deadlines and revision planning.",
+    "Personal study tracker: natural-language study updates, syllabus progress, deadlines and revision planning.",
   manifest: "/manifest.json",
 };
 

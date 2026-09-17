@@ -1,7 +1,7 @@
 {
-  "name": "Alim Study Dashboard",
-  "short_name": "Alim Study",
-  "description": "Alim 2nd Year Study Tracker and Classroom",
+  "name": "Study Dashboard",
+  "short_name": "Study Dashboard",
+  "description": "Study Tracker and Classroom",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f4f2ec",

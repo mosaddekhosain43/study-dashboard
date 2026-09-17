@@ -5,7 +5,7 @@ import { getRemaining, getSubjectStats } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Still Remaining — Alim Study Dashboard" };
+export const metadata = { title: "Still Remaining — Study Dashboard" };
 
 export default async function RemainingPage() {
   const [groups, stats] = await Promise.all([getRemaining(), getSubjectStats()]);

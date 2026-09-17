@@ -159,7 +159,7 @@ export default function SettingsClient({
             }}
           />
           <span className="flex items-center gap-1.5 text-[11.5px] text-ink-faint">
-            <FileJson className="size-3.5" /> Alim dashboard backup files only
+            <FileJson className="size-3.5" /> Dashboard backup files only
           </span>
         </div>
       </section>
