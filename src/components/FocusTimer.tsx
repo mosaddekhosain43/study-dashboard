@@ -126,30 +126,98 @@ export default function FocusTimer({
   const [streak, setStreak] = useState(initialStreak);
   const [lastLoggedMinutes, setLastLoggedMinutes] = useState(25);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Default to true so Timer is immediately in fullscreen deep-green focus mode!
+  const [isFullscreen, setIsFullscreen] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fullscreen detection
+  // Cross-browser fullscreen helper functions
+  const getBrowserFullscreenElement = () => {
+    if (typeof document === "undefined") return null;
+    const doc = document as unknown as {
+      fullscreenElement?: Element;
+      webkitFullscreenElement?: Element;
+      mozFullScreenElement?: Element;
+      msFullscreenElement?: Element;
+    };
+    return (
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement ||
+      null
+    );
+  };
+
+  const requestBrowserFullscreen = async (el: HTMLElement) => {
+    const elem = el as unknown as {
+      requestFullscreen?: () => Promise<void>;
+      webkitRequestFullscreen?: () => Promise<void>;
+      mozRequestFullScreen?: () => Promise<void>;
+      msRequestFullscreen?: () => Promise<void>;
+    };
+    if (elem.requestFullscreen) {
+      await elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      await elem.webkitRequestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      await elem.mozRequestFullScreen();
+    } else if (elem.msRequestFullscreen) {
+      await elem.msRequestFullscreen();
+    }
+  };
+
+  const exitBrowserFullscreen = async () => {
+    if (typeof document === "undefined") return;
+    const doc = document as unknown as {
+      exitFullscreen?: () => Promise<void>;
+      webkitExitFullscreen?: () => Promise<void>;
+      mozCancelFullScreen?: () => Promise<void>;
+      msExitFullscreen?: () => Promise<void>;
+    };
+    if (doc.exitFullscreen) {
+      await doc.exitFullscreen();
+    } else if (doc.webkitExitFullscreen) {
+      await doc.webkitExitFullscreen();
+    } else if (doc.mozCancelFullScreen) {
+      await doc.mozCancelFullScreen();
+    } else if (doc.msExitFullscreen) {
+      await doc.msExitFullscreen();
+    }
+  };
+
+  // Fullscreen detection & event listeners
   useEffect(() => {
     const handleFsChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const fsEl = getBrowserFullscreenElement();
+      if (!fsEl) {
+        // Native fullscreen was exited (e.g. Escape key)
+        setIsFullscreen(false);
+      } else {
+        setIsFullscreen(true);
+      }
     };
     document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+    };
   }, []);
 
   const toggleFullscreen = async () => {
     try {
-      if (!document.fullscreenElement) {
-        if (containerRef.current) {
-          await containerRef.current.requestFullscreen();
-        } else {
-          await document.documentElement.requestFullscreen();
+      if (isFullscreen) {
+        setIsFullscreen(false);
+        if (getBrowserFullscreenElement()) {
+          await exitBrowserFullscreen();
         }
       } else {
-        await document.exitFullscreen();
+        setIsFullscreen(true);
+        if (containerRef.current && !getBrowserFullscreenElement()) {
+          await requestBrowserFullscreen(containerRef.current);
+        }
       }
     } catch (err) {
       console.error("Fullscreen toggle error:", err);
