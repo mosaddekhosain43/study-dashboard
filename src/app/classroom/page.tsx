@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { ArrowLeft, GraduationCap, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { getStudentClassroomData } from "@/lib/queries";
@@ -7,7 +8,7 @@ import ClassroomChatClient from "@/components/ClassroomChatClient";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Classroom Discussion — Study Dashboard" };
+export const metadata = { title: "Classroom & Notes — Study Dashboard" };
 
 export default async function ClassroomPage() {
   const user = await getCurrentUser();
@@ -58,21 +59,30 @@ export default async function ClassroomPage() {
             </span>
           </div>
           <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            Classroom Discussion & Q&A
+            Classroom & Notes
           </h1>
           <p className="mt-1 text-xs text-ink-faint">
-            Batch chatroom for {data.batch.name}. Ask questions, discuss lessons, and read teacher notices.
+            Batch updates, lesson materials, teacher notes & student discussion for {data.batch.name}.
           </p>
         </div>
       </header>
 
-      {/* Interactive Chat Client */}
-      <ClassroomChatClient
-        batchId={data.batch.id}
-        batchName={data.batch.name}
-        currentUser={user}
-        initialMessages={data.messages}
-      />
+      {/* Interactive Classroom Client with Suspense for SearchParams */}
+      <Suspense
+        fallback={
+          <div className="card p-12 text-center text-xs text-ink-faint">
+            Loading Classroom...
+          </div>
+        }
+      >
+        <ClassroomChatClient
+          batchId={data.batch.id}
+          batchName={data.batch.name}
+          currentUser={user}
+          initialMessages={data.messages}
+          materials={data.materials}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   BarChart3,
+  Bell,
   BookOpenCheck,
   CalendarDays,
   CalendarRange,
@@ -37,9 +38,14 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState("notices");
 
   useEffect(() => {
     setOpen(false);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setCurrentTab(params.get("tab") || "notices");
+    }
   }, [pathname]);
 
   const handleLogout = async () => {
@@ -72,7 +78,18 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
             label: "Classroom",
             items: [
               ...(user.batchId || user.role === "admin"
-                ? [{ href: "/classroom", label: "Batch Discussion", icon: MessageSquare }]
+                ? [
+                    {
+                      href: "/classroom?tab=notices",
+                      label: "Notices & Files",
+                      icon: Bell,
+                    },
+                    {
+                      href: "/classroom?tab=chat",
+                      label: "Batch Discussion",
+                      icon: MessageSquare,
+                    },
+                  ]
                 : []),
               ...(user.role === "teacher" || user.role === "admin"
                 ? [{ href: "/teacher", label: "Teacher Panel", icon: GraduationCap }]
@@ -118,15 +135,30 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
             </p>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
-                const active =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname.startsWith(item.href);
+                let active = false;
+                if (item.href === "/") {
+                  active = pathname === "/";
+                } else if (item.href.includes("?")) {
+                  const [path, query] = item.href.split("?");
+                  if (pathname === path) {
+                    const tabParam = new URLSearchParams(query).get("tab");
+                    active = currentTab === tabParam;
+                  }
+                } else {
+                  active = pathname.startsWith(item.href);
+                }
+
                 const Icon = item.icon;
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      onClick={() => {
+                        if (item.href.includes("?")) {
+                          const tab = new URLSearchParams(item.href.split("?")[1]).get("tab");
+                          if (tab) setCurrentTab(tab);
+                        }
+                      }}
                       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
                         active
                           ? "bg-emerald-400/10 text-emerald-50"
