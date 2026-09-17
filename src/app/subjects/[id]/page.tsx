@@ -40,7 +40,7 @@ export default async function SubjectDetailPage({
       <header className="card rise relative overflow-hidden p-4 sm:p-6">
         <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
         {/* Top: Donut and Subject Details */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Donut
             size={118}
             stroke={13}
@@ -53,10 +53,10 @@ export default async function SubjectDetailPage({
             centerLabel={`${Math.round(progress * 100)}%`}
             centerSub="done"
           />
-          <div className="w-full flex-1 text-center sm:text-left">
+          <div className="min-w-[220px] flex-1">
             <p className="font-bengali text-[13px] text-ink-faint">{subject.nameBn}</p>
-            <h1 className="font-display text-[24px] sm:text-[28px] font-bold tracking-tight text-ink">{subject.name}</h1>
-            <div className="mt-3 w-full max-w-lg mx-auto sm:mx-0">
+            <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">{subject.name}</h1>
+            <div className="mt-3 max-w-md">
               <div className="mb-1 flex justify-between text-[11px] font-semibold tabular-nums text-ink-faint">
                 <span>{byStatus.completed}/{total} topics completed</span>
                 <span>{total - byStatus.completed} remaining</span>
