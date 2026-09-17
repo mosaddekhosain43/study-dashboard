@@ -2,26 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Bell,
-  BellOff,
   BookOpen,
   CheckCircle2,
   Maximize2,
   Minimize2,
+  Minus,
   Pause,
   Play,
+  Plus,
   RotateCcw,
   Sparkles,
-  Square,
   Timer as TimerIcon,
   Volume2,
   VolumeX,
 } from "lucide-react";
 import {
-  getTimerAction,
   saveStudySessionAction,
   timerPauseAction,
-  timerResumeAction,
   timerStartAction,
   timerStopAction,
 } from "@/actions";
@@ -37,7 +34,7 @@ function playCelebrationChime() {
     const ctx = new AudioContextClass();
     const now = ctx.currentTime;
 
-    // First tone (587.33 Hz - D5)
+    // Tone 1 (D5)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = "sine";
@@ -49,7 +46,7 @@ function playCelebrationChime() {
     osc1.start(now);
     osc1.stop(now + 0.9);
 
-    // Second tone (880 Hz - A5)
+    // Tone 2 (A5)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = "sine";
@@ -61,7 +58,7 @@ function playCelebrationChime() {
     osc2.start(now + 0.2);
     osc2.stop(now + 1.4);
 
-    // Third high tone (1174.66 Hz - D6)
+    // Tone 3 (D6)
     const osc3 = ctx.createOscillator();
     const gain3 = ctx.createGain();
     osc3.type = "sine";
@@ -94,25 +91,15 @@ interface Props {
   subjects: { id: number; name: string }[];
 }
 
-const PRESET_MINUTES = [
-  { label: "15 min", value: 15 },
-  { label: "25 min (Pomodoro)", value: 25 },
-  { label: "30 min", value: 30 },
-  { label: "45 min", value: 45 },
-  { label: "60 min", value: 60 },
-];
-
 export default function FocusTimer({ subjects }: Props) {
-  // Timer Mode: 'countdown' or 'stopwatch'
-  const [mode, setMode] = useState<"countdown" | "stopwatch">("countdown");
+  // 2 Options: 'set' (User sets how many minutes) OR 'free' (No limit, count up)
+  const [timerType, setTimerType] = useState<"set" | "free">("set");
   const [targetMinutes, setTargetMinutes] = useState(25);
-  const [customInputMinutes, setCustomInputMinutes] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
 
   // Runtime State
   const [isRunning, setIsRunning] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(25 * 60);
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0);
+  const [freeSeconds, setFreeSeconds] = useState(0);
   const [selectedSubject, setSelectedSubject] = useState<number | "">("");
   const [sessionNote, setSessionNote] = useState("");
   const [isCompleted, setIsCompleted] = useState(false);
@@ -124,7 +111,7 @@ export default function FocusTimer({ subjects }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check and listen for fullscreen change
+  // Listen for fullscreen change
   useEffect(() => {
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -149,11 +136,11 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  // Main tick loop
+  // Main tick interval
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
-        if (mode === "countdown") {
+        if (timerType === "set") {
           setRemainingSeconds((prev) => {
             if (prev <= 1) {
               clearInterval(intervalRef.current!);
@@ -170,7 +157,7 @@ export default function FocusTimer({ subjects }: Props) {
             return prev - 1;
           });
         } else {
-          setStopwatchSeconds((prev) => prev + 1);
+          setFreeSeconds((prev) => prev + 1);
         }
       }, 1000);
     } else {
@@ -180,42 +167,35 @@ export default function FocusTimer({ subjects }: Props) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isRunning, mode, soundEnabled]);
+  }, [isRunning, timerType, soundEnabled]);
 
-  // When changing target minutes while not running
-  const handleSelectPreset = (mins: number) => {
+  const handleSwitchType = (type: "set" | "free") => {
     if (isRunning) return;
-    setMode("countdown");
-    setTargetMinutes(mins);
-    setRemainingSeconds(mins * 60);
+    setTimerType(type);
     setIsCompleted(false);
     setSavedMessage(null);
-    setShowCustomInput(false);
+    if (type === "set") {
+      setRemainingSeconds(targetMinutes * 60);
+    } else {
+      setFreeSeconds(0);
+    }
   };
 
-  const handleSelectStopwatch = () => {
-    if (isRunning) return;
-    setMode("stopwatch");
-    setStopwatchSeconds(0);
-    setIsCompleted(false);
-    setSavedMessage(null);
-    setShowCustomInput(false);
-  };
-
-  const handleApplyCustomMinutes = (e: React.FormEvent) => {
-    e.preventDefault();
-    const mins = parseInt(customInputMinutes, 10);
-    if (!isNaN(mins) && mins > 0) {
-      handleSelectPreset(mins);
-      setShowCustomInput(false);
+  const handleMinutesChange = (newMins: number) => {
+    const valid = Math.max(1, Math.min(720, newMins));
+    setTargetMinutes(valid);
+    if (!isRunning) {
+      setRemainingSeconds(valid * 60);
+      setIsCompleted(false);
+      setSavedMessage(null);
     }
   };
 
   const handleStart = () => {
+    if (timerType === "set" && targetMinutes <= 0) return;
     setSavedMessage(null);
     setIsCompleted(false);
     setIsRunning(true);
-    // Tell server timer started for live sync
     timerStartAction(selectedSubject === "" ? null : selectedSubject).catch(() => {});
   };
 
@@ -228,10 +208,10 @@ export default function FocusTimer({ subjects }: Props) {
     setIsRunning(false);
     setIsCompleted(false);
     setSavedMessage(null);
-    if (mode === "countdown") {
+    if (timerType === "set") {
       setRemainingSeconds(targetMinutes * 60);
     } else {
-      setStopwatchSeconds(0);
+      setFreeSeconds(0);
     }
     timerStopAction().catch(() => {});
   };
@@ -240,11 +220,11 @@ export default function FocusTimer({ subjects }: Props) {
     setIsSaving(true);
     let studiedMinutes = 0;
 
-    if (mode === "countdown") {
+    if (timerType === "set") {
       const elapsedSec = targetMinutes * 60 - remainingSeconds;
       studiedMinutes = Math.max(1, Math.round(elapsedSec / 60));
     } else {
-      studiedMinutes = Math.max(1, Math.round(stopwatchSeconds / 60));
+      studiedMinutes = Math.max(1, Math.round(freeSeconds / 60));
     }
 
     try {
@@ -262,10 +242,10 @@ export default function FocusTimer({ subjects }: Props) {
       setSessionNote("");
       setIsRunning(false);
       setIsCompleted(false);
-      if (mode === "countdown") {
+      if (timerType === "set") {
         setRemainingSeconds(targetMinutes * 60);
       } else {
-        setStopwatchSeconds(0);
+        setFreeSeconds(0);
       }
     } catch (err) {
       console.error("Failed to save session:", err);
@@ -274,10 +254,10 @@ export default function FocusTimer({ subjects }: Props) {
     }
   };
 
-  // Calculate completion percentage for countdown
+  // Progress ratio for countdown
   const totalTargetSec = targetMinutes * 60;
   const progressRatio =
-    mode === "countdown"
+    timerType === "set" && totalTargetSec > 0
       ? Math.min(1, Math.max(0, (totalTargetSec - remainingSeconds) / totalTargetSec))
       : 1;
 
@@ -292,7 +272,7 @@ export default function FocusTimer({ subjects }: Props) {
           : "w-full rounded-3xl bg-gradient-to-b from-[#0a1510] via-[#07110d] to-[#050b08] p-6 sm:p-10 shadow-2xl border border-emerald-900/30"
       }`}
     >
-      {/* Ambient background glow */}
+      {/* Ambient glow behind timer */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
         <div
           className={`size-[380px] sm:size-[560px] rounded-full blur-[100px] transition-all duration-1000 ${
@@ -305,8 +285,8 @@ export default function FocusTimer({ subjects }: Props) {
         />
       </div>
 
-      {/* Top Bar: Sound toggle & Fullscreen toggle */}
-      <div className="relative z-20 mb-6 flex w-full max-w-xl items-center justify-between gap-3 text-white/70">
+      {/* Top Bar: Sound toggle & Fullscreen button */}
+      <div className="relative z-20 mb-4 sm:mb-6 flex w-full max-w-xl items-center justify-between gap-3 text-white/70">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -347,7 +327,7 @@ export default function FocusTimer({ subjects }: Props) {
         </button>
       </div>
 
-      {/* Main Focus Container */}
+      {/* Main Container */}
       <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col items-center text-center">
         {/* Status Pill */}
         <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 shadow-sm backdrop-blur-md">
@@ -365,18 +345,18 @@ export default function FocusTimer({ subjects }: Props) {
                 <span className="relative inline-flex size-2.5 rounded-full bg-emerald-400" />
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                {mode === "countdown"
-                  ? `Studying (${targetMinutes} min session)`
-                  : "Stopwatch Running"}
+                {timerType === "set"
+                  ? `Focusing (${targetMinutes} min session)`
+                  : "Free Study Running"}
               </span>
             </>
           ) : (
             <>
               <TimerIcon className="size-3.5 text-white/60" />
               <span className="text-xs font-semibold uppercase tracking-wider text-white/70">
-                {mode === "countdown"
+                {timerType === "set"
                   ? `Set Target: ${targetMinutes} Minutes`
-                  : "Free Study Mode"}
+                  : "Free Study (No Time Limit)"}
               </span>
             </>
           )}
@@ -393,9 +373,9 @@ export default function FocusTimer({ subjects }: Props) {
                 : "text-white/85 drop-shadow-md"
             }`}
           >
-            {mode === "countdown"
+            {timerType === "set"
               ? formatSeconds(remainingSeconds)
-              : formatSeconds(stopwatchSeconds)}
+              : formatSeconds(freeSeconds)}
           </div>
 
           {/* Active subject indicator */}
@@ -407,8 +387,8 @@ export default function FocusTimer({ subjects }: Props) {
           )}
         </div>
 
-        {/* ── Progress Bar (for Countdown mode) ────────────────── */}
-        {mode === "countdown" && (
+        {/* ── Progress Bar (Only when Target is Set) ────────────── */}
+        {timerType === "set" && (
           <div className="mb-6 w-full max-w-xs sm:max-w-sm">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
               <div
@@ -424,76 +404,78 @@ export default function FocusTimer({ subjects }: Props) {
           </div>
         )}
 
-        {/* ── Target Duration Presets (Select Time to Study) ──── */}
+        {/* ── EXACTLY 2 OPTIONS: Set Time vs Free Timer ─────────── */}
         {!isRunning && (
-          <div className="mb-6 w-full space-y-2.5">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-              {PRESET_MINUTES.map((p) => {
-                const active = mode === "countdown" && targetMinutes === p.value;
-                return (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => handleSelectPreset(p.value)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                      active
-                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400"
-                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-
+          <div className="mb-6 w-full space-y-3.5">
+            {/* 2-Option Toggle */}
+            <div className="inline-flex items-center rounded-2xl border border-white/15 bg-white/5 p-1 backdrop-blur-md shadow-sm">
               <button
                 type="button"
-                onClick={() => setShowCustomInput((v) => !v)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                  showCustomInput || (mode === "countdown" && !PRESET_MINUTES.some(p => p.value === targetMinutes))
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400"
-                    : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+                onClick={() => handleSwitchType("set")}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  timerType === "set"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+                    : "text-white/60 hover:text-white"
                 }`}
               >
-                Custom Time
+                <TimerIcon className="size-3.5" />
+                <span>Set Time</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleSelectStopwatch}
-                className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
-                  mode === "stopwatch"
-                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 border border-emerald-400"
-                    : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+                onClick={() => handleSwitchType("free")}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                  timerType === "free"
+                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+                    : "text-white/60 hover:text-white"
                 }`}
               >
-                ⏱️ Free Count-Up
+                <Play className="size-3.5 fill-current" />
+                <span>Open Timer (No Limit)</span>
               </button>
             </div>
 
-            {/* Custom Minutes Input Popup */}
-            {showCustomInput && (
-              <form
-                onSubmit={handleApplyCustomMinutes}
-                className="flex items-center justify-center gap-2 pt-1"
-              >
-                <input
-                  type="number"
-                  min="1"
-                  max="360"
-                  autoFocus
-                  placeholder="Minutes (e.g. 40)"
-                  value={customInputMinutes}
-                  onChange={(e) => setCustomInputMinutes(e.target.value)}
-                  className="w-36 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white placeholder:text-white/40 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
-                />
+            {/* If "Set Time" is chosen: Simple input to choose minutes */}
+            {timerType === "set" && (
+              <div className="flex items-center justify-center gap-2">
                 <button
-                  type="submit"
-                  className="rounded-xl bg-emerald-500 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-400 transition"
+                  type="button"
+                  onClick={() => handleMinutesChange(targetMinutes - 5)}
+                  className="size-8 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition grid place-items-center"
+                  title="Decrease 5 minutes"
                 >
-                  Set
+                  <Minus className="size-3.5" />
                 </button>
-              </form>
+
+                <div className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-1.5 shadow-xs">
+                  <input
+                    type="number"
+                    min="1"
+                    max="720"
+                    value={targetMinutes || ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        handleMinutesChange(val);
+                      } else {
+                        setTargetMinutes(0);
+                      }
+                    }}
+                    className="w-14 bg-transparent text-center font-display text-base font-bold text-white focus:outline-none"
+                  />
+                  <span className="text-xs font-semibold text-white/70">minutes</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleMinutesChange(targetMinutes + 5)}
+                  className="size-8 rounded-xl border border-white/15 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition grid place-items-center"
+                  title="Increase 5 minutes"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -539,7 +521,7 @@ export default function FocusTimer({ subjects }: Props) {
               <span>
                 {isCompleted
                   ? "Start Again"
-                  : mode === "countdown" && remainingSeconds < totalTargetSec
+                  : timerType === "set" && remainingSeconds < totalTargetSec
                   ? "Resume Session"
                   : "Start Studying"}
               </span>
@@ -556,8 +538,8 @@ export default function FocusTimer({ subjects }: Props) {
 
           {/* Reset or Stop & Save Button */}
           {(isRunning ||
-            (mode === "countdown" && remainingSeconds < totalTargetSec) ||
-            (mode === "stopwatch" && stopwatchSeconds > 0) ||
+            (timerType === "set" && remainingSeconds < totalTargetSec) ||
+            (timerType === "free" && freeSeconds > 0) ||
             isCompleted) && (
             <button
               disabled={isSaving}
@@ -571,8 +553,8 @@ export default function FocusTimer({ subjects }: Props) {
           )}
 
           {!isRunning &&
-            ((mode === "countdown" && remainingSeconds < totalTargetSec) ||
-              (mode === "stopwatch" && stopwatchSeconds > 0)) && (
+            ((timerType === "set" && remainingSeconds < totalTargetSec) ||
+              (timerType === "free" && freeSeconds > 0)) && (
               <button
                 onClick={handleReset}
                 className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-xs sm:text-sm font-semibold text-white/60 hover:bg-white/10 hover:text-white transition active:scale-98"
@@ -586,8 +568,8 @@ export default function FocusTimer({ subjects }: Props) {
 
         {/* Optional Study Note */}
         {(isRunning ||
-          (mode === "countdown" && remainingSeconds < totalTargetSec) ||
-          (mode === "stopwatch" && stopwatchSeconds > 0) ||
+          (timerType === "set" && remainingSeconds < totalTargetSec) ||
+          (timerType === "free" && freeSeconds > 0) ||
           isCompleted) && (
           <div className="mt-5 w-full max-w-xs transition-all">
             <input
