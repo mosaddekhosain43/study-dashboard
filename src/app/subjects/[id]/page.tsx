@@ -39,7 +39,8 @@ export default async function SubjectDetailPage({
 
       <header className="card rise relative overflow-hidden p-4 sm:p-6">
         <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        {/* Top: Donut and Subject Details */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           <Donut
             size={118}
             stroke={13}
@@ -52,10 +53,10 @@ export default async function SubjectDetailPage({
             centerLabel={`${Math.round(progress * 100)}%`}
             centerSub="done"
           />
-          <div className="min-w-[220px] flex-1">
+          <div className="w-full flex-1 text-center sm:text-left">
             <p className="font-bengali text-[13px] text-ink-faint">{subject.nameBn}</p>
-            <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">{subject.name}</h1>
-            <div className="mt-3 max-w-md">
+            <h1 className="font-display text-[24px] sm:text-[28px] font-bold tracking-tight text-ink">{subject.name}</h1>
+            <div className="mt-3 w-full max-w-lg mx-auto sm:mx-0">
               <div className="mb-1 flex justify-between text-[11px] font-semibold tabular-nums text-ink-faint">
                 <span>{byStatus.completed}/{total} topics completed</span>
                 <span>{total - byStatus.completed} remaining</span>
@@ -63,22 +64,24 @@ export default async function SubjectDetailPage({
               <ProgressBar value={progress} shine={progress > 0 && progress < 1} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
-            {[
-              { icon: CheckCircle2, label: "Done", value: byStatus.completed, cls: "text-emerald-600", bg: "bg-emerald-50" },
-              { icon: CircleDashed, label: "Doing", value: byStatus.in_progress, cls: "text-amber-600", bg: "bg-amber-50" },
-              { icon: XCircle, label: "Missed", value: byStatus.not_completed, cls: "text-rose-500", bg: "bg-rose-50" },
-              { icon: Timer, label: "Time", value: formatMinutes(totalMinutes), cls: "text-leaf", bg: "bg-leaf-soft" },
-            ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-line bg-paper/50 px-3.5 py-2.5">
-                <span className={`mx-auto mb-1 grid size-7 place-items-center rounded-lg ${s.bg} ${s.cls}`}>
-                  <s.icon className="size-4" />
-                </span>
-                <p className="font-display text-[15px] font-bold tabular-nums text-ink">{s.value}</p>
-                <p className="text-[9.5px] font-semibold uppercase tracking-wider text-ink-faint">{s.label}</p>
-              </div>
-            ))}
-          </div>
+        </div>
+
+        {/* Bottom: 4 Full-Width Stat Cards */}
+        <div className="mt-5 pt-4 border-t border-line/60 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 text-center w-full">
+          {[
+            { icon: CheckCircle2, label: "Done", value: byStatus.completed, cls: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200/60" },
+            { icon: CircleDashed, label: "Doing", value: byStatus.in_progress, cls: "text-amber-600", bg: "bg-amber-50 border-amber-200/60" },
+            { icon: XCircle, label: "Missed", value: byStatus.not_completed, cls: "text-rose-500", bg: "bg-rose-50 border-rose-200/60" },
+            { icon: Timer, label: "Time", value: formatMinutes(totalMinutes), cls: "text-leaf", bg: "bg-leaf-soft border-leaf/20" },
+          ].map((s) => (
+            <div key={s.label} className="rounded-2xl border border-line bg-paper/60 p-3 sm:p-4 transition hover:bg-paper hover:shadow-2xs">
+              <span className={`mx-auto mb-1.5 grid size-8 place-items-center rounded-xl border ${s.bg} ${s.cls}`}>
+                <s.icon className="size-4" />
+              </span>
+              <p className="font-display text-base sm:text-lg font-bold tabular-nums text-ink">{s.value}</p>
+              <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-faint mt-0.5">{s.label}</p>
+            </div>
+          ))}
         </div>
       </header>
 
