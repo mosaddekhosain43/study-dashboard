@@ -16,7 +16,6 @@ import {
   TrendingUp,
   XCircle,
 } from "lucide-react";
-import StudyComposer from "@/components/StudyComposer";
 import UpdateFeed from "@/components/UpdateFeed";
 import ClassroomCard from "@/components/ClassroomCard";
 import {
@@ -30,7 +29,6 @@ import {
 import { redirect } from "next/navigation";
 import { formatLong, formatMinutes, relativeDay, todayKey } from "@/lib/dates";
 import { getDashboardData, getStudentClassroomData, getSubjects } from "@/lib/queries";
-import { getTopicsForComposer } from "@/actions";
 import { STATUS_META } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -48,10 +46,9 @@ export default async function DashboardPage() {
     redirect("/teacher");
   }
 
-  const [data, subjects, syllabus, classroom] = await Promise.all([
+  const [data, subjects, classroom] = await Promise.all([
     getDashboardData(),
     getSubjects(),
-    getTopicsForComposer(),
     getStudentClassroomData(),
   ]);
   const subjectOpts = subjects.map((s) => ({ id: s.id, name: s.name }));
@@ -101,11 +98,6 @@ export default async function DashboardPage() {
           </div>
         </div>
       </header>
-
-      {/* ── Composer ───────────────────────────────────────── */}
-      <div className="rise rise-1">
-        <StudyComposer subjects={subjectOpts} syllabus={syllabus} />
-      </div>
 
       {/* ── Classroom Tasks & Materials (if enrolled in a batch) ─ */}
       {classroom && (
