@@ -22,6 +22,7 @@ export async function GET() {
 
     return Response.json({
       ok: true,
+      build: "v2-commit-03958bd",
       driver: dbDriverType,
       isPersistentPostgres: dbDriverType === "postgres",
       dbEnvKeysFound: envKeys,
