@@ -43,7 +43,7 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="mt-1 text-xs text-ink-faint">
-            Sign in to access your Alim study dashboard and classroom
+            Sign in to access your Study Dashboard and classroom
           </p>
         </div>
 
@@ -109,8 +109,16 @@ export default function LoginPage() {
                 Create Student Account
               </Link>
             </p>
-            <p className="mt-3 text-[11px] text-ink-faint/75 leading-relaxed">
-              Teacher & Admin accounts are managed by the institution.
+            <p className="mt-4 text-xs text-ink-faint/80">
+              Developed by{" "}
+              <a
+                href="https://www.facebook.com/mosaddek.hosain.rahi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-leaf hover:underline"
+              >
+                Mosaddek Hosain
+              </a>
             </p>
           </div>
         </div>

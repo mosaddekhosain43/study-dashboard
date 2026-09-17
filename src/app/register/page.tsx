@@ -118,7 +118,7 @@ export default function RegisterPage() {
                   required
                   className="w-full appearance-none rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-8 text-xs text-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 >
-                  <option value="">Choose Batch (e.g. Alim 2027)</option>
+                  <option value="">Choose Batch</option>
                   {batches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -164,6 +164,17 @@ export default function RegisterPage() {
               >
                 Sign In
               </Link>
+            </p>
+            <p className="mt-4 text-xs text-ink-faint/80">
+              Developed by{" "}
+              <a
+                href="https://www.facebook.com/mosaddek.hosain.rahi"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-leaf hover:underline"
+              >
+                Mosaddek Hosain
+              </a>
             </p>
           </div>
         </div>

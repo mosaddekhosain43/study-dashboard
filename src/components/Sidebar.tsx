@@ -176,6 +176,20 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
             Sign In / Register
           </Link>
         )}
+
+        <div className="pt-2 text-center">
+          <p className="text-[11px] text-emerald-100/40">
+            Developed by{" "}
+            <a
+              href="https://www.facebook.com/mosaddek.hosain.rahi"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-emerald-200/70 transition hover:text-white hover:underline"
+            >
+              Mosaddek Hosain
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
