@@ -959,6 +959,7 @@ export async function getStudentClassroomData() {
   const messages = rawMessages.map((m) => ({
     id: m.id,
     content: m.content,
+    isPinned: Boolean(m.isPinned),
     createdAt: m.createdAt,
     senderName: userMap.get(m.userId)?.name || "User",
     senderRole: userMap.get(m.userId)?.role || "student",

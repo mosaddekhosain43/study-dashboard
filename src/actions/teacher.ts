@@ -188,16 +188,42 @@ export async function sendBatchMessageAction(formData: FormData) {
     return { ok: false, error: "Message cannot be empty." };
   }
 
+  const isPinned =
+    formData.get("isPinned") === "true" &&
+    (user.role === "teacher" || user.role === "admin");
+
   try {
     await db.insert(batchMessages).values({
       batchId,
       userId: user.id,
       content,
+      isPinned,
     });
     revalidatePath("/teacher");
+    revalidatePath("/classroom");
     revalidatePath("/");
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err?.message || "Failed to send message." };
+  }
+}
+
+export async function togglePinBatchMessageAction(messageId: number, pinState: boolean) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "teacher" && user.role !== "admin")) {
+    return { ok: false, error: "Only teachers or admins can pin announcements." };
+  }
+
+  try {
+    await db
+      .update(batchMessages)
+      .set({ isPinned: pinState })
+      .where(eq(batchMessages.id, messageId));
+    revalidatePath("/teacher");
+    revalidatePath("/classroom");
+    revalidatePath("/");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to update pin state." };
   }
 }

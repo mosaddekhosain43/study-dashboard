@@ -15,6 +15,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  MessageSquare,
   NotebookPen,
   Search,
   Settings,
@@ -65,18 +66,23 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         { href: "/analytics", label: "Analytics", icon: BarChart3 },
       ],
     },
-    ...(user?.role === "teacher" || user?.role === "admin"
+    ...(user
       ? [
           {
             label: "Classroom",
             items: [
-              { href: "/teacher", label: "Teacher Panel", icon: GraduationCap },
+              ...(user.batchId || user.role === "admin"
+                ? [{ href: "/classroom", label: "Batch Discussion", icon: MessageSquare }]
+                : []),
+              ...(user.role === "teacher" || user.role === "admin"
+                ? [{ href: "/teacher", label: "Teacher Panel", icon: GraduationCap }]
+                : []),
               ...(user.role === "admin"
                 ? [{ href: "/admin", label: "Admin Panel", icon: ShieldCheck }]
                 : []),
             ],
           },
-        ]
+        ].filter((g) => g.items.length > 0)
       : []),
     {
       label: "Manage",

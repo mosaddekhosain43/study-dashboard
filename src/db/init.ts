@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS batch_messages (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   material_id INTEGER REFERENCES batch_materials(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
+  is_pinned BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -119,6 +120,13 @@ export async function runInitAndSeed(
 ) {
   try {
     await rawExec(INIT_SQL);
+    try {
+      await rawExec(
+        "ALTER TABLE batch_messages ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN NOT NULL DEFAULT FALSE;"
+      );
+    } catch {
+      // ignore
+    }
 
     // 1. Seed default subjects
     const existingSubjects = await rawQuery("SELECT COUNT(*) as count FROM subjects");

@@ -3,6 +3,7 @@ import {
   serial,
   integer,
   text,
+  boolean,
   timestamp,
   index,
 } from "drizzle-orm/pg-core";
@@ -107,6 +108,7 @@ export const batchMessages = pgTable(
       onDelete: "cascade",
     }),
     content: text("content").notNull(),
+    isPinned: boolean("is_pinned").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
