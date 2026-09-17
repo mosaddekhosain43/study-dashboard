@@ -126,8 +126,8 @@ export default function FocusTimer({
   const [streak, setStreak] = useState(initialStreak);
   const [lastLoggedMinutes, setLastLoggedMinutes] = useState(25);
   const [isSaving, setIsSaving] = useState(false);
-  // Default to true so Timer is immediately in fullscreen deep-green focus mode!
-  const [isFullscreen, setIsFullscreen] = useState(true);
+  // Default to false: page opens clean without card, goes fullscreen on Start
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -192,7 +192,6 @@ export default function FocusTimer({
     const handleFsChange = () => {
       const fsEl = getBrowserFullscreenElement();
       if (!fsEl) {
-        // Native fullscreen was exited (e.g. Escape key)
         setIsFullscreen(false);
       } else {
         setIsFullscreen(true);
@@ -267,9 +266,6 @@ export default function FocusTimer({
   // Mode change
   const handleSwitchType = (type: "free" | "set") => {
     if (isRunning) return;
-    if (!document.fullscreenElement) {
-      toggleFullscreen().catch(() => {});
-    }
     setTimerType(type);
     if (type === "set") {
       setRemainingSeconds(targetMinutes * 60);
@@ -286,10 +282,11 @@ export default function FocusTimer({
     }
   };
 
-  // Start / Resume session
+  // Start / Resume session: enters Fullscreen and changes color!
   const handleStart = () => {
-    if (!document.fullscreenElement) {
-      toggleFullscreen().catch(() => {});
+    setIsFullscreen(true);
+    if (containerRef.current && !getBrowserFullscreenElement()) {
+      requestBrowserFullscreen(containerRef.current)?.catch?.(() => {});
     }
     if (timerType === "set" && remainingSeconds <= 0) {
       setRemainingSeconds(targetMinutes * 60);
@@ -312,6 +309,10 @@ export default function FocusTimer({
   const handleReset = () => {
     setIsRunning(false);
     setFlowState("ready");
+    setIsFullscreen(false);
+    if (getBrowserFullscreenElement()) {
+      exitBrowserFullscreen()?.catch?.(() => {});
+    }
     if (timerType === "set") {
       setRemainingSeconds(targetMinutes * 60);
     } else {
@@ -353,6 +354,10 @@ export default function FocusTimer({
   const handleReturnToTimer = () => {
     setFlowState("ready");
     setIsRunning(false);
+    setIsFullscreen(false);
+    if (getBrowserFullscreenElement()) {
+      exitBrowserFullscreen()?.catch?.(() => {});
+    }
     if (timerType === "set") {
       setRemainingSeconds(targetMinutes * 60);
     } else {
@@ -385,17 +390,17 @@ export default function FocusTimer({
       }`}
     >
       {/* ════════════════════════════════════════════════════════════
-          STATE 1: READY / IDLE
+          STATE 1: READY / IDLE (No white card!)
          ════════════════════════════════════════════════════════════ */}
       {flowState === "ready" && (
         <div
           className={`w-full transition-all duration-300 ${
             isFullscreen
               ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
-              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
+              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
           }`}
         >
-          {/* Top Header Row: Pushed to TOP in Fullscreen */}
+          {/* Top Header Row */}
           <div className="flex items-center justify-between gap-2 pt-1 pb-2">
             <button
               type="button"
@@ -403,7 +408,7 @@ export default function FocusTimer({
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
                 isFullscreen
                   ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
-                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700 hover:bg-slate-100"
+                  : "border border-slate-300/80 bg-white/90 text-slate-700 hover:bg-white shadow-2xs"
               }`}
             >
               {soundEnabled ? (
@@ -423,7 +428,7 @@ export default function FocusTimer({
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider ${
                 isFullscreen
                   ? "border border-[#265342] bg-[#18382c] text-emerald-200"
-                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700"
+                  : "border border-slate-300/80 bg-white/90 text-slate-700 shadow-2xs"
               }`}
             >
               <TimerIcon className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
@@ -436,7 +441,7 @@ export default function FocusTimer({
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
                 isFullscreen
                   ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
-                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700 hover:bg-slate-100"
+                  : "border border-slate-300/80 bg-white/90 text-slate-700 hover:bg-white shadow-2xs"
               }`}
             >
               {isFullscreen ? (
@@ -453,18 +458,12 @@ export default function FocusTimer({
             </button>
           </div>
 
-          {/* Middle Body: Centered between top and bottom in Fullscreen */}
+          {/* Middle Body */}
           <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-4 space-y-3" : ""}>
             {/* Clock Display */}
-            <div
-              onClick={() => {
-                if (!document.fullscreenElement) toggleFullscreen().catch(() => {});
-              }}
-              title="Click to toggle Fullscreen"
-              className="my-2 sm:my-3 text-center select-none cursor-pointer"
-            >
+            <div className="my-2 sm:my-3 text-center select-none">
               <div
-                className={`font-display text-[68px] sm:text-[80px] font-black leading-none tabular-nums tracking-tight transition hover:scale-102 ${
+                className={`font-display text-[68px] sm:text-[80px] font-black leading-none tabular-nums tracking-tight ${
                   isFullscreen ? "text-white drop-shadow-md" : "text-[#0f172a]"
                 }`}
               >
@@ -478,7 +477,7 @@ export default function FocusTimer({
                 className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-2xs ${
                   isFullscreen
                     ? "bg-[#18382c] border border-[#265342] text-emerald-200"
-                    : "bg-emerald-50/90 border border-emerald-200/70 text-emerald-800"
+                    : "bg-emerald-50 border border-emerald-200/80 text-emerald-800"
                 }`}
               >
                 <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
@@ -491,7 +490,7 @@ export default function FocusTimer({
               className={`mb-3.5 w-full rounded-2xl p-1 grid grid-cols-2 gap-1 border ${
                 isFullscreen
                   ? "bg-[#143226] border-[#224b3b]"
-                  : "bg-[#eef3f0] border-slate-200/50"
+                  : "bg-slate-200/70 border-slate-300/60"
               }`}
             >
               <button
@@ -535,7 +534,7 @@ export default function FocusTimer({
                 className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 ${
                   isFullscreen
                     ? "border border-[#265342] bg-[#143226] text-emerald-100"
-                    : "border border-emerald-200/80 bg-emerald-50/50 text-slate-800"
+                    : "border border-emerald-200/90 bg-emerald-50/70 text-slate-800"
                 }`}
               >
                 <span className={`text-xs font-bold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
@@ -577,7 +576,7 @@ export default function FocusTimer({
                 className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none cursor-pointer ${
                   isFullscreen
                     ? "bg-[#143226] border border-[#265342] text-white hover:border-[#38745c] focus:border-[#10b981]"
-                    : "bg-white border border-slate-200/90 text-slate-800 hover:border-slate-300 focus:border-[#0c4a34]"
+                    : "bg-white border border-slate-300/90 text-slate-800 hover:border-slate-400 focus:border-[#0c4a34]"
                 }`}
               >
                 <option value="" className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
@@ -615,7 +614,7 @@ export default function FocusTimer({
                 className={`size-12 rounded-2xl grid place-items-center transition shadow-2xs ${
                   isFullscreen
                     ? "border border-[#265342] bg-[#143226] text-emerald-200 hover:bg-[#1c4233] hover:text-white"
-                    : "border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    : "border border-slate-300/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
                 title="Reset"
               >
@@ -624,7 +623,7 @@ export default function FocusTimer({
             </div>
           </div>
 
-          {/* Bottom Section: Pushed to BOTTOM in Fullscreen */}
+          {/* Bottom Section */}
           <div className="w-full pt-2 pb-1">
             {/* Note */}
             <p className={`flex items-center justify-center gap-1.5 text-[11.5px] font-medium mb-3 ${
@@ -639,7 +638,7 @@ export default function FocusTimer({
               className={`rounded-2xl p-3.5 flex items-center justify-between text-xs border ${
                 isFullscreen
                   ? "border-[#265342] bg-[#143226]"
-                  : "border-slate-100 bg-slate-50/90"
+                  : "border-slate-200/90 bg-white/90 shadow-2xs"
               }`}
             >
               <div className="flex items-center gap-2.5">

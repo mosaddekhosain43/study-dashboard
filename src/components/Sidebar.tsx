@@ -155,13 +155,6 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                     <Link
                       href={item.href}
                       onClick={() => {
-                        if (item.href === "/timer") {
-                          try {
-                            if (!document.fullscreenElement) {
-                              document.documentElement.requestFullscreen().catch(() => {});
-                            }
-                          } catch {}
-                        }
                         if (item.href.includes("?")) {
                           const tab = new URLSearchParams(item.href.split("?")[1]).get("tab");
                           if (tab) setCurrentTab(tab);
