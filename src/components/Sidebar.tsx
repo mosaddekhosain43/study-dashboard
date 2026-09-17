@@ -59,7 +59,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       label: "Track",
       items: [
         { href: "/", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/timer", label: "Study Timer", icon: Timer },
+        { href: "/timer", label: "Timer", icon: Timer },
         { href: "/update", label: "Study Update", icon: SquarePen },
         { href: "/subjects", label: "Subjects", icon: LibraryBig },
         { href: "/remaining", label: "Still Remaining", icon: Hourglass },
@@ -155,6 +155,13 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                     <Link
                       href={item.href}
                       onClick={() => {
+                        if (item.href === "/timer") {
+                          try {
+                            if (!document.fullscreenElement) {
+                              document.documentElement.requestFullscreen().catch(() => {});
+                            }
+                          } catch {}
+                        }
                         if (item.href.includes("?")) {
                           const tab = new URLSearchParams(item.href.split("?")[1]).get("tab");
                           if (tab) setCurrentTab(tab);

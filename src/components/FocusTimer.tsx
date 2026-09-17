@@ -199,6 +199,9 @@ export default function FocusTimer({
   // Mode change
   const handleSwitchType = (type: "free" | "set") => {
     if (isRunning) return;
+    if (!document.fullscreenElement) {
+      toggleFullscreen().catch(() => {});
+    }
     setTimerType(type);
     if (type === "set") {
       setRemainingSeconds(targetMinutes * 60);
@@ -217,6 +220,9 @@ export default function FocusTimer({
 
   // Start / Resume session
   const handleStart = () => {
+    if (!document.fullscreenElement) {
+      toggleFullscreen().catch(() => {});
+    }
     if (timerType === "set" && remainingSeconds <= 0) {
       setRemainingSeconds(targetMinutes * 60);
     }
@@ -306,8 +312,8 @@ export default function FocusTimer({
       ref={containerRef}
       className={`transition-colors duration-300 ${
         isFullscreen
-          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0e261d] overflow-y-auto flex items-center justify-center p-4 sm:p-6"
-          : "w-full flex items-center justify-center"
+          ? "fixed inset-0 z-50 h-[100dvh] w-screen bg-[#0e261d] overflow-hidden flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 select-none"
+          : "w-full flex items-center justify-center py-2"
       }`}
     >
       {/* ════════════════════════════════════════════════════════════
@@ -317,12 +323,12 @@ export default function FocusTimer({
         <div
           className={`w-full transition-all duration-300 ${
             isFullscreen
-              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
               : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
           }`}
         >
-          {/* Top Header Row */}
-          <div className="flex items-center justify-between gap-2 pb-2">
+          {/* Top Header Row: Pushed to TOP in Fullscreen */}
+          <div className="flex items-center justify-between gap-2 pt-1 pb-2">
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
@@ -379,217 +385,229 @@ export default function FocusTimer({
             </button>
           </div>
 
-          {/* Clock Display */}
-          <div className="my-2 sm:my-3 text-center select-none">
+          {/* Middle Body: Centered between top and bottom in Fullscreen */}
+          <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-4 space-y-3" : ""}>
+            {/* Clock Display */}
             <div
-              className={`font-display text-[68px] sm:text-[76px] font-black leading-none tabular-nums tracking-tight ${
-                isFullscreen ? "text-white drop-shadow-sm" : "text-[#0f172a]"
-              }`}
+              onClick={() => {
+                if (!document.fullscreenElement) toggleFullscreen().catch(() => {});
+              }}
+              title="Click to toggle Fullscreen"
+              className="my-2 sm:my-3 text-center select-none cursor-pointer"
             >
-              {timerType === "set" ? formatSeconds(remainingSeconds) : formatSeconds(freeSeconds)}
-            </div>
-          </div>
-
-          {/* Selected Subject Pill */}
-          <div className="flex justify-center mb-4">
-            <div
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-2xs ${
-                isFullscreen
-                  ? "bg-[#18382c] border border-[#265342] text-emerald-200"
-                  : "bg-emerald-50/90 border border-emerald-200/70 text-emerald-800"
-              }`}
-            >
-              <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-              <span className="truncate max-w-[220px]">{subjectDisplayName}</span>
-            </div>
-          </div>
-
-          {/* Mode Switcher: Timer (Default) vs Set Timer */}
-          <div
-            className={`mb-3.5 rounded-2xl p-1 grid grid-cols-2 gap-1 border ${
-              isFullscreen
-                ? "bg-[#143226] border-[#224b3b]"
-                : "bg-[#eef3f0] border-slate-200/50"
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => handleSwitchType("free")}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
-                timerType === "free"
-                  ? isFullscreen
-                    ? "bg-[#10b981] text-[#062419] font-black shadow-md"
-                    : "bg-[#0c4a34] text-white shadow-xs"
-                  : isFullscreen
-                  ? "text-emerald-300 hover:text-white"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Play className="size-3.5 fill-current" />
-              <span>Timer</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSwitchType("set")}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
-                timerType === "set"
-                  ? isFullscreen
-                    ? "bg-[#10b981] text-[#062419] font-black shadow-md"
-                    : "bg-[#0c4a34] text-white shadow-xs"
-                  : isFullscreen
-                  ? "text-emerald-300 hover:text-white"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <TimerIcon className="size-3.5" />
-              <span>Set Timer</span>
-            </button>
-          </div>
-
-          {/* Custom Duration Input when "Set Timer" is selected */}
-          {timerType === "set" && (
-            <div
-              className={`mb-3.5 flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 ${
-                isFullscreen
-                  ? "border border-[#265342] bg-[#143226] text-emerald-100"
-                  : "border border-emerald-200/80 bg-emerald-50/50 text-slate-800"
-              }`}
-            >
-              <span className={`text-xs font-bold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
-                Set Duration:
-              </span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min="1"
-                  max="720"
-                  value={targetMinutes}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val)) {
-                      handleTargetChange(val);
-                    }
-                  }}
-                  className={`w-16 rounded-xl py-1.5 px-2 text-center text-sm font-bold shadow-2xs focus:outline-none ${
-                    isFullscreen
-                      ? "bg-[#0e261d] border border-[#2d5f4c] text-white focus:border-[#10b981]"
-                      : "border border-emerald-300 bg-white text-slate-900 focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34]"
-                  }`}
-                />
-                <span className={`text-xs font-semibold ${isFullscreen ? "text-emerald-300" : "text-emerald-900"}`}>
-                  min
-                </span>
+              <div
+                className={`font-display text-[68px] sm:text-[80px] font-black leading-none tabular-nums tracking-tight transition hover:scale-102 ${
+                  isFullscreen ? "text-white drop-shadow-md" : "text-[#0f172a]"
+                }`}
+              >
+                {timerType === "set" ? formatSeconds(remainingSeconds) : formatSeconds(freeSeconds)}
               </div>
             </div>
-          )}
 
-          {/* Subject Dropdown */}
-          <div className="relative mb-3.5">
-            <div className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-600"}`}>
-              <BookOpen className="size-4" />
+            {/* Selected Subject Pill */}
+            <div className="flex justify-center mb-4">
+              <div
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-2xs ${
+                  isFullscreen
+                    ? "bg-[#18382c] border border-[#265342] text-emerald-200"
+                    : "bg-emerald-50/90 border border-emerald-200/70 text-emerald-800"
+                }`}
+              >
+                <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+                <span className="truncate max-w-[220px]">{subjectDisplayName}</span>
+              </div>
             </div>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : "")}
-              className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none cursor-pointer ${
+
+            {/* Mode Switcher: Timer (Default) vs Set Timer */}
+            <div
+              className={`mb-3.5 w-full rounded-2xl p-1 grid grid-cols-2 gap-1 border ${
                 isFullscreen
-                  ? "bg-[#143226] border border-[#265342] text-white hover:border-[#38745c] focus:border-[#10b981]"
-                  : "bg-white border border-slate-200/90 text-slate-800 hover:border-slate-300 focus:border-[#0c4a34]"
+                  ? "bg-[#143226] border-[#224b3b]"
+                  : "bg-[#eef3f0] border-slate-200/50"
               }`}
             >
-              <option value="" className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
-                General / Mixed study
-              </option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id} className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
-                  {s.name}
+              <button
+                type="button"
+                onClick={() => handleSwitchType("free")}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
+                  timerType === "free"
+                    ? isFullscreen
+                      ? "bg-[#10b981] text-[#062419] font-black shadow-md"
+                      : "bg-[#0c4a34] text-white shadow-xs"
+                    : isFullscreen
+                    ? "text-emerald-300 hover:text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Play className="size-3.5 fill-current" />
+                <span>Timer</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSwitchType("set")}
+                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
+                  timerType === "set"
+                    ? isFullscreen
+                      ? "bg-[#10b981] text-[#062419] font-black shadow-md"
+                      : "bg-[#0c4a34] text-white shadow-xs"
+                    : isFullscreen
+                    ? "text-emerald-300 hover:text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <TimerIcon className="size-3.5" />
+                <span>Set Timer</span>
+              </button>
+            </div>
+
+            {/* Custom Duration Input when "Set Timer" is selected */}
+            {timerType === "set" && (
+              <div
+                className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 ${
+                  isFullscreen
+                    ? "border border-[#265342] bg-[#143226] text-emerald-100"
+                    : "border border-emerald-200/80 bg-emerald-50/50 text-slate-800"
+                }`}
+              >
+                <span className={`text-xs font-bold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
+                  Set Duration:
+                </span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="720"
+                    value={targetMinutes}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val)) {
+                        handleTargetChange(val);
+                      }
+                    }}
+                    className={`w-16 rounded-xl py-1.5 px-2 text-center text-sm font-bold shadow-2xs focus:outline-none ${
+                      isFullscreen
+                        ? "bg-[#0e261d] border border-[#2d5f4c] text-white focus:border-[#10b981]"
+                        : "border border-emerald-300 bg-white text-slate-900 focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34]"
+                    }`}
+                  />
+                  <span className={`text-xs font-semibold ${isFullscreen ? "text-emerald-300" : "text-emerald-900"}`}>
+                    min
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Subject Dropdown */}
+            <div className="relative mb-3.5 w-full">
+              <div className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-600"}`}>
+                <BookOpen className="size-4" />
+              </div>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : "")}
+                className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none cursor-pointer ${
+                  isFullscreen
+                    ? "bg-[#143226] border border-[#265342] text-white hover:border-[#38745c] focus:border-[#10b981]"
+                    : "bg-white border border-slate-200/90 text-slate-800 hover:border-slate-300 focus:border-[#0c4a34]"
+                }`}
+              >
+                <option value="" className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
+                  General / Mixed study
                 </option>
-              ))}
-            </select>
-            <div className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-500"}`}>
-              <ChevronDown className="size-4" />
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id} className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+              <div className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-500"}`}>
+                <ChevronDown className="size-4" />
+              </div>
+            </div>
+
+            {/* Big Start Button */}
+            <div className="flex items-center gap-2 mb-3 w-full">
+              <button
+                type="button"
+                onClick={handleStart}
+                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+                  isFullscreen
+                    ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
+                    : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
+                }`}
+              >
+                <Play className={`size-4 ${isFullscreen ? "fill-[#062419]" : "fill-white"}`} />
+                <span>Start</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleReset}
+                className={`size-12 rounded-2xl grid place-items-center transition shadow-2xs ${
+                  isFullscreen
+                    ? "border border-[#265342] bg-[#143226] text-emerald-200 hover:bg-[#1c4233] hover:text-white"
+                    : "border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+                title="Reset"
+              >
+                <RotateCcw className="size-4.5" />
+              </button>
             </div>
           </div>
 
-          {/* Big Start Button */}
-          <div className="flex items-center gap-2 mb-3">
-            <button
-              type="button"
-              onClick={handleStart}
-              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+          {/* Bottom Section: Pushed to BOTTOM in Fullscreen */}
+          <div className="w-full pt-2 pb-1">
+            {/* Note */}
+            <p className={`flex items-center justify-center gap-1.5 text-[11.5px] font-medium mb-3 ${
+              isFullscreen ? "text-emerald-400/90" : "text-emerald-800/80"
+            }`}>
+              <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+              <span>Stop saves the session to today&apos;s log.</span>
+            </p>
+
+            {/* Stats Card: Today's Focus & Streak */}
+            <div
+              className={`rounded-2xl p-3.5 flex items-center justify-between text-xs border ${
                 isFullscreen
-                  ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
-                  : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
+                  ? "border-[#265342] bg-[#143226]"
+                  : "border-slate-100 bg-slate-50/90"
               }`}
             >
-              <Play className={`size-4 ${isFullscreen ? "fill-[#062419]" : "fill-white"}`} />
-              <span>Start</span>
-            </button>
+              <div className="flex items-center gap-2.5">
+                <span className={`grid size-8 place-items-center rounded-xl ${
+                  isFullscreen ? "bg-[#1c4233] text-emerald-300" : "bg-emerald-100/70 text-emerald-800"
+                }`}>
+                  <BarChart2 className="size-4" />
+                </span>
+                <div>
+                  <p className={`text-[10px] uppercase font-bold tracking-wider ${
+                    isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+                  }`}>
+                    TODAY&apos;S FOCUS
+                  </p>
+                  <p className={`font-bold text-[13px] flex items-center gap-1 ${
+                    isFullscreen ? "text-white" : "text-slate-900"
+                  }`}>
+                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                    {formatTotalFocus(todayMinutes)}
+                  </p>
+                </div>
+              </div>
 
-            <button
-              type="button"
-              onClick={handleReset}
-              className={`size-12 rounded-2xl grid place-items-center transition shadow-2xs ${
-                isFullscreen
-                  ? "border border-[#265342] bg-[#143226] text-emerald-200 hover:bg-[#1c4233] hover:text-white"
-                  : "border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-              title="Reset"
-            >
-              <RotateCcw className="size-4.5" />
-            </button>
-          </div>
-
-          {/* Note */}
-          <p className={`flex items-center justify-center gap-1.5 text-[11.5px] font-medium mb-3.5 ${
-            isFullscreen ? "text-emerald-400/90" : "text-emerald-800/80"
-          }`}>
-            <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-            <span>Stop saves the session to today&apos;s log.</span>
-          </p>
-
-          {/* Stats Card: Today's Focus & Streak */}
-          <div
-            className={`rounded-2xl p-3.5 flex items-center justify-between text-xs border ${
-              isFullscreen
-                ? "border-[#265342] bg-[#143226]"
-                : "border-slate-100 bg-slate-50/90"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <span className={`grid size-8 place-items-center rounded-xl ${
-                isFullscreen ? "bg-[#1c4233] text-emerald-300" : "bg-emerald-100/70 text-emerald-800"
-              }`}>
-                <BarChart2 className="size-4" />
-              </span>
-              <div>
+              <div className="text-right">
                 <p className={`text-[10px] uppercase font-bold tracking-wider ${
                   isFullscreen ? "text-emerald-300/70" : "text-slate-400"
                 }`}>
-                  TODAY&apos;S FOCUS
+                  SESSION STREAK
                 </p>
-                <p className={`font-bold text-[13px] flex items-center gap-1 ${
-                  isFullscreen ? "text-white" : "text-slate-900"
+                <p className={`font-bold text-[13px] flex items-center justify-end gap-1 ${
+                  isFullscreen ? "text-amber-300" : "text-amber-900"
                 }`}>
-                  <span className="size-1.5 rounded-full bg-emerald-400" />
-                  {formatTotalFocus(todayMinutes)}
+                  <Flame className="size-3.5 text-amber-500 fill-amber-500" />
+                  {streak} Days
                 </p>
               </div>
-            </div>
-
-            <div className="text-right">
-              <p className={`text-[10px] uppercase font-bold tracking-wider ${
-                isFullscreen ? "text-emerald-300/70" : "text-slate-400"
-              }`}>
-                SESSION STREAK
-              </p>
-              <p className={`font-bold text-[13px] flex items-center justify-end gap-1 ${
-                isFullscreen ? "text-amber-300" : "text-amber-900"
-              }`}>
-                <Flame className="size-3.5 text-amber-500 fill-amber-500" />
-                {streak} Days
-              </p>
             </div>
           </div>
         </div>
@@ -602,12 +620,12 @@ export default function FocusTimer({
         <div
           className={`w-full transition-all duration-300 ${
             isFullscreen
-              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
               : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
           }`}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2 pb-2">
+          {/* Top Header Row: PUSHED TO TOP IN FULLSCREEN */}
+          <div className="flex items-center justify-between gap-2 pt-1 pb-2">
             <button
               type="button"
               onClick={handlePause}
@@ -659,138 +677,144 @@ export default function FocusTimer({
             </div>
           </div>
 
-          {/* Circular Progress Ring with Digital Time Inside */}
-          <div className="relative my-4 flex items-center justify-center select-none">
-            <svg className="size-[220px] -rotate-90 transform" viewBox="0 0 240 240">
-              {/* Background Track Circle */}
-              <circle
-                cx="120"
-                cy="120"
-                r={strokeRadius}
-                stroke={isFullscreen ? "#1c4233" : "#e2e8f0"}
-                strokeWidth="12"
-                fill="transparent"
-              />
-              {/* Animated Progress Circle */}
-              <circle
-                cx="120"
-                cy="120"
-                r={strokeRadius}
-                stroke={isFullscreen ? "#10b981" : "#0c4a34"}
-                strokeWidth="12"
-                strokeDasharray={strokeCircumference}
-                strokeDashoffset={timerType === "set" ? strokeDashoffset : 0}
-                strokeLinecap="round"
-                fill="transparent"
-                className="transition-all duration-1000 ease-linear"
-              />
-            </svg>
+          {/* Middle Body: Circular Progress Ring + Controls: PUSHED TO CENTER IN FULLSCREEN */}
+          <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-2" : ""}>
+            {/* Circular Progress Ring with Digital Time Inside */}
+            <div className="relative my-4 flex items-center justify-center select-none">
+              <svg className="size-[220px] sm:size-[240px] -rotate-90 transform" viewBox="0 0 240 240">
+                {/* Background Track Circle */}
+                <circle
+                  cx="120"
+                  cy="120"
+                  r={strokeRadius}
+                  stroke={isFullscreen ? "#1c4233" : "#e2e8f0"}
+                  strokeWidth="12"
+                  fill="transparent"
+                />
+                {/* Animated Progress Circle */}
+                <circle
+                  cx="120"
+                  cy="120"
+                  r={strokeRadius}
+                  stroke={isFullscreen ? "#10b981" : "#0c4a34"}
+                  strokeWidth="12"
+                  strokeDasharray={strokeCircumference}
+                  strokeDashoffset={timerType === "set" ? strokeDashoffset : 0}
+                  strokeLinecap="round"
+                  fill="transparent"
+                  className="transition-all duration-1000 ease-linear"
+                />
+              </svg>
 
-            {/* Content Inside Circle */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
-                isFullscreen ? "text-emerald-300/70" : "text-slate-400"
-              }`}>
-                DEEP WORK
-              </span>
-              <span className={`font-display text-5xl sm:text-6xl font-black tabular-nums tracking-tight my-1 ${
-                isFullscreen ? "text-white" : "text-[#0f172a]"
-              }`}>
-                {timerType === "set"
-                  ? formatSeconds(remainingSeconds)
-                  : formatSeconds(freeSeconds)}
-              </span>
-              <span className={`text-xs font-semibold ${
-                isFullscreen ? "text-emerald-300/80" : "text-slate-400"
-              }`}>
-                {timerType === "set" ? `target ${targetMinutes}m` : "session in progress"}
-              </span>
+              {/* Content Inside Circle */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
+                  isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+                }`}>
+                  DEEP WORK
+                </span>
+                <span className={`font-display text-5xl sm:text-6xl font-black tabular-nums tracking-tight my-1 ${
+                  isFullscreen ? "text-white" : "text-[#0f172a]"
+                }`}>
+                  {timerType === "set"
+                    ? formatSeconds(remainingSeconds)
+                    : formatSeconds(freeSeconds)}
+                </span>
+                <span className={`text-xs font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-400"
+                }`}>
+                  {timerType === "set" ? `target ${targetMinutes}m` : "session in progress"}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Active Subject Pill */}
-          <div className="flex justify-center mb-5">
-            <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-semibold shadow-2xs ${
-              isFullscreen
-                ? "bg-[#18382c] border border-[#265342] text-emerald-200"
-                : "bg-slate-100 border border-slate-200/60 text-slate-800"
-            }`}>
-              <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-700"}`} />
-              <span className="truncate max-w-[240px]">{subjectDisplayName}</span>
-            </div>
-          </div>
-
-          {/* Clean Controls: Central Big Pause/Play & Finish */}
-          <div className="flex items-center justify-center gap-4 mb-4">
-            {/* Central Giant Play/Pause Circle Button */}
-            {isRunning ? (
-              <button
-                type="button"
-                onClick={handlePause}
-                className={`grid size-16 place-items-center rounded-full transition active:scale-95 hover:scale-105 ${
-                  isFullscreen
-                    ? "bg-[#10b981] text-[#062419] shadow-lg shadow-emerald-950/50"
-                    : "bg-[#0c4a34] text-white shadow-lg shadow-emerald-900/20"
-                }`}
-                title="Pause"
-              >
-                <Pause className="size-6 fill-current" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleResume}
-                className="grid size-16 place-items-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 hover:scale-105 active:scale-95 transition"
-                title="Resume"
-              >
-                <Play className="size-6 fill-white ml-0.5" />
-              </button>
-            )}
-
-            {/* Finish & Save Session Button */}
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={handleStopAndSave}
-              className={`rounded-2xl px-5 py-3.5 text-xs font-bold transition shadow-2xs flex items-center gap-1.5 ${
+            {/* Active Subject Pill */}
+            <div className="flex justify-center mb-5">
+              <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-semibold shadow-2xs ${
                 isFullscreen
-                  ? "border border-rose-900/60 bg-[#2b171c] text-rose-300 hover:bg-[#3b1f26]"
-                  : "border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-100"
-              }`}
-              title="Finish and save to log"
-            >
-              <Square className="size-3.5 fill-rose-500 text-rose-500" />
-              <span>{isSaving ? "Saving..." : "Finish"}</span>
-            </button>
+                  ? "bg-[#18382c] border border-[#265342] text-emerald-200"
+                  : "bg-slate-100 border border-slate-200/60 text-slate-800"
+              }`}>
+                <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-700"}`} />
+                <span className="truncate max-w-[240px]">{subjectDisplayName}</span>
+              </div>
+            </div>
+
+            {/* Clean Controls: Central Big Pause/Play & Finish */}
+            <div className="flex items-center justify-center gap-5 mt-1 mb-2">
+              {/* Central Giant Play/Pause Circle Button */}
+              {isRunning ? (
+                <button
+                  type="button"
+                  onClick={handlePause}
+                  className={`grid size-16 place-items-center rounded-full transition active:scale-95 hover:scale-105 ${
+                    isFullscreen
+                      ? "bg-[#10b981] text-[#062419] shadow-lg shadow-emerald-950/50"
+                      : "bg-[#0c4a34] text-white shadow-lg shadow-emerald-900/20"
+                  }`}
+                  title="Pause"
+                >
+                  <Pause className="size-6 fill-current" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResume}
+                  className="grid size-16 place-items-center rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 hover:scale-105 active:scale-95 transition"
+                  title="Resume"
+                >
+                  <Play className="size-6 fill-white ml-0.5" />
+                </button>
+              )}
+
+              {/* Finish & Save Session Button */}
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleStopAndSave}
+                className={`rounded-2xl px-5 py-3.5 text-xs font-bold transition shadow-2xs flex items-center gap-1.5 ${
+                  isFullscreen
+                    ? "border border-rose-900/60 bg-[#2b171c] text-rose-300 hover:bg-[#3b1f26]"
+                    : "border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-100"
+                }`}
+                title="Finish and save to log"
+              >
+                <Square className="size-3.5 fill-rose-500 text-rose-500" />
+                <span>{isSaving ? "Saving..." : "Finish"}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Subtle info notice */}
-          <p className={`text-center text-[11px] mb-4 ${isFullscreen ? "text-emerald-400/70" : "text-slate-400"}`}>
-            Finishing saves this session directly to your study log.
-          </p>
+          {/* Bottom Section: PUSHED TO BOTTOM IN FULLSCREEN */}
+          <div className="w-full pt-2 pb-1">
+            {/* Subtle info notice */}
+            <p className={`text-center text-[11px] mb-2.5 ${isFullscreen ? "text-emerald-400/70" : "text-slate-400"}`}>
+              Finishing saves this session directly to your study log.
+            </p>
 
-          {/* Today's Target / Progress Card */}
-          <div className={`rounded-2xl p-3 border ${
-            isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50"
-          }`}>
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className={`flex items-center gap-1.5 font-bold ${
-                isFullscreen ? "text-emerald-200" : "text-slate-700"
-              }`}>
-                <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-                Today&apos;s Focus
-              </span>
-              <span className={`font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                {formatTotalFocus(todayMinutes)}
-              </span>
-            </div>
-            <div className={`h-1.5 w-full overflow-hidden rounded-full ${isFullscreen ? "bg-[#1c4233]" : "bg-slate-200"}`}>
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  isFullscreen ? "bg-[#10b981]" : "bg-[#0c4a34]"
-                }`}
-                style={{ width: `${Math.min(100, Math.round((todayMinutes / 180) * 100))}%` }}
-              />
+            {/* Today's Target / Progress Card */}
+            <div className={`rounded-2xl p-3 sm:p-3.5 border ${
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50"
+            }`}>
+              <div className="flex items-center justify-between text-xs mb-2">
+                <span className={`flex items-center gap-1.5 font-bold ${
+                  isFullscreen ? "text-emerald-200" : "text-slate-700"
+                }`}>
+                  <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+                  Today&apos;s Focus
+                </span>
+                <span className={`font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                  {formatTotalFocus(todayMinutes)}
+                </span>
+              </div>
+              <div className={`h-2 w-full overflow-hidden rounded-full ${isFullscreen ? "bg-[#1c4233]" : "bg-slate-200"}`}>
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    isFullscreen ? "bg-[#10b981]" : "bg-[#0c4a34]"
+                  }`}
+                  style={{ width: `${Math.min(100, Math.round((todayMinutes / 180) * 100))}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -803,103 +827,109 @@ export default function FocusTimer({
         <div
           className={`w-full text-center transition-all duration-300 ${
             isFullscreen
-              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
               : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl"
           }`}
         >
-          {/* Top Big Emerald Celebration Badge */}
-          <div className={`mx-auto grid size-16 place-items-center rounded-full mb-3 shadow-inner ${
-            isFullscreen
-              ? "bg-[#18382c] border border-[#265342] text-emerald-400"
-              : "bg-emerald-100/90 text-emerald-700"
-          }`}>
-            <Check className="size-8" strokeWidth={3} />
-          </div>
-
-          {/* Pill Badge */}
-          <div className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-bold mb-2 ${
-            isFullscreen
-              ? "bg-[#18382c] border border-[#265342] text-emerald-300"
-              : "bg-emerald-50 border border-emerald-200/70 text-emerald-800"
-          }`}>
-            <Sparkles className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
-            <span>SESSION ACCOMPLISHED</span>
-          </div>
-
-          {/* Big Heading */}
-          <h2 className={`font-display text-2xl font-black tracking-tight ${
-            isFullscreen ? "text-white" : "text-slate-900"
-          }`}>
-            Session Complete!
-          </h2>
-          <p className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
-            isFullscreen ? "text-emerald-200/80" : "text-slate-500"
-          }`}>
-            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
-              {lastLoggedMinutes} minutes
-            </strong> of deep focus logged for{" "}
-            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
-              {subjectDisplayName}
-            </strong>.
-          </p>
-
-          {/* 4-Grid Stats Summary (User's Real Database Data) */}
-          <div className="my-5 grid grid-cols-2 gap-2.5">
-            <div className={`rounded-2xl p-3 text-left border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+          {/* Top Section in Fullscreen */}
+          <div className="pt-2">
+            {/* Top Big Emerald Celebration Badge */}
+            <div className={`mx-auto grid size-16 place-items-center rounded-full mb-3 shadow-inner ${
+              isFullscreen
+                ? "bg-[#18382c] border border-[#265342] text-emerald-400"
+                : "bg-emerald-100/90 text-emerald-700"
             }`}>
-              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-              }`}>
-                <Clock className="size-3.5 text-emerald-400" /> Focus Time
-              </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                {lastLoggedMinutes}m
-              </p>
+              <Check className="size-8" strokeWidth={3} />
             </div>
 
-            <div className={`rounded-2xl p-3 text-left border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+            {/* Pill Badge */}
+            <div className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-bold mb-2 ${
+              isFullscreen
+                ? "bg-[#18382c] border border-[#265342] text-emerald-300"
+                : "bg-emerald-50 border border-emerald-200/70 text-emerald-800"
             }`}>
-              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
-              }`}>
-                <BookOpen className="size-3.5 text-emerald-400" /> Subject
-              </span>
-              <p className={`mt-1 font-display text-sm font-bold truncate ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+              <Sparkles className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
+              <span>SESSION ACCOMPLISHED</span>
+            </div>
+          </div>
+
+          {/* Middle Section in Fullscreen */}
+          <div className={isFullscreen ? "my-auto flex flex-col items-center justify-center w-full py-4" : ""}>
+            {/* Big Heading */}
+            <h2 className={`font-display text-2xl font-black tracking-tight ${
+              isFullscreen ? "text-white" : "text-slate-900"
+            }`}>
+              Session Complete!
+            </h2>
+            <p className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
+              isFullscreen ? "text-emerald-200/80" : "text-slate-500"
+            }`}>
+              <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+                {lastLoggedMinutes} minutes
+              </strong> of deep focus logged for{" "}
+              <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
                 {subjectDisplayName}
-              </p>
-            </div>
+              </strong>.
+            </p>
 
-            <div className={`rounded-2xl p-3 text-left border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-            }`}>
-              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+            {/* 4-Grid Stats Summary (User's Real Database Data) */}
+            <div className="my-5 w-full grid grid-cols-2 gap-2.5">
+              <div className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
               }`}>
-                <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
-              </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                {formatTotalFocus(todayMinutes)}
-              </p>
-            </div>
+                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}>
+                  <Clock className="size-3.5 text-emerald-400" /> Focus Time
+                </span>
+                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                  {lastLoggedMinutes}m
+                </p>
+              </div>
 
-            <div className={`rounded-2xl p-3 text-left border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
-            }`}>
-              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+              <div className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
               }`}>
-                <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
-              </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
-                {streak} Days
-              </p>
+                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}>
+                  <BookOpen className="size-3.5 text-emerald-400" /> Subject
+                </span>
+                <p className={`mt-1 font-display text-sm font-bold truncate ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                  {subjectDisplayName}
+                </p>
+              </div>
+
+              <div className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+              }`}>
+                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}>
+                  <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
+                </span>
+                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                  {formatTotalFocus(todayMinutes)}
+                </p>
+              </div>
+
+              <div className={`rounded-2xl p-3 text-left border ${
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+              }`}>
+                <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                }`}>
+                  <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
+                </span>
+                <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                  {streak} Days
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Action Button: Return to Timer */}
-          <div className="mt-6 mb-2">
+          {/* Bottom Action Button: PUSHED TO BOTTOM IN FULLSCREEN */}
+          <div className="w-full pb-2">
             <button
               type="button"
               onClick={handleReturnToTimer}
