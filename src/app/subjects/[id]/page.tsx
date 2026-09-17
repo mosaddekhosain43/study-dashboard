@@ -1,0 +1,112 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, CheckCircle2, CircleDashed, Timer, XCircle } from "lucide-react";
+import TopicManager from "@/components/TopicManager";
+import { Donut, ProgressBar } from "@/components/ui";
+import { formatMinutes } from "@/lib/dates";
+import { getSubjectDetail } from "@/lib/queries";
+import { STATUS_META } from "@/lib/constants";
+
+export const dynamic = "force-dynamic";
+
+export default async function SubjectDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const subjectId = Number(id);
+  if (!Number.isInteger(subjectId)) notFound();
+
+  const detail = await getSubjectDetail(subjectId);
+  if (!detail) notFound();
+
+  const { subject, topics, recentItems, totalMinutes } = detail;
+  const total = topics.length;
+  const byStatus = {
+    completed: topics.filter((t) => t.status === "completed").length,
+    in_progress: topics.filter((t) => t.status === "in_progress").length,
+    not_completed: topics.filter((t) => t.status === "not_completed").length,
+    not_started: topics.filter((t) => t.status === "not_started").length,
+  };
+  const progress = total > 0 ? byStatus.completed / total : 0;
+
+  return (
+    <div className="space-y-6">
+      <Link href="/subjects" className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-faint transition hover:text-leaf">
+        <ArrowLeft className="size-4" /> All subjects
+      </Link>
+
+      <header className="card rise relative overflow-hidden p-6">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
+        <div className="flex flex-wrap items-center gap-6">
+          <Donut
+            size={118}
+            stroke={13}
+            segments={[
+              { value: byStatus.completed, color: STATUS_META.completed.color },
+              { value: byStatus.in_progress, color: STATUS_META.in_progress.color },
+              { value: byStatus.not_completed, color: STATUS_META.not_completed.color },
+              { value: byStatus.not_started, color: STATUS_META.not_started.color },
+            ]}
+            centerLabel={`${Math.round(progress * 100)}%`}
+            centerSub="done"
+          />
+          <div className="min-w-[220px] flex-1">
+            <p className="font-bengali text-[13px] text-ink-faint">{subject.nameBn}</p>
+            <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">{subject.name}</h1>
+            <div className="mt-3 max-w-md">
+              <div className="mb-1 flex justify-between text-[11px] font-semibold tabular-nums text-ink-faint">
+                <span>{byStatus.completed}/{total} topics completed</span>
+                <span>{total - byStatus.completed} remaining</span>
+              </div>
+              <ProgressBar value={progress} shine={progress > 0 && progress < 1} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
+            {[
+              { icon: CheckCircle2, label: "Done", value: byStatus.completed, cls: "text-emerald-600", bg: "bg-emerald-50" },
+              { icon: CircleDashed, label: "Doing", value: byStatus.in_progress, cls: "text-amber-600", bg: "bg-amber-50" },
+              { icon: XCircle, label: "Missed", value: byStatus.not_completed, cls: "text-rose-500", bg: "bg-rose-50" },
+              { icon: Timer, label: "Time", value: formatMinutes(totalMinutes), cls: "text-leaf", bg: "bg-leaf-soft" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl border border-line bg-paper/50 px-3.5 py-2.5">
+                <span className={`mx-auto mb-1 grid size-7 place-items-center rounded-lg ${s.bg} ${s.cls}`}>
+                  <s.icon className="size-4" />
+                </span>
+                <p className="font-display text-[15px] font-bold tabular-nums text-ink">{s.value}</p>
+                <p className="text-[9.5px] font-semibold uppercase tracking-wider text-ink-faint">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <section className="rise rise-1">
+        <TopicManager subjectId={subject.id} topics={topics} />
+      </section>
+
+      {recentItems.length > 0 && (
+        <section className="rise rise-2">
+          <h2 className="mb-3 font-display text-[17px] font-semibold tracking-tight text-ink">
+            Recent records in this paper
+          </h2>
+          <div className="card p-4">
+            <ul className="divide-y divide-line">
+              {recentItems.slice(0, 12).map((r) => (
+                <li key={r.id} className="flex items-center gap-3 py-2 text-[13px]">
+                  <span className={`size-2 rounded-full ${STATUS_META[r.status].dot}`} />
+                  <span className="font-bengali flex-1 font-medium text-ink">{r.label}</span>
+                  <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_META[r.status].bg} ${STATUS_META[r.status].text}`}>
+                    {STATUS_META[r.status].short}
+                  </span>
+                  <span className="w-20 text-right text-[11px] tabular-nums text-ink-faint">{r.date}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
