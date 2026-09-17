@@ -304,27 +304,37 @@ export default function FocusTimer({
   return (
     <div
       ref={containerRef}
-      className={`flex items-center justify-center transition-colors duration-300 ${
+      className={`transition-colors duration-300 ${
         isFullscreen
-          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0d1b14] p-4 sm:p-6"
-          : "w-full"
+          ? "fixed inset-0 z-50 min-h-screen w-screen bg-[#0e261d] overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+          : "w-full flex items-center justify-center"
       }`}
     >
       {/* ════════════════════════════════════════════════════════════
           STATE 1: READY / IDLE
          ════════════════════════════════════════════════════════════ */}
       {flowState === "ready" && (
-        <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl">
+        <div
+          className={`w-full transition-all duration-300 ${
+            isFullscreen
+              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
+          }`}
+        >
           {/* Top Header Row */}
           <div className="flex items-center justify-between gap-2 pb-2">
             <button
               type="button"
               onClick={() => setSoundEnabled((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
+                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700 hover:bg-slate-100"
+              }`}
             >
               {soundEnabled ? (
                 <>
-                  <Volume2 className="size-3.5 text-emerald-600" />
+                  <Volume2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
                   <span>Chime On</span>
                 </>
               ) : (
@@ -335,15 +345,25 @@ export default function FocusTimer({
               )}
             </button>
 
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-slate-700">
-              <TimerIcon className="size-3 text-emerald-600" />
+            <div
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold uppercase tracking-wider ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#18382c] text-emerald-200"
+                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700"
+              }`}
+            >
+              <TimerIcon className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
               <span>TIMER</span>
             </div>
 
             <button
               type="button"
               onClick={toggleFullscreen}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/80 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#18382c] text-emerald-100 hover:bg-[#1f4738]"
+                  : "border border-slate-200/90 bg-slate-50/80 text-slate-700 hover:bg-slate-100"
+              }`}
             >
               {isFullscreen ? (
                 <>
@@ -361,27 +381,47 @@ export default function FocusTimer({
 
           {/* Clock Display */}
           <div className="my-2 sm:my-3 text-center select-none">
-            <div className="font-display text-[68px] sm:text-[76px] font-black leading-none tabular-nums tracking-tight text-[#0f172a]">
+            <div
+              className={`font-display text-[68px] sm:text-[76px] font-black leading-none tabular-nums tracking-tight ${
+                isFullscreen ? "text-white drop-shadow-sm" : "text-[#0f172a]"
+              }`}
+            >
               {timerType === "set" ? formatSeconds(remainingSeconds) : formatSeconds(freeSeconds)}
             </div>
           </div>
 
           {/* Selected Subject Pill */}
           <div className="flex justify-center mb-4">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/90 px-3.5 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200/70 shadow-2xs">
-              <BookOpen className="size-3 text-emerald-600" />
+            <div
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-2xs ${
+                isFullscreen
+                  ? "bg-[#18382c] border border-[#265342] text-emerald-200"
+                  : "bg-emerald-50/90 border border-emerald-200/70 text-emerald-800"
+              }`}
+            >
+              <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
               <span className="truncate max-w-[220px]">{subjectDisplayName}</span>
             </div>
           </div>
 
           {/* Mode Switcher: Timer (Default) vs Set Timer */}
-          <div className="mb-3.5 rounded-2xl bg-[#eef3f0] p-1 grid grid-cols-2 gap-1 border border-slate-200/50">
+          <div
+            className={`mb-3.5 rounded-2xl p-1 grid grid-cols-2 gap-1 border ${
+              isFullscreen
+                ? "bg-[#143226] border-[#224b3b]"
+                : "bg-[#eef3f0] border-slate-200/50"
+            }`}
+          >
             <button
               type="button"
               onClick={() => handleSwitchType("free")}
               className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
                 timerType === "free"
-                  ? "bg-[#0c4a34] text-white shadow-xs"
+                  ? isFullscreen
+                    ? "bg-[#10b981] text-[#062419] font-black shadow-md"
+                    : "bg-[#0c4a34] text-white shadow-xs"
+                  : isFullscreen
+                  ? "text-emerald-300 hover:text-white"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -394,7 +434,11 @@ export default function FocusTimer({
               onClick={() => handleSwitchType("set")}
               className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all ${
                 timerType === "set"
-                  ? "bg-[#0c4a34] text-white shadow-xs"
+                  ? isFullscreen
+                    ? "bg-[#10b981] text-[#062419] font-black shadow-md"
+                    : "bg-[#0c4a34] text-white shadow-xs"
+                  : isFullscreen
+                  ? "text-emerald-300 hover:text-white"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -405,8 +449,16 @@ export default function FocusTimer({
 
           {/* Custom Duration Input when "Set Timer" is selected */}
           {timerType === "set" && (
-            <div className="mb-3.5 flex items-center justify-between rounded-2xl border border-emerald-200/80 bg-emerald-50/50 px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200">
-              <span className="text-xs font-bold text-emerald-950">Set Duration:</span>
+            <div
+              className={`mb-3.5 flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs animate-in fade-in slide-in-from-top-1 duration-200 ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#143226] text-emerald-100"
+                  : "border border-emerald-200/80 bg-emerald-50/50 text-slate-800"
+              }`}
+            >
+              <span className={`text-xs font-bold ${isFullscreen ? "text-emerald-200" : "text-emerald-950"}`}>
+                Set Duration:
+              </span>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -419,31 +471,43 @@ export default function FocusTimer({
                       handleTargetChange(val);
                     }
                   }}
-                  className="w-16 rounded-xl border border-emerald-300 bg-white py-1.5 px-2 text-center text-sm font-bold text-slate-900 shadow-2xs focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34] focus:outline-none"
+                  className={`w-16 rounded-xl py-1.5 px-2 text-center text-sm font-bold shadow-2xs focus:outline-none ${
+                    isFullscreen
+                      ? "bg-[#0e261d] border border-[#2d5f4c] text-white focus:border-[#10b981]"
+                      : "border border-emerald-300 bg-white text-slate-900 focus:border-[#0c4a34] focus:ring-1 focus:ring-[#0c4a34]"
+                  }`}
                 />
-                <span className="text-xs font-semibold text-emerald-900">min</span>
+                <span className={`text-xs font-semibold ${isFullscreen ? "text-emerald-300" : "text-emerald-900"}`}>
+                  min
+                </span>
               </div>
             </div>
           )}
 
           {/* Subject Dropdown */}
           <div className="relative mb-3.5">
-            <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600">
+            <div className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-600"}`}>
               <BookOpen className="size-4" />
             </div>
             <select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : "")}
-              className="w-full appearance-none rounded-2xl border border-slate-200/90 bg-white py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold text-slate-800 shadow-2xs transition hover:border-slate-300 focus:border-[#0c4a34] focus:outline-none cursor-pointer"
+              className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none cursor-pointer ${
+                isFullscreen
+                  ? "bg-[#143226] border border-[#265342] text-white hover:border-[#38745c] focus:border-[#10b981]"
+                  : "bg-white border border-slate-200/90 text-slate-800 hover:border-slate-300 focus:border-[#0c4a34]"
+              }`}
             >
-              <option value="">General / Mixed study</option>
+              <option value="" className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
+                General / Mixed study
+              </option>
               {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
+                <option key={s.id} value={s.id} className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
                   {s.name}
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500">
+            <div className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-500"}`}>
               <ChevronDown className="size-4" />
             </div>
           </div>
@@ -453,16 +517,24 @@ export default function FocusTimer({
             <button
               type="button"
               onClick={handleStart}
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
+              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+                isFullscreen
+                  ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
+                  : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
+              }`}
             >
-              <Play className="size-4 fill-white" />
+              <Play className={`size-4 ${isFullscreen ? "fill-[#062419]" : "fill-white"}`} />
               <span>Start</span>
             </button>
 
             <button
               type="button"
               onClick={handleReset}
-              className="size-12 rounded-2xl border border-slate-200/90 bg-white grid place-items-center text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-2xs"
+              className={`size-12 rounded-2xl grid place-items-center transition shadow-2xs ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#143226] text-emerald-200 hover:bg-[#1c4233] hover:text-white"
+                  : "border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              }`}
               title="Reset"
             >
               <RotateCcw className="size-4.5" />
@@ -470,33 +542,51 @@ export default function FocusTimer({
           </div>
 
           {/* Note */}
-          <p className="flex items-center justify-center gap-1.5 text-[11.5px] font-medium text-emerald-800/80 mb-3.5">
-            <CheckCircle2 className="size-3.5 text-emerald-600" />
+          <p className={`flex items-center justify-center gap-1.5 text-[11.5px] font-medium mb-3.5 ${
+            isFullscreen ? "text-emerald-400/90" : "text-emerald-800/80"
+          }`}>
+            <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
             <span>Stop saves the session to today&apos;s log.</span>
           </p>
 
           {/* Stats Card: Today's Focus & Streak */}
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/90 p-3.5 flex items-center justify-between text-xs">
+          <div
+            className={`rounded-2xl p-3.5 flex items-center justify-between text-xs border ${
+              isFullscreen
+                ? "border-[#265342] bg-[#143226]"
+                : "border-slate-100 bg-slate-50/90"
+            }`}
+          >
             <div className="flex items-center gap-2.5">
-              <span className="grid size-8 place-items-center rounded-xl bg-emerald-100/70 text-emerald-800">
+              <span className={`grid size-8 place-items-center rounded-xl ${
+                isFullscreen ? "bg-[#1c4233] text-emerald-300" : "bg-emerald-100/70 text-emerald-800"
+              }`}>
                 <BarChart2 className="size-4" />
               </span>
               <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                <p className={`text-[10px] uppercase font-bold tracking-wider ${
+                  isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+                }`}>
                   TODAY&apos;S FOCUS
                 </p>
-                <p className="font-bold text-slate-900 text-[13px] flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                <p className={`font-bold text-[13px] flex items-center gap-1 ${
+                  isFullscreen ? "text-white" : "text-slate-900"
+                }`}>
+                  <span className="size-1.5 rounded-full bg-emerald-400" />
                   {formatTotalFocus(todayMinutes)}
                 </p>
               </div>
             </div>
 
             <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              <p className={`text-[10px] uppercase font-bold tracking-wider ${
+                isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+              }`}>
                 SESSION STREAK
               </p>
-              <p className="font-bold text-amber-900 text-[13px] flex items-center justify-end gap-1">
+              <p className={`font-bold text-[13px] flex items-center justify-end gap-1 ${
+                isFullscreen ? "text-amber-300" : "text-amber-900"
+              }`}>
                 <Flame className="size-3.5 text-amber-500 fill-amber-500" />
                 {streak} Days
               </p>
@@ -509,13 +599,21 @@ export default function FocusTimer({
           STATE 2: ACTIVE RUNNING FOCUS SESSION
          ════════════════════════════════════════════════════════════ */}
       {flowState === "running" && (
-        <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl">
+        <div
+          className={`w-full transition-all duration-300 ${
+            isFullscreen
+              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-5 sm:p-6 shadow-xl"
+          }`}
+        >
           {/* Header */}
           <div className="flex items-center justify-between gap-2 pb-2">
             <button
               type="button"
               onClick={handlePause}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+              className={`inline-flex items-center gap-1 text-xs font-semibold transition ${
+                isFullscreen ? "text-emerald-200 hover:text-white" : "text-slate-600 hover:text-slate-900"
+              }`}
             >
               <ArrowLeft className="size-3.5" />
               <span>Focus Session</span>
@@ -525,24 +623,36 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={() => setSoundEnabled((v) => !v)}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-slate-700"
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
+                  isFullscreen
+                    ? "border border-[#265342] bg-[#18382c] text-emerald-200"
+                    : "border border-slate-200/80 bg-slate-50 text-slate-700"
+                }`}
               >
                 {soundEnabled ? (
-                  <Volume2 className="size-3 text-emerald-600" />
+                  <Volume2 className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
                 ) : (
                   <VolumeX className="size-3 text-slate-400" />
                 )}
               </button>
 
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                isFullscreen
+                  ? "border border-[#265342] bg-[#18382c] text-emerald-300"
+                  : "border border-emerald-200 bg-emerald-50 text-emerald-800"
+              }`}>
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
                 Active
               </span>
 
               <button
                 type="button"
                 onClick={toggleFullscreen}
-                className="inline-flex items-center rounded-full border border-slate-200/80 bg-slate-50 p-1 text-slate-600 hover:text-slate-900"
+                className={`inline-flex items-center rounded-full p-1 ${
+                  isFullscreen
+                    ? "border border-[#265342] bg-[#18382c] text-emerald-200 hover:text-white"
+                    : "border border-slate-200/80 bg-slate-50 text-slate-600 hover:text-slate-900"
+                }`}
               >
                 {isFullscreen ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}
               </button>
@@ -557,7 +667,7 @@ export default function FocusTimer({
                 cx="120"
                 cy="120"
                 r={strokeRadius}
-                stroke="#e2e8f0"
+                stroke={isFullscreen ? "#1c4233" : "#e2e8f0"}
                 strokeWidth="12"
                 fill="transparent"
               />
@@ -566,7 +676,7 @@ export default function FocusTimer({
                 cx="120"
                 cy="120"
                 r={strokeRadius}
-                stroke="#0c4a34"
+                stroke={isFullscreen ? "#10b981" : "#0c4a34"}
                 strokeWidth="12"
                 strokeDasharray={strokeCircumference}
                 strokeDashoffset={timerType === "set" ? strokeDashoffset : 0}
@@ -578,15 +688,21 @@ export default function FocusTimer({
 
             {/* Content Inside Circle */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${
+                isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+              }`}>
                 DEEP WORK
               </span>
-              <span className="font-display text-5xl sm:text-6xl font-black tabular-nums tracking-tight text-[#0f172a] my-1">
+              <span className={`font-display text-5xl sm:text-6xl font-black tabular-nums tracking-tight my-1 ${
+                isFullscreen ? "text-white" : "text-[#0f172a]"
+              }`}>
                 {timerType === "set"
                   ? formatSeconds(remainingSeconds)
                   : formatSeconds(freeSeconds)}
               </span>
-              <span className="text-xs font-semibold text-slate-400">
+              <span className={`text-xs font-semibold ${
+                isFullscreen ? "text-emerald-300/80" : "text-slate-400"
+              }`}>
                 {timerType === "set" ? `target ${targetMinutes}m` : "session in progress"}
               </span>
             </div>
@@ -594,8 +710,12 @@ export default function FocusTimer({
 
           {/* Active Subject Pill */}
           <div className="flex justify-center mb-5">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold text-slate-800 border border-slate-200/60 shadow-2xs">
-              <BookOpen className="size-3 text-emerald-700" />
+            <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-semibold shadow-2xs ${
+              isFullscreen
+                ? "bg-[#18382c] border border-[#265342] text-emerald-200"
+                : "bg-slate-100 border border-slate-200/60 text-slate-800"
+            }`}>
+              <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-700"}`} />
               <span className="truncate max-w-[240px]">{subjectDisplayName}</span>
             </div>
           </div>
@@ -607,10 +727,14 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={handlePause}
-                className="grid size-16 place-items-center rounded-full bg-[#0c4a34] text-white shadow-lg shadow-emerald-900/20 hover:scale-105 active:scale-95 transition"
+                className={`grid size-16 place-items-center rounded-full transition active:scale-95 hover:scale-105 ${
+                  isFullscreen
+                    ? "bg-[#10b981] text-[#062419] shadow-lg shadow-emerald-950/50"
+                    : "bg-[#0c4a34] text-white shadow-lg shadow-emerald-900/20"
+                }`}
                 title="Pause"
               >
-                <Pause className="size-6 fill-white" />
+                <Pause className="size-6 fill-current" />
               </button>
             ) : (
               <button
@@ -628,31 +752,43 @@ export default function FocusTimer({
               type="button"
               disabled={isSaving}
               onClick={handleStopAndSave}
-              className="rounded-2xl border border-rose-200 bg-rose-50/80 px-5 py-3.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition shadow-2xs flex items-center gap-1.5"
+              className={`rounded-2xl px-5 py-3.5 text-xs font-bold transition shadow-2xs flex items-center gap-1.5 ${
+                isFullscreen
+                  ? "border border-rose-900/60 bg-[#2b171c] text-rose-300 hover:bg-[#3b1f26]"
+                  : "border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-100"
+              }`}
               title="Finish and save to log"
             >
-              <Square className="size-3.5 fill-rose-600 text-rose-600" />
+              <Square className="size-3.5 fill-rose-500 text-rose-500" />
               <span>{isSaving ? "Saving..." : "Finish"}</span>
             </button>
           </div>
 
           {/* Subtle info notice */}
-          <p className="text-center text-[11px] text-slate-400 mb-4">
+          <p className={`text-center text-[11px] mb-4 ${isFullscreen ? "text-emerald-400/70" : "text-slate-400"}`}>
             Finishing saves this session directly to your study log.
           </p>
 
           {/* Today's Target / Progress Card */}
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+          <div className={`rounded-2xl p-3 border ${
+            isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50"
+          }`}>
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="flex items-center gap-1.5 font-bold text-slate-700">
-                <CheckCircle2 className="size-3.5 text-emerald-600" />
+              <span className={`flex items-center gap-1.5 font-bold ${
+                isFullscreen ? "text-emerald-200" : "text-slate-700"
+              }`}>
+                <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
                 Today&apos;s Focus
               </span>
-              <span className="font-bold text-slate-900">{formatTotalFocus(todayMinutes)}</span>
+              <span className={`font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                {formatTotalFocus(todayMinutes)}
+              </span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+            <div className={`h-1.5 w-full overflow-hidden rounded-full ${isFullscreen ? "bg-[#1c4233]" : "bg-slate-200"}`}>
               <div
-                className="h-full rounded-full bg-[#0c4a34] transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  isFullscreen ? "bg-[#10b981]" : "bg-[#0c4a34]"
+                }`}
                 style={{ width: `${Math.min(100, Math.round((todayMinutes / 180) * 100))}%` }}
               />
             </div>
@@ -664,61 +800,99 @@ export default function FocusTimer({
           STATE 3: SESSION ACCOMPLISHED (Real Data Only)
          ════════════════════════════════════════════════════════════ */}
       {flowState === "completed" && (
-        <div className="w-full max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl text-center">
+        <div
+          className={`w-full text-center transition-all duration-300 ${
+            isFullscreen
+              ? "max-w-[420px] p-2 sm:p-4 text-white"
+              : "max-w-[400px] rounded-[32px] border border-line/80 bg-white p-6 shadow-xl"
+          }`}
+        >
           {/* Top Big Emerald Celebration Badge */}
-          <div className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-100/90 text-emerald-700 mb-3 shadow-inner">
+          <div className={`mx-auto grid size-16 place-items-center rounded-full mb-3 shadow-inner ${
+            isFullscreen
+              ? "bg-[#18382c] border border-[#265342] text-emerald-400"
+              : "bg-emerald-100/90 text-emerald-700"
+          }`}>
             <Check className="size-8" strokeWidth={3} />
           </div>
 
           {/* Pill Badge */}
-          <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-0.5 text-[11px] font-bold text-emerald-800 border border-emerald-200/70 mb-2">
-            <Sparkles className="size-3 text-emerald-600" />
+          <div className={`inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-[11px] font-bold mb-2 ${
+            isFullscreen
+              ? "bg-[#18382c] border border-[#265342] text-emerald-300"
+              : "bg-emerald-50 border border-emerald-200/70 text-emerald-800"
+          }`}>
+            <Sparkles className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
             <span>SESSION ACCOMPLISHED</span>
           </div>
 
           {/* Big Heading */}
-          <h2 className="font-display text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className={`font-display text-2xl font-black tracking-tight ${
+            isFullscreen ? "text-white" : "text-slate-900"
+          }`}>
             Session Complete!
           </h2>
-          <p className="mt-1 text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
-            <strong className="font-semibold text-slate-800">{lastLoggedMinutes} minutes</strong> of deep focus logged for{" "}
-            <strong className="font-semibold text-slate-800">{subjectDisplayName}</strong>.
+          <p className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
+            isFullscreen ? "text-emerald-200/80" : "text-slate-500"
+          }`}>
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+              {lastLoggedMinutes} minutes
+            </strong> of deep focus logged for{" "}
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+              {subjectDisplayName}
+            </strong>.
           </p>
 
           {/* 4-Grid Stats Summary (User's Real Database Data) */}
           <div className="my-5 grid grid-cols-2 gap-2.5">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                <Clock className="size-3.5 text-emerald-600" /> Focus Time
+            <div className={`rounded-2xl p-3 text-left border ${
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+            }`}>
+              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+              }`}>
+                <Clock className="size-3.5 text-emerald-400" /> Focus Time
               </span>
-              <p className="mt-1 font-display text-lg font-black text-slate-900">
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
                 {lastLoggedMinutes}m
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                <BookOpen className="size-3.5 text-emerald-600" /> Subject
+            <div className={`rounded-2xl p-3 text-left border ${
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+            }`}>
+              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+              }`}>
+                <BookOpen className="size-3.5 text-emerald-400" /> Subject
               </span>
-              <p className="mt-1 font-display text-sm font-bold text-slate-900 truncate">
+              <p className={`mt-1 font-display text-sm font-bold truncate ${isFullscreen ? "text-white" : "text-slate-900"}`}>
                 {subjectDisplayName}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                <Calendar className="size-3.5 text-emerald-600" /> Today&apos;s Total
+            <div className={`rounded-2xl p-3 text-left border ${
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+            }`}>
+              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+              }`}>
+                <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
               </span>
-              <p className="mt-1 font-display text-lg font-black text-slate-900">
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
                 {formatTotalFocus(todayMinutes)}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-3 text-left">
-              <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+            <div className={`rounded-2xl p-3 text-left border ${
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-100 bg-slate-50/80"
+            }`}>
+              <span className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+                isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+              }`}>
                 <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
               </span>
-              <p className="mt-1 font-display text-lg font-black text-slate-900">
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
                 {streak} Days
               </p>
             </div>
@@ -729,7 +903,11 @@ export default function FocusTimer({
             <button
               type="button"
               onClick={handleReturnToTimer}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0c4a34] py-3.5 text-sm font-bold text-white shadow-sm hover:bg-[#093a29] transition active:scale-98"
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+                isFullscreen
+                  ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black"
+                  : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
+              }`}
             >
               <RotateCcw className="size-4" />
               <span>Return to Timer</span>
