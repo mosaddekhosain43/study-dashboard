@@ -293,7 +293,7 @@ export async function createMasterSubjectAction(data: {
     await db.insert(lessons).values({
       subjectId: sub.id,
       userId: null,
-      name: "অধ্যায় ১ / Chapter 1",
+      name: "Chapter 1 / অধ্যায় ১",
       sortOrder: 1,
     });
 

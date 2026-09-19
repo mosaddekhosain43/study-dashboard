@@ -273,7 +273,7 @@ export async function createCustomSubjectAction(name: string, nameBn?: string) {
   await db.insert(lessons).values({
     userId,
     subjectId: created.id,
-    name: "Lesson 1 / অধ্যায় ১",
+    name: "Chapter 1 / অধ্যায় ১",
     sortOrder: 1,
   });
 
@@ -322,7 +322,7 @@ export async function addTopicAction(
         .values({
           userId,
           subjectId,
-          name: chapter?.trim() || "Lesson 1 / অধ্যায় ১",
+          name: chapter?.trim() || "Chapter 1 / অধ্যায় ১",
           sortOrder: 1,
         })
         .returning();
@@ -377,7 +377,7 @@ export async function bulkAddTopicsAction(
         .values({
           userId,
           subjectId,
-          name: "Lesson 1 / অধ্যায় ১",
+          name: "Chapter 1 / অধ্যায় ১",
           sortOrder: 1,
         })
         .returning();

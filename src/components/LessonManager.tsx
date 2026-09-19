@@ -226,15 +226,15 @@ export default function LessonManager({
           className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep shrink-0"
         >
           <FolderPlus className="size-4" />
-          <span>+ Add Lesson / অধ্যায়</span>
+          <span>+ Add Chapter / অধ্যায়</span>
         </button>
       </div>
 
-      {/* Inline Add Lesson Form */}
+      {/* Inline Add Chapter Form */}
       {showAddLesson && (
         <div className="card rise border-leaf/40 bg-leaf-soft/20 p-3.5 sm:p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[12.5px] font-bold text-ink">Add New Lesson (অধ্যায়)</span>
+            <span className="text-[12.5px] font-bold text-ink">Add New Chapter (অধ্যায়)</span>
             <button onClick={() => setShowAddLesson(false)} className="text-ink-faint hover:text-ink">
               <X className="size-4" />
             </button>
@@ -246,7 +246,7 @@ export default function LessonManager({
               value={newLessonName}
               onChange={(e) => setNewLessonName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLesson()}
-              placeholder="e.g. Lesson 1: Grammar Basics / অধ্যায় ১: নাহু পরিচিতি"
+              placeholder="e.g. Chapter 1: Grammar Basics / অধ্যায় ১: নাহু পরিচিতি"
               className="min-w-0 flex-1 rounded-xl border border-line bg-white px-3 py-2 text-[13px] outline-none focus:border-leaf"
             />
             <button
@@ -254,7 +254,7 @@ export default function LessonManager({
               disabled={pending || !newLessonName.trim()}
               className="shrink-0 rounded-xl bg-leaf px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
             >
-              Create Lesson
+              Create Chapter
             </button>
           </div>
         </div>
@@ -361,7 +361,7 @@ export default function LessonManager({
                       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-leaf shrink-0">
-                            L{lessonIndex + 1}
+                            CH{lessonIndex + 1}
                           </span>
                           <h3
                             onClick={() => toggleLesson(lesson.id)}
@@ -708,8 +708,8 @@ export default function LessonManager({
 
         {filteredLessons.length === 0 && (
           <div className="card border-dashed p-10 text-center text-[13.5px] text-ink-faint">
-            No lessons created yet for this subject. Click{" "}
-            <span className="font-semibold text-leaf">&quot;+ Add Lesson&quot;</span> above to create your first lesson!
+            No chapters created yet for this subject. Click{" "}
+            <span className="font-semibold text-leaf">&quot;+ Add Chapter&quot;</span> above to create your first chapter!
           </div>
         )}
       </div>

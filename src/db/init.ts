@@ -157,7 +157,7 @@ export async function runInitAndSeed(
       );
       const rows = unlinked.rows || unlinked || [];
       for (const row of rows) {
-        const lessonName = (row.chapter || "Lesson 1 / অধ্যায় ১").trim();
+        const lessonName = (row.chapter || "Chapter 1 / অধ্যায় ১").trim();
         const existingLesson = await rawQuery(
           "SELECT id FROM lessons WHERE subject_id = $1 AND name = $2 LIMIT 1",
           [row.subject_id, lessonName]
@@ -174,6 +174,11 @@ export async function runInitAndSeed(
           await rawQuery("UPDATE topics SET lesson_id = $1 WHERE id = $2", [lessonId, row.id]);
         }
       }
+
+      // Rename any existing "Lesson" references in lessons table to "Chapter"
+      await rawQuery(
+        "UPDATE lessons SET name = REPLACE(name, 'Lesson ', 'Chapter ') WHERE name LIKE '%Lesson %'"
+      );
     } catch {
       // ignore
     }
