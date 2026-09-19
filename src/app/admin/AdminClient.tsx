@@ -19,6 +19,7 @@ import {
   deleteBatchAction,
   deleteUserAction,
 } from "@/actions/admin";
+import MasterCurriculumManager from "@/components/admin/MasterCurriculumManager";
 
 interface Batch {
   id: number;
@@ -53,12 +54,13 @@ interface Props {
     batches: Batch[];
     teachers: Teacher[];
     students: Student[];
+    curriculum?: any[];
   };
 }
 
 export default function AdminClient({ initialData }: Props) {
   const [data, setData] = useState(initialData);
-  const [activeTab, setActiveTab] = useState<"batches" | "teachers" | "students">("batches");
+  const [activeTab, setActiveTab] = useState<"batches" | "teachers" | "students" | "curriculum">("batches");
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -213,6 +215,16 @@ export default function AdminClient({ initialData }: Props) {
           }`}
         >
           All Students ({data.students.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("curriculum")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+            activeTab === "curriculum"
+              ? "bg-pine text-white shadow-md shadow-pine/20"
+              : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
+          }`}
+        >
+          Master Curriculum ({data.curriculum?.length || 0})
         </button>
       </div>
 
@@ -558,6 +570,14 @@ export default function AdminClient({ initialData }: Props) {
             </table>
           </div>
         </section>
+      )}
+
+      {/* TAB 4: Master Curriculum */}
+      {activeTab === "curriculum" && (
+        <MasterCurriculumManager
+          batches={data.batches}
+          initialCurriculum={data.curriculum || []}
+        />
       )}
 
       {/* Create Batch Modal */}

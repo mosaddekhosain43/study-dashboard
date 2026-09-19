@@ -11,6 +11,7 @@ import {
   Info,
   LibraryBig,
   ListChecks,
+  Sparkles,
   Target,
   Timer,
   TrendingUp,
@@ -110,6 +111,31 @@ export default async function DashboardPage() {
             initialMessages={classroom.messages}
             userName={classroom.user.name}
           />
+        </div>
+      )}
+
+      {data.total === 0 && (
+        <div className="card rise p-5 border-leaf/40 bg-leaf-soft/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-2xl bg-leaf text-white shadow-sm shrink-0">
+              <Sparkles className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-bold text-ink">
+                Set Up Your Exam Syllabus & Books
+              </h2>
+              <p className="text-xs text-ink-faint">
+                Select your class books and exam chapters to get started with personalized tracking.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/syllabus"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf px-4 py-2.5 text-xs font-bold text-white transition hover:bg-leaf-deep shrink-0 shadow-sm"
+          >
+            <span>Set Up Syllabus</span>
+            <ArrowRight className="size-4" />
+          </Link>
         </div>
       )}
 

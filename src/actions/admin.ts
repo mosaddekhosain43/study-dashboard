@@ -1,9 +1,18 @@
 "use server";
 
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { batches, batchMaterials, batchMessages, teacherBatches, topics, users } from "@/db/schema";
+import {
+  batches,
+  batchMaterials,
+  batchMessages,
+  lessons,
+  subjects,
+  teacherBatches,
+  topics,
+  users,
+} from "@/db/schema";
 import { getCurrentUser, hashPassword } from "@/lib/auth";
 
 async function requireAdmin() {
@@ -178,5 +187,277 @@ export async function deleteUserAction(userId: number) {
     return { ok: true };
   } catch (err: any) {
     return { ok: false, error: err?.message || "Failed to delete user." };
+  }
+}
+
+export async function updateBatchAction(batchId: number, name: string, description?: string | null) {
+  await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Class/Batch name cannot be empty." };
+  const slug = cleanName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+  try {
+    await db
+      .update(batches)
+      .set({
+        name: cleanName,
+        slug,
+        description: description?.trim() || null,
+      })
+      .where(eq(batches.id, batchId));
+
+    revalidatePath("/admin");
+    revalidatePath("/teacher");
+    revalidatePath("/register");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to update class." };
+  }
+}
+
+// ── Master Curriculum Management (Admin Template) ──────────────────────────
+
+export async function getMasterCurriculumAction(batchId?: number) {
+  await requireAdmin();
+
+  // If batchId is specified, filter by that batch.
+  const subConditions = [isNull(subjects.userId)];
+  if (batchId) {
+    subConditions.push(eq(subjects.batchId, batchId));
+  }
+
+  const [masterSubjects, masterLessons, masterTopics, allBatches] = await Promise.all([
+    db
+      .select()
+      .from(subjects)
+      .where(and(...subConditions))
+      .orderBy(subjects.sortOrder, subjects.id),
+    db
+      .select()
+      .from(lessons)
+      .where(isNull(lessons.userId))
+      .orderBy(lessons.sortOrder, lessons.id),
+    db
+      .select()
+      .from(topics)
+      .where(isNull(topics.userId))
+      .orderBy(topics.sortOrder, topics.id),
+    db.select().from(batches).orderBy(batches.name),
+  ]);
+
+  const tree = masterSubjects.map((s) => {
+    const sLessons = masterLessons.filter((l) => l.subjectId === s.id);
+    return {
+      ...s,
+      lessons: sLessons.map((l) => {
+        const lTopics = masterTopics.filter((t) => t.lessonId === l.id);
+        return {
+          ...l,
+          topics: lTopics,
+        };
+      }),
+    };
+  });
+
+  return {
+    batches: allBatches,
+    curriculum: tree,
+  };
+}
+
+export async function createMasterSubjectAction(data: {
+  batchId: number;
+  name: string;
+  nameBn?: string;
+  sortOrder?: number;
+}) {
+  await requireAdmin();
+  const name = data.name.trim();
+  if (!name) return { ok: false, error: "Subject name is required." };
+  const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "") + `-${Date.now().toString(36)}`;
+
+  try {
+    const [sub] = await db
+      .insert(subjects)
+      .values({
+        batchId: data.batchId,
+        userId: null,
+        name,
+        slug,
+        nameBn: data.nameBn?.trim() || null,
+        sortOrder: data.sortOrder ?? 0,
+      })
+      .returning();
+
+    // Default first chapter for convenience
+    await db.insert(lessons).values({
+      subjectId: sub.id,
+      userId: null,
+      name: "অধ্যায় ১ / Chapter 1",
+      sortOrder: 1,
+    });
+
+    revalidatePath("/admin");
+    return { ok: true, subject: sub };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to create master subject." };
+  }
+}
+
+export async function updateMasterSubjectAction(
+  subjectId: number,
+  data: { name: string; nameBn?: string; batchId?: number; sortOrder?: number }
+) {
+  await requireAdmin();
+  const name = data.name.trim();
+  if (!name) return { ok: false, error: "Subject name is required." };
+
+  try {
+    await db
+      .update(subjects)
+      .set({
+        name,
+        nameBn: data.nameBn?.trim() || null,
+        ...(data.batchId ? { batchId: data.batchId } : {}),
+        ...(typeof data.sortOrder === "number" ? { sortOrder: data.sortOrder } : {}),
+      })
+      .where(and(eq(subjects.id, subjectId), isNull(subjects.userId)));
+
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to update master subject." };
+  }
+}
+
+export async function deleteMasterSubjectAction(subjectId: number) {
+  await requireAdmin();
+  try {
+    await db.delete(subjects).where(and(eq(subjects.id, subjectId), isNull(subjects.userId)));
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to delete master subject." };
+  }
+}
+
+export async function createMasterChapterAction(subjectId: number, name: string, sortOrder?: number) {
+  await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Chapter name is required." };
+
+  try {
+    const max = await db
+      .select({ m: sql<number>`coalesce(max(${lessons.sortOrder}), 0)` })
+      .from(lessons)
+      .where(and(eq(lessons.subjectId, subjectId), isNull(lessons.userId)));
+
+    const [created] = await db
+      .insert(lessons)
+      .values({
+        subjectId,
+        userId: null,
+        name: cleanName,
+        sortOrder: sortOrder ?? Number(max[0]?.m ?? 0) + 1,
+      })
+      .returning();
+
+    revalidatePath("/admin");
+    return { ok: true, chapter: created };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to create master chapter." };
+  }
+}
+
+export async function updateMasterChapterAction(chapterId: number, name: string) {
+  await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Chapter name cannot be empty." };
+
+  try {
+    await db
+      .update(lessons)
+      .set({ name: cleanName, updatedAt: new Date() })
+      .where(and(eq(lessons.id, chapterId), isNull(lessons.userId)));
+
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to update master chapter." };
+  }
+}
+
+export async function deleteMasterChapterAction(chapterId: number) {
+  await requireAdmin();
+  try {
+    await db.delete(lessons).where(and(eq(lessons.id, chapterId), isNull(lessons.userId)));
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to delete master chapter." };
+  }
+}
+
+export async function createMasterTopicAction(
+  subjectId: number,
+  chapterId: number,
+  name: string,
+  sortOrder?: number
+) {
+  await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Topic name is required." };
+
+  try {
+    const max = await db
+      .select({ m: sql<number>`coalesce(max(${topics.sortOrder}), 0)` })
+      .from(topics)
+      .where(and(eq(topics.subjectId, subjectId), isNull(topics.userId)));
+
+    const [created] = await db
+      .insert(topics)
+      .values({
+        subjectId,
+        lessonId: chapterId,
+        userId: null,
+        name: cleanName,
+        sortOrder: sortOrder ?? Number(max[0]?.m ?? 0) + 1,
+        status: "not_started",
+      })
+      .returning();
+
+    revalidatePath("/admin");
+    return { ok: true, topic: created };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to create master topic." };
+  }
+}
+
+export async function updateMasterTopicAction(topicId: number, name: string) {
+  await requireAdmin();
+  const cleanName = name.trim();
+  if (!cleanName) return { ok: false, error: "Topic name cannot be empty." };
+
+  try {
+    await db
+      .update(topics)
+      .set({ name: cleanName, updatedAt: new Date() })
+      .where(and(eq(topics.id, topicId), isNull(topics.userId)));
+
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to update master topic." };
+  }
+}
+
+export async function deleteMasterTopicAction(topicId: number) {
+  await requireAdmin();
+  try {
+    await db.delete(topics).where(and(eq(topics.id, topicId), isNull(topics.userId)));
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "Failed to delete master topic." };
   }
 }

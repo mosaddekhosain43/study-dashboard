@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { db, initializeDb } from "@/db";
 import {
   batches,
@@ -157,15 +157,34 @@ export interface SubjectStats {
 
 export async function getSubjectStats(): Promise<SubjectStats[]> {
   await ensureSeeded();
-  const [subs, tops, itemActs, sessActs, sessMins] = await Promise.all([
-    db.select().from(subjects).orderBy(subjects.sortOrder, subjects.id),
-    db.select().from(topics),
+  const user = await getCurrentUser();
+
+  let userPersonalSubs: any[] = [];
+  if (user) {
+    userPersonalSubs = await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user.id))
+      .orderBy(subjects.sortOrder, subjects.id);
+  }
+
+  const usePersonal = userPersonalSubs.length > 0;
+  const subRows = usePersonal
+    ? userPersonalSubs
+    : await db.select().from(subjects).where(isNull(subjects.userId)).orderBy(subjects.sortOrder, subjects.id);
+
+  const topRows = usePersonal && user
+    ? await db.select().from(topics).where(eq(topics.userId, user.id))
+    : await db.select().from(topics).where(isNull(topics.userId));
+
+  const [itemActs, sessActs, sessMins] = await Promise.all([
     db
       .select({
         subjectId: updateItems.subjectId,
         lastDate: sql<string | null>`max(${updateItems.date})`,
       })
       .from(updateItems)
+      .where(user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId))
       .groupBy(updateItems.subjectId),
     db
       .select({
@@ -174,6 +193,7 @@ export async function getSubjectStats(): Promise<SubjectStats[]> {
         minutes: sql<number>`coalesce(sum(${sessions.minutes}), 0)`,
       })
       .from(sessions)
+      .where(user ? eq(sessions.userId, user.id) : isNull(sessions.userId))
       .groupBy(sessions.subjectId),
     db
       .select({
@@ -181,8 +201,12 @@ export async function getSubjectStats(): Promise<SubjectStats[]> {
         minutes: sql<number>`coalesce(sum(${updateItems.minutes}), 0)`,
       })
       .from(updateItems)
+      .where(user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId))
       .groupBy(updateItems.subjectId),
   ]);
+
+  const subs = subRows;
+  const tops = topRows;
 
   const lastMap = new Map<number, string>();
   for (const r of itemActs) {

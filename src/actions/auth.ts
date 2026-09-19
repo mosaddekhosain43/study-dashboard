@@ -91,36 +91,6 @@ export async function registerStudentAction(formData: FormData) {
     })
     .returning();
 
-  // Create default syllabus topics for the new student
-  try {
-    const allSubjects = await db.select().from(subjects);
-    if (allSubjects.length > 0) {
-      for (const sub of allSubjects) {
-        // Add standard 2 starter topics per subject
-        await db.insert(topics).values([
-          {
-            userId: newUser.id,
-            subjectId: sub.id,
-            name: `${sub.name} — Chapter 1 Overview`,
-            chapter: "Chapter 1",
-            sortOrder: 1,
-            status: "not_started",
-          },
-          {
-            userId: newUser.id,
-            subjectId: sub.id,
-            name: `${sub.name} — Core Concepts & Practice`,
-            chapter: "Chapter 2",
-            sortOrder: 2,
-            status: "not_started",
-          },
-        ]);
-      }
-    }
-  } catch (err) {
-    console.error("Default topics seed error:", err);
-  }
-
   await setSessionCookie({
     id: newUser.id,
     name: newUser.name,
@@ -130,7 +100,7 @@ export async function registerStudentAction(formData: FormData) {
   });
 
   revalidatePath("/", "layout");
-  return { ok: true, redirectUrl: "/" };
+  return { ok: true, redirectUrl: "/syllabus" };
 }
 
 export async function logoutAction() {

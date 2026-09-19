@@ -122,19 +122,29 @@ export const batchMessages = pgTable(
 /**
  * The 13 Alim 2nd-year papers. Seeded automatically on first run.
  */
-export const subjects = pgTable("subjects", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id, {
-    onDelete: "cascade",
-  }),
-  name: text("name").notNull(),
-  slug: text("slug").notNull(),
-  nameBn: text("name_bn"),
-  sortOrder: integer("sort_order").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const subjects = pgTable(
+  "subjects",
+  {
+    id: serial("id").primaryKey(),
+    batchId: integer("batch_id").references(() => batches.id, {
+      onDelete: "cascade",
+    }),
+    userId: integer("user_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    nameBn: text("name_bn"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("subjects_batch_idx").on(t.batchId),
+    index("subjects_user_idx").on(t.userId),
+  ]
+);
 
 /**
  * Lessons / Chapters inside a Subject

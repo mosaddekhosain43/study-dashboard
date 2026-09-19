@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS batch_messages (
 
 CREATE TABLE IF NOT EXISTS subjects (
   id SERIAL PRIMARY KEY,
+  batch_id INTEGER REFERENCES batches(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   slug TEXT NOT NULL,
@@ -143,7 +144,7 @@ export async function runInitAndSeed(
         "CREATE TABLE IF NOT EXISTS lessons (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE, name TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
       );
       await rawExec(
-        "ALTER TABLE topics ADD COLUMN IF NOT EXISTS lesson_id INTEGER REFERENCES lessons(id) ON DELETE CASCADE;"
+        "ALTER TABLE subjects ADD COLUMN IF NOT EXISTS batch_id INTEGER REFERENCES batches(id) ON DELETE CASCADE;"
       );
     } catch {
       // ignore
@@ -177,20 +178,7 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // 1. Seed default subjects
-    const existingSubjects = await rawQuery("SELECT COUNT(*) as count FROM subjects");
-    const subCount = Number(existingSubjects.rows?.[0]?.count || existingSubjects[0]?.count || 0);
-    if (subCount === 0) {
-      for (let i = 0; i < SUBJECT_DEFS.length; i++) {
-        const s = SUBJECT_DEFS[i];
-        await rawQuery(
-          "INSERT INTO subjects (name, slug, name_bn, sort_order) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-          [s.name, s.slug, s.nameBn, i + 1]
-        );
-      }
-    }
-
-    // 2. Seed default batches (Alim 2027, Dakhil 2027, Class 8)
+    // 1. Seed default batches (Alim 2027, Dakhil 2027, Class 8)
     const existingBatches = await rawQuery("SELECT COUNT(*) as count FROM batches");
     const batchCount = Number(existingBatches.rows?.[0]?.count || existingBatches[0]?.count || 0);
     if (batchCount === 0) {
@@ -208,7 +196,54 @@ export async function runInitAndSeed(
       );
     }
 
-    // 3. Seed default Admin account (admin@alim.edu / admin123)
+    const firstBatchRes = await rawQuery("SELECT id FROM batches ORDER BY id ASC LIMIT 1");
+    const firstBatchId = firstBatchRes.rows?.[0]?.id || firstBatchRes[0]?.id || 1;
+
+    // 2. Seed default subjects
+    const existingSubjects = await rawQuery("SELECT COUNT(*) as count FROM subjects WHERE user_id IS NULL");
+    const subCount = Number(existingSubjects.rows?.[0]?.count || existingSubjects[0]?.count || 0);
+    if (subCount === 0) {
+      for (let i = 0; i < SUBJECT_DEFS.length; i++) {
+        const s = SUBJECT_DEFS[i];
+        await rawQuery(
+          "INSERT INTO subjects (batch_id, name, slug, name_bn, sort_order) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+          [firstBatchId, s.name, s.slug, s.nameBn, i + 1]
+        );
+      }
+    } else {
+      // Ensure master subjects are linked to a batch
+      await rawQuery("UPDATE subjects SET batch_id = $1 WHERE user_id IS NULL AND batch_id IS NULL", [firstBatchId]);
+    }
+
+    // 3. Seed default Master Chapters (Lessons) & Topics for master subjects if empty
+    try {
+      const masterSubjects = await rawQuery("SELECT id, name FROM subjects WHERE user_id IS NULL");
+      const mSubRows = masterSubjects.rows || masterSubjects || [];
+      for (const sub of mSubRows) {
+        const existingMasterLessons = await rawQuery("SELECT count(*) as count FROM lessons WHERE subject_id = $1 AND user_id IS NULL", [sub.id]);
+        const lCount = Number(existingMasterLessons.rows?.[0]?.count || existingMasterLessons[0]?.count || 0);
+        if (lCount === 0) {
+          // Add default chapters
+          const ch1 = await rawQuery("INSERT INTO lessons (subject_id, user_id, name, sort_order) VALUES ($1, NULL, $2, 1) RETURNING id", [sub.id, "অধ্যায় ১: মৌলিক ধারণা (Chapter 1)"]);
+          const ch1Id = ch1.rows?.[0]?.id || ch1[0]?.id;
+          if (ch1Id) {
+            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 1, 'not_started')", [sub.id, ch1Id, "ভূমিকা ও পটভূমি (Introduction & Background)"]);
+            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 2, 'not_started')", [sub.id, ch1Id, "প্রধান পাঠ ও পর্যালোচনা (Core Concepts & Analysis)"]);
+          }
+
+          const ch2 = await rawQuery("INSERT INTO lessons (subject_id, user_id, name, sort_order) VALUES ($1, NULL, $2, 2) RETURNING id", [sub.id, "অধ্যায় ২: প্রয়োগ ও অনুশীলন (Chapter 2)"]);
+          const ch2Id = ch2.rows?.[0]?.id || ch2[0]?.id;
+          if (ch2Id) {
+            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 1, 'not_started')", [sub.id, ch2Id, "গুরুত্বপূর্ণ প্রশ্নোত্তর (Important Questions)"]);
+            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 2, 'not_started')", [sub.id, ch2Id, "পরীক্ষামূলক মডেল টেস্ট (Model Practice)"]);
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 4. Seed default Admin account (admin@alim.edu / admin123)
     const adminRows = await rawQuery("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
     const hasAdmin = (adminRows.rows?.length || adminRows.length || 0) > 0;
     if (!hasAdmin) {

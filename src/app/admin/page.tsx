@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { getAdminDataAction } from "@/actions/admin";
+import { getAdminDataAction, getMasterCurriculumAction } from "@/actions/admin";
 import AdminClient from "./AdminClient";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,10 @@ export default async function AdminPage() {
     redirect("/login?relogin=1");
   }
 
-  const data = await getAdminDataAction();
+  const [data, currData] = await Promise.all([
+    getAdminDataAction(),
+    getMasterCurriculumAction(),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -29,7 +32,7 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      <AdminClient initialData={data} />
+      <AdminClient initialData={{ ...data, curriculum: currData.curriculum }} />
     </div>
   );
 }

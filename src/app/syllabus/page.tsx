@@ -1,9 +1,11 @@
-import { eq } from "drizzle-orm";
-import SyllabusManager from "@/components/SyllabusManager";
+import { and, eq } from "drizzle-orm";
+import SyllabusClientView from "@/components/SyllabusClientView";
 import { db } from "@/db";
 import { subjects, topics } from "@/db/schema";
+import { getCurrentUser } from "@/lib/auth";
 import { ensureSeeded, type SubjectDto, type TopicDto } from "@/lib/queries";
 import type { StudyStatus } from "@/lib/constants";
+import { getStudentCurriculumStatusAction } from "@/actions/syllabus";
 
 export const dynamic = "force-dynamic";
 
@@ -15,22 +17,45 @@ function toStatus(s: string): StudyStatus {
 
 export default async function SyllabusPage() {
   await ensureSeeded();
-  const subs = (await db.select().from(subjects).orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
-  const topicRows = await db
-    .select({
-      id: topics.id,
-      subjectId: topics.subjectId,
-      name: topics.name,
-      chapter: topics.chapter,
-      status: topics.status,
-      notes: topics.notes,
-      completedAt: topics.completedAt,
-      updatedAt: topics.updatedAt,
-      subjectName: subjects.name,
-    })
-    .from(topics)
-    .leftJoin(subjects, eq(topics.subjectId, subjects.id))
-    .orderBy(topics.subjectId, topics.sortOrder, topics.id);
+  const user = await getCurrentUser();
+
+  const status = await getStudentCurriculumStatusAction();
+
+  // If student has personal syllabus, fetch their personal subjects and topics
+  let subs: SubjectDto[] = [];
+  let topicRows: any[] = [];
+
+  if (user && status.hasPersonalSyllabus) {
+    subs = (await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user.id))
+      .orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
+
+    topicRows = await db
+      .select({
+        id: topics.id,
+        subjectId: topics.subjectId,
+        name: topics.name,
+        chapter: topics.chapter,
+        status: topics.status,
+        notes: topics.notes,
+        completedAt: topics.completedAt,
+        updatedAt: topics.updatedAt,
+        subjectName: subjects.name,
+      })
+      .from(topics)
+      .leftJoin(subjects, eq(topics.subjectId, subjects.id))
+      .where(eq(topics.userId, user.id))
+      .orderBy(topics.subjectId, topics.sortOrder, topics.id);
+  } else {
+    // Fallback: master or default subjects
+    subs = (await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user ? user.id : 0))
+      .orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
+  }
 
   const groups = subs.map((s) => ({
     subject: s,
@@ -46,26 +71,21 @@ export default async function SyllabusPage() {
           status: toStatus(t.status),
           notes: t.notes,
           completedAt: t.completedAt,
-          updatedAt: t.updatedAt.toISOString(),
-        }),
+          updatedAt: t.updatedAt ? t.updatedAt.toISOString() : new Date().toISOString(),
+        })
       ),
   }));
 
   const totalTopics = topicRows.length;
 
   return (
-    <div className="space-y-6">
-      <header className="rise">
-        <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">Syllabus Setup</h1>
-        <p className="mt-1 max-w-2xl text-[13.5px] leading-relaxed text-ink-faint">
-          Enter your <span className="font-semibold text-ink">real</span> syllabus — chapter by chapter, topic by
-          topic. Nothing is invented for you: these exact names power progress tracking, the remaining list, and the
-          natural-language matcher. {totalTopics > 0 && <span className="font-semibold text-leaf">{totalTopics} topics entered.</span>}
-        </p>
-      </header>
-      <div className="rise rise-1">
-        <SyllabusManager groups={groups} />
-      </div>
-    </div>
+    <SyllabusClientView
+      hasPersonalSyllabus={status.hasPersonalSyllabus ?? false}
+      userBatch={status.userBatch ?? null}
+      availableBatches={status.availableBatches ?? []}
+      masterBooks={status.masterBooks ?? []}
+      groups={groups}
+      totalTopics={totalTopics}
+    />
   );
 }
