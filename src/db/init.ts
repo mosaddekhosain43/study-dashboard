@@ -204,34 +204,48 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // 1. Seed default batches (Alim 2027, Dakhil 2027, SSC 2027, Class 10, Class 8)
-    const existingBatches = await rawQuery("SELECT COUNT(*) as count FROM batches");
-    const batchCount = Number(existingBatches.rows?.[0]?.count || existingBatches[0]?.count || 0);
-    if (batchCount === 0) {
-      await rawQuery(
-        "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-        ["SSC 2027", "ssc-2027", "SSC Examination Batch 2027 (General Education Board)"]
-      );
-      await rawQuery(
-        "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-        ["Dakhil 2027", "dakhil-2027", "Dakhil Examination Batch 2027 (Madrasah Board)"]
-      );
-      await rawQuery(
-        "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-        ["Alim 2027", "alim-2027", "Alim 2nd Year Examination Batch 2027"]
-      );
-      await rawQuery(
-        "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-        ["Class 10", "class-10", "Class 10 Secondary Batch"]
-      );
-      await rawQuery(
-        "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-        ["Class 8", "class-8", "Junior Dakhil / Class 8 Batch"]
-      );
+    // 1. Seed default batches (SSC 2027, HSC 2027, Dakhil 2027, Alim 2027)
+    await rawQuery(
+      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
+      ["SSC 2027", "ssc-2027", "SSC Examination Batch 2027 (General Education Board)"]
+    );
+    await rawQuery(
+      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
+      ["HSC 2027", "hsc-2027", "HSC Examination Batch 2027 (General Education Board)"]
+    );
+    await rawQuery(
+      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
+      ["Dakhil 2027", "dakhil-2027", "Dakhil Examination Batch 2027 (Madrasah Board)"]
+    );
+    await rawQuery(
+      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
+      ["Alim 2027", "alim-2027", "Alim 2nd Year Examination Batch 2027 (Madrasah Board)"]
+    );
+
+    // Clean up deprecated batches and legacy class levels
+    try {
+      await rawExec("DELETE FROM batches WHERE slug IN ('class-10', 'class-8');");
+      await rawExec("UPDATE subjects SET class_level = 'ssc' WHERE class_level = 'class_10';");
+      await rawExec("UPDATE subjects SET class_level = 'dakhil' WHERE class_level = 'class_8';");
+      await rawExec("UPDATE users SET class_level = 'ssc' WHERE class_level = 'class_10';");
+      await rawExec("UPDATE users SET class_level = 'dakhil' WHERE class_level = 'class_8';");
+    } catch {
+      // ignore
     }
 
     const firstBatchRes = await rawQuery("SELECT id FROM batches ORDER BY id ASC LIMIT 1");
     const firstBatchId = firstBatchRes.rows?.[0]?.id || firstBatchRes[0]?.id || 1;
+
+    // Build map of class levels to batch IDs
+    const allBatchesRes = await rawQuery("SELECT id, slug FROM batches");
+    const batchRows = allBatchesRes.rows || allBatchesRes || [];
+    const batchMap: Record<string, number> = {};
+    for (const b of batchRows) {
+      if (b.slug?.includes("ssc")) batchMap["ssc"] = b.id;
+      if (b.slug?.includes("hsc")) batchMap["hsc"] = b.id;
+      if (b.slug?.includes("dakhil")) batchMap["dakhil"] = b.id;
+      if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
+    }
 
     // 2. Seed default legacy subjects if empty
     const existingSubjects = await rawQuery("SELECT COUNT(*) as count FROM subjects WHERE user_id IS NULL");
@@ -241,7 +255,7 @@ export async function runInitAndSeed(
         const s = SUBJECT_DEFS[i];
         await rawQuery(
           "INSERT INTO subjects (batch_id, name, slug, name_bn, sort_order, board, class_level, stream_group, subject_type, structure_type) VALUES ($1, $2, $3, $4, $5, 'madrasah', 'alim', 'all', 'compulsory', 'chapter') ON CONFLICT DO NOTHING",
-          [firstBatchId, s.name, s.slug, s.nameBn, i + 1]
+          [batchMap["alim"] || firstBatchId, s.name, s.slug, s.nameBn, i + 1]
         );
       }
     } else {
@@ -251,7 +265,7 @@ export async function runInitAndSeed(
       );
     }
 
-    // 3. Seed comprehensive NCTB Curriculum data (SSC, Dakhil, etc.)
+    // 3. Seed comprehensive NCTB Curriculum data (SSC, HSC, Dakhil, Alim)
     try {
       // Fetch all existing master subject slugs
       const existingSlugsRes = await rawQuery("SELECT slug FROM subjects WHERE user_id IS NULL");
@@ -263,12 +277,14 @@ export async function runInitAndSeed(
         const def = NCTB_CURRICULUM_DATA[i];
         if (existingSlugs.has(def.slug)) continue;
 
+        const effectiveBatchId = batchMap[def.classLevel] || firstBatchId;
+
         const subRes = await rawQuery(
           `INSERT INTO subjects (batch_id, user_id, name, name_bn, slug, sort_order, board, class_level, stream_group, subject_type, structure_type)
            VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            RETURNING id`,
           [
-            firstBatchId,
+            effectiveBatchId,
             def.name,
             def.nameBn,
             def.slug,

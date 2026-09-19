@@ -49,7 +49,7 @@ interface Props {
 }
 
 export type BoardType = "general" | "madrasah";
-export type ClassLevel = "ssc" | "class_10" | "hsc" | "dakhil" | "alim" | "class_8";
+export type ClassLevel = "ssc" | "hsc" | "dakhil" | "alim";
 export type StreamGroup =
   | "science"
   | "humanities"
@@ -73,7 +73,7 @@ export default function SyllabusOnboarding({
       return userProfile.board as BoardType;
     }
     // Infer from userBatch name if possible
-    if (userBatch?.name.toLowerCase().includes("ssc") || userBatch?.name.toLowerCase().includes("school")) {
+    if (userBatch?.name.toLowerCase().includes("ssc") || userBatch?.name.toLowerCase().includes("school") || userBatch?.name.toLowerCase().includes("hsc")) {
       return "general";
     }
     return "general";
@@ -81,7 +81,9 @@ export default function SyllabusOnboarding({
 
   // ── Step B: Class / Level Selection ──
   const [classLevel, setClassLevel] = useState<ClassLevel>(() => {
-    if (userProfile?.classLevel) return userProfile.classLevel as ClassLevel;
+    if (userProfile?.classLevel === "ssc" || userProfile?.classLevel === "hsc" || userProfile?.classLevel === "dakhil" || userProfile?.classLevel === "alim") {
+      return userProfile.classLevel as ClassLevel;
+    }
     return board === "general" ? "ssc" : "dakhil";
   });
 
@@ -89,12 +91,12 @@ export default function SyllabusOnboarding({
   const handleBoardChange = (newBoard: BoardType) => {
     setBoard(newBoard);
     if (newBoard === "general") {
-      if (classLevel === "dakhil" || classLevel === "alim" || classLevel === "class_8") {
+      if (classLevel !== "ssc" && classLevel !== "hsc") {
         setClassLevel("ssc");
       }
       setStreamGroup("science");
     } else {
-      if (classLevel === "ssc" || classLevel === "class_10" || classLevel === "hsc") {
+      if (classLevel !== "dakhil" && classLevel !== "alim") {
         setClassLevel("dakhil");
       }
       setStreamGroup("general_madrasah");
@@ -109,7 +111,7 @@ export default function SyllabusOnboarding({
 
   // Auto-select matching batchId
   const matchingBatchId = useMemo(() => {
-    const slugKey = classLevel === "class_10" ? "class-10" : classLevel;
+    const slugKey = classLevel;
     const found = availableBatches.find((b) =>
       b.slug.toLowerCase().includes(slugKey.toLowerCase()) ||
       b.name.toLowerCase().includes(slugKey.toLowerCase())
@@ -132,13 +134,7 @@ export default function SyllabusOnboarding({
       }
       // 2. Class Level filter
       if (book.classLevel && book.classLevel !== "all") {
-        // SSC / Class 10 share books in general curriculum
-        if (
-          (classLevel === "ssc" || classLevel === "class_10") &&
-          (book.classLevel === "ssc" || book.classLevel === "class_10")
-        ) {
-          // match
-        } else if (book.classLevel !== classLevel) {
+        if (book.classLevel !== classLevel) {
           return false;
         }
       }
@@ -412,7 +408,7 @@ export default function SyllabusOnboarding({
               <GraduationCap className="size-3.5 text-leaf" />
               <span>2. Class / Level</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {board === "general" ? (
                 <>
                   <button
@@ -425,17 +421,6 @@ export default function SyllabusOnboarding({
                     }`}
                   >
                     SSC
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("class_10")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "class_10"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    Class 10
                   </button>
                   <button
                     type="button"
@@ -472,17 +457,6 @@ export default function SyllabusOnboarding({
                     }`}
                   >
                     Alim
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("class_8")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "class_8"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    Class 8
                   </button>
                 </>
               )}

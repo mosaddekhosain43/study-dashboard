@@ -412,7 +412,15 @@ export default function MasterCurriculumManager({
             </span>
             <select
               value={filterBoard}
-              onChange={(e) => setFilterBoard(e.target.value)}
+              onChange={(e) => {
+                const newBoard = e.target.value;
+                setFilterBoard(newBoard);
+                if (newBoard === "general" && (filterClass === "dakhil" || filterClass === "alim")) {
+                  setFilterClass("all");
+                } else if (newBoard === "madrasah" && (filterClass === "ssc" || filterClass === "hsc")) {
+                  setFilterClass("all");
+                }
+              }}
               className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
             >
               <option value="all">All Boards</option>
@@ -432,12 +440,24 @@ export default function MasterCurriculumManager({
               className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
             >
               <option value="all">All Classes</option>
-              <option value="ssc">SSC</option>
-              <option value="class_10">Class 10</option>
-              <option value="hsc">HSC</option>
-              <option value="dakhil">Dakhil</option>
-              <option value="alim">Alim</option>
-              <option value="class_8">Class 8</option>
+              {filterBoard === "madrasah" ? (
+                <>
+                  <option value="dakhil">Dakhil</option>
+                  <option value="alim">Alim</option>
+                </>
+              ) : filterBoard === "general" ? (
+                <>
+                  <option value="ssc">SSC</option>
+                  <option value="hsc">HSC</option>
+                </>
+              ) : (
+                <>
+                  <option value="ssc">SSC</option>
+                  <option value="hsc">HSC</option>
+                  <option value="dakhil">Dakhil</option>
+                  <option value="alim">Alim</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -877,7 +897,15 @@ export default function MasterCurriculumManager({
                 </label>
                 <select
                   value={bookBoard}
-                  onChange={(e) => setBookBoard(e.target.value)}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    setBookBoard(b);
+                    if (b === "madrasah" && (bookClassLevel === "ssc" || bookClassLevel === "hsc")) {
+                      setBookClassLevel("dakhil");
+                    } else if (b === "general" && (bookClassLevel === "dakhil" || bookClassLevel === "alim")) {
+                      setBookClassLevel("ssc");
+                    }
+                  }}
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 >
                   <option value="general">General Education (School)</option>
@@ -895,13 +923,25 @@ export default function MasterCurriculumManager({
                   onChange={(e) => setBookClassLevel(e.target.value)}
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 >
-                  <option value="ssc">SSC</option>
-                  <option value="class_10">Class 10</option>
-                  <option value="hsc">HSC</option>
-                  <option value="dakhil">Dakhil</option>
-                  <option value="alim">Alim</option>
-                  <option value="class_8">Class 8</option>
-                  <option value="all">All Classes</option>
+                  {bookBoard === "madrasah" ? (
+                    <>
+                      <option value="dakhil">Dakhil</option>
+                      <option value="alim">Alim</option>
+                    </>
+                  ) : bookBoard === "general" ? (
+                    <>
+                      <option value="ssc">SSC</option>
+                      <option value="hsc">HSC</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="ssc">SSC</option>
+                      <option value="hsc">HSC</option>
+                      <option value="dakhil">Dakhil</option>
+                      <option value="alim">Alim</option>
+                      <option value="all">All Classes</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -1019,7 +1059,15 @@ export default function MasterCurriculumManager({
                 </label>
                 <select
                   value={editBookBoard}
-                  onChange={(e) => setEditBookBoard(e.target.value)}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    setEditBookBoard(b);
+                    if (b === "madrasah" && (editBookClassLevel === "ssc" || editBookClassLevel === "hsc")) {
+                      setEditBookClassLevel("dakhil");
+                    } else if (b === "general" && (editBookClassLevel === "dakhil" || editBookClassLevel === "alim")) {
+                      setEditBookClassLevel("ssc");
+                    }
+                  }}
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 >
                   <option value="general">General Education (School)</option>
@@ -1037,13 +1085,25 @@ export default function MasterCurriculumManager({
                   onChange={(e) => setEditBookClassLevel(e.target.value)}
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 >
-                  <option value="ssc">SSC</option>
-                  <option value="class_10">Class 10</option>
-                  <option value="hsc">HSC</option>
-                  <option value="dakhil">Dakhil</option>
-                  <option value="alim">Alim</option>
-                  <option value="class_8">Class 8</option>
-                  <option value="all">All Classes</option>
+                  {editBookBoard === "madrasah" ? (
+                    <>
+                      <option value="dakhil">Dakhil</option>
+                      <option value="alim">Alim</option>
+                    </>
+                  ) : editBookBoard === "general" ? (
+                    <>
+                      <option value="ssc">SSC</option>
+                      <option value="hsc">HSC</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="ssc">SSC</option>
+                      <option value="hsc">HSC</option>
+                      <option value="dakhil">Dakhil</option>
+                      <option value="alim">Alim</option>
+                      <option value="all">All Classes</option>
+                    </>
+                  )}
                 </select>
               </div>
 
