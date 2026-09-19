@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import {
   BookOpen,
   Check,
@@ -14,7 +14,14 @@ import {
   Trash2,
   X,
   BookPlus,
-  HelpCircle,
+  Filter,
+  School,
+  Building2,
+  Compass,
+  Atom,
+  Briefcase,
+  BookMarked,
+  Tag,
 } from "lucide-react";
 import {
   createMasterSubjectAction,
@@ -51,6 +58,11 @@ interface SubjectItem {
   nameBn: string | null;
   slug: string;
   sortOrder: number;
+  board?: string | null;
+  classLevel?: string | null;
+  streamGroup?: string | null;
+  subjectType?: "compulsory" | "group_elective" | "optional";
+  structureType?: "chapter" | "module";
   lessons: ChapterItem[];
 }
 
@@ -74,21 +86,40 @@ export default function MasterCurriculumManager({
     batches[0]?.id || 1
   );
 
+  // Filter controls
+  const [filterBoard, setFilterBoard] = useState<string>("all");
+  const [filterClass, setFilterClass] = useState<string>("all");
+  const [filterGroup, setFilterGroup] = useState<string>("all");
+
   // Expanded book IDs: Record<subjectId, boolean>
   const [expandedBooks, setExpandedBooks] = useState<Record<number, boolean>>({});
 
   // Expanded chapter IDs: Record<chapterId, boolean>
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({});
 
-  // Add Book Modal
+  // Add Book Modal State
   const [showAddBook, setShowAddBook] = useState(false);
   const [bookName, setBookName] = useState("");
   const [bookNameBn, setBookNameBn] = useState("");
+  const [bookBoard, setBookBoard] = useState<string>("general");
+  const [bookClassLevel, setBookClassLevel] = useState<string>("ssc");
+  const [bookStreamGroup, setBookStreamGroup] = useState<string>("all");
+  const [bookSubjectType, setBookSubjectType] = useState<
+    "compulsory" | "group_elective" | "optional"
+  >("compulsory");
+  const [bookStructureType, setBookStructureType] = useState<"chapter" | "module">("chapter");
 
-  // Edit Book Modal
+  // Edit Book Modal State
   const [editingBook, setEditingBook] = useState<SubjectItem | null>(null);
   const [editBookName, setEditBookName] = useState("");
   const [editBookNameBn, setEditBookNameBn] = useState("");
+  const [editBookBoard, setEditBookBoard] = useState<string>("general");
+  const [editBookClassLevel, setEditBookClassLevel] = useState<string>("ssc");
+  const [editBookStreamGroup, setEditBookStreamGroup] = useState<string>("all");
+  const [editBookSubjectType, setEditBookSubjectType] = useState<
+    "compulsory" | "group_elective" | "optional"
+  >("compulsory");
+  const [editBookStructureType, setEditBookStructureType] = useState<"chapter" | "module">("chapter");
 
   // Add Chapter state: { [subjectId]: string }
   const [chapterInputs, setChapterInputs] = useState<Record<number, string>>({});
@@ -118,10 +149,24 @@ export default function MasterCurriculumManager({
 
   const currentBatch = batches.find((b) => b.id === selectedBatchId) || batches[0];
 
-  // Filter books for this batch (or general master)
-  const currentBooks = initialCurriculum.filter(
-    (s) => s.batchId === selectedBatchId || s.batchId === null
-  );
+  // Filter books by board, class, group and active batch
+  const currentBooks = useMemo(() => {
+    return initialCurriculum.filter((s) => {
+      // Board filter
+      if (filterBoard !== "all") {
+        if (s.board && s.board !== "both" && s.board !== filterBoard) return false;
+      }
+      // Class filter
+      if (filterClass !== "all") {
+        if (s.classLevel && s.classLevel !== "all" && s.classLevel !== filterClass) return false;
+      }
+      // Group filter
+      if (filterGroup !== "all") {
+        if (s.streamGroup && s.streamGroup !== "all" && s.streamGroup !== filterGroup) return false;
+      }
+      return true;
+    });
+  }, [initialCurriculum, filterBoard, filterClass, filterGroup]);
 
   // ── Book Handlers ──
   const handleCreateBook = () => {
@@ -131,6 +176,11 @@ export default function MasterCurriculumManager({
         batchId: selectedBatchId,
         name: bookName.trim(),
         nameBn: bookNameBn.trim() || undefined,
+        board: bookBoard,
+        classLevel: bookClassLevel,
+        streamGroup: bookStreamGroup,
+        subjectType: bookSubjectType,
+        structureType: bookStructureType,
       });
       if (res.ok) {
         setBookName("");
@@ -150,6 +200,11 @@ export default function MasterCurriculumManager({
         name: editBookName.trim(),
         nameBn: editBookNameBn.trim() || undefined,
         batchId: selectedBatchId,
+        board: editBookBoard,
+        classLevel: editBookClassLevel,
+        streamGroup: editBookStreamGroup,
+        subjectType: editBookSubjectType,
+        structureType: editBookStructureType,
       });
       if (res.ok) {
         setEditingBook(null);
@@ -201,7 +256,7 @@ export default function MasterCurriculumManager({
   };
 
   const handleDeleteChapter = (chapterId: number) => {
-    if (!confirm("Delete this chapter and its topics from the master template?")) return;
+    if (!confirm("Delete this chapter and all its topics?")) return;
     startTransition(async () => {
       const res = await deleteMasterChapterAction(chapterId);
       if (res.ok) {
@@ -241,7 +296,7 @@ export default function MasterCurriculumManager({
   };
 
   const handleDeleteTopic = (topicId: number) => {
-    if (!confirm("Delete this topic from the master template?")) return;
+    if (!confirm("Delete this topic?")) return;
     startTransition(async () => {
       const res = await deleteMasterTopicAction(topicId);
       if (res.ok) {
@@ -277,12 +332,11 @@ export default function MasterCurriculumManager({
         <GraduationCap className="size-5 text-sky-700 shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-bold text-sky-950">
-            Master Curriculum Template (Default for New Students)
+            Official NCTB & Master Curriculum Management
           </p>
           <p className="text-sky-800 leading-relaxed">
-            All subjects, chapters, and topics managed here serve as the official curriculum template.
-            When newly registered students in this class set up their syllabus, they can select and clone
-            these books into their personal dashboards.
+            Manage books, chapters, modules, and sub-topics across General School and Madrasah boards.
+            You can configure Chapter-based vs. Module/Skills-based structures and assign Compulsory, Group Elective, or Optional tags.
           </p>
         </div>
       </div>
@@ -293,53 +347,122 @@ export default function MasterCurriculumManager({
         </div>
       )}
 
-      {/* Top Class/Grade Control Bar */}
-      <div className="card p-4 sm:p-5 border border-line bg-card shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="grid size-9 place-items-center rounded-xl bg-leaf-soft text-leaf">
-            <Layers className="size-5" />
-          </div>
-          <div>
-            <span className="block text-[10.5px] font-bold uppercase tracking-wider text-ink-faint">
-              Active Class / Grade
-            </span>
-            <div className="flex items-center gap-2">
-              <select
-                value={selectedBatchId}
-                onChange={(e) => setSelectedBatchId(Number(e.target.value))}
-                className="font-display text-base font-bold text-ink bg-transparent cursor-pointer outline-none border-b border-line pb-0.5 hover:border-leaf"
-              >
-                {batches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                title="Edit class name or description"
-                onClick={() => {
-                  if (currentBatch) {
-                    setEditBatchName(currentBatch.name);
-                    setEditBatchDesc(currentBatch.description || "");
-                    setShowEditBatchModal(true);
-                  }
-                }}
-                className="grid size-7 place-items-center rounded-lg text-ink-faint hover:bg-paper hover:text-leaf transition"
-              >
-                <Pencil className="size-3.5" />
-              </button>
+      {/* Top Filter & Control Bar */}
+      <div className="card p-4 sm:p-5 border border-line bg-card shadow-xs space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-9 place-items-center rounded-xl bg-leaf-soft text-leaf">
+              <Layers className="size-5" />
             </div>
+            <div>
+              <span className="block text-[10.5px] font-bold uppercase tracking-wider text-ink-faint">
+                Active Batch
+              </span>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedBatchId}
+                  onChange={(e) => setSelectedBatchId(Number(e.target.value))}
+                  className="font-display text-sm sm:text-base font-bold text-ink bg-transparent cursor-pointer outline-none border-b border-line pb-0.5 hover:border-leaf"
+                >
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  title="Edit class name or description"
+                  onClick={() => {
+                    if (currentBatch) {
+                      setEditBatchName(currentBatch.name);
+                      setEditBatchDesc(currentBatch.description || "");
+                      setShowEditBatchModal(true);
+                    }
+                  }}
+                  className="grid size-7 place-items-center rounded-lg text-ink-faint hover:bg-paper hover:text-leaf transition"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAddBook(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-leaf-deep shrink-0"
+            >
+              <BookPlus className="size-4" />
+              <span>+ Add Master Book</span>
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowAddBook(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-leaf-deep shrink-0"
-          >
-            <BookPlus className="size-4" />
-            <span>+ Add Master Book</span>
-          </button>
+        {/* Dynamic Filters Row */}
+        <div className="pt-3 border-t border-line/60 flex flex-wrap items-center gap-3 text-xs">
+          <div className="flex items-center gap-1.5 text-ink-faint font-semibold mr-1">
+            <Filter className="size-3.5 text-leaf" />
+            <span>Filter Curriculum:</span>
+          </div>
+
+          {/* Board Filter */}
+          <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
+              Board:
+            </span>
+            <select
+              value={filterBoard}
+              onChange={(e) => setFilterBoard(e.target.value)}
+              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
+            >
+              <option value="all">All Boards</option>
+              <option value="general">General (School)</option>
+              <option value="madrasah">Madrasah Board</option>
+            </select>
+          </div>
+
+          {/* Class Filter */}
+          <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
+              Class:
+            </span>
+            <select
+              value={filterClass}
+              onChange={(e) => setFilterClass(e.target.value)}
+              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
+            >
+              <option value="all">All Classes</option>
+              <option value="ssc">SSC</option>
+              <option value="class_10">Class 10</option>
+              <option value="hsc">HSC</option>
+              <option value="dakhil">Dakhil</option>
+              <option value="alim">Alim</option>
+              <option value="class_8">Class 8</option>
+            </select>
+          </div>
+
+          {/* Group Filter */}
+          <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
+              Stream:
+            </span>
+            <select
+              value={filterGroup}
+              onChange={(e) => setFilterGroup(e.target.value)}
+              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
+            >
+              <option value="all">All Streams</option>
+              <option value="science">Science</option>
+              <option value="humanities">Humanities</option>
+              <option value="business_studies">Commerce / Business</option>
+              <option value="general_madrasah">General Madrasah</option>
+              <option value="quran_hadith">Quran/Hadith Track</option>
+            </select>
+          </div>
+
+          <span className="text-ink-faint text-[11px] font-semibold ml-auto">
+            Showing {currentBooks.length} books
+          </span>
         </div>
       </div>
 
@@ -347,12 +470,13 @@ export default function MasterCurriculumManager({
       <div className="space-y-4">
         {currentBooks.length === 0 ? (
           <div className="card p-12 text-center text-xs text-ink-faint border-dashed">
-            No default books mapped to this class yet. Click{" "}
-            <strong className="text-leaf">+ Add Master Book</strong> above to create your first book.
+            No master books found matching the active filters. Click{" "}
+            <strong className="text-leaf">+ Add Master Book</strong> above to create a new book.
           </div>
         ) : (
           currentBooks.map((book) => {
             const isBookExpanded = Boolean(expandedBooks[book.id]);
+            const isModuleBased = book.structureType === "module";
 
             return (
               <div
@@ -386,9 +510,40 @@ export default function MasterCurriculumManager({
                             ({book.nameBn})
                           </span>
                         )}
+
+                        {/* Badges for board, class, group, and types */}
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                            book.board === "madrasah"
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              : "bg-sky-50 text-sky-800 border border-sky-200"
+                          }`}
+                        >
+                          {book.board === "madrasah" ? "Madrasah" : "General"}
+                        </span>
+
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 uppercase">
+                          {book.classLevel || "all"}
+                        </span>
+
+                        <span
+                          className={`rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                            book.subjectType === "compulsory"
+                              ? "bg-leaf-soft text-leaf-deep font-bold"
+                              : book.subjectType === "group_elective"
+                              ? "bg-emerald-50 text-emerald-800"
+                              : "bg-purple-50 text-purple-800"
+                          }`}
+                        >
+                          {book.subjectType || "compulsory"}
+                        </span>
+
+                        <span className="rounded-md bg-paper px-2 py-0.5 text-[10px] font-medium text-ink-faint border border-line">
+                          {isModuleBased ? "Module-Based" : "Chapter-Based"}
+                        </span>
                       </div>
-                      <p className="text-[11px] text-ink-faint">
-                        {book.lessons.length} chapter{book.lessons.length === 1 ? "" : "s"} •{" "}
+                      <p className="text-[11px] text-ink-faint mt-0.5">
+                        {book.lessons.length} {isModuleBased ? "modules/parts" : "chapters"} •{" "}
                         {book.lessons.reduce((acc, l) => acc + l.topics.length, 0)} total topics
                       </p>
                     </div>
@@ -401,6 +556,11 @@ export default function MasterCurriculumManager({
                         setEditingBook(book);
                         setEditBookName(book.name);
                         setEditBookNameBn(book.nameBn || "");
+                        setEditBookBoard(book.board || "general");
+                        setEditBookClassLevel(book.classLevel || "ssc");
+                        setEditBookStreamGroup(book.streamGroup || "all");
+                        setEditBookSubjectType(book.subjectType || "compulsory");
+                        setEditBookStructureType(book.structureType || "chapter");
                       }}
                       className="grid size-7 place-items-center rounded-lg border border-line bg-white text-ink-faint hover:text-leaf transition"
                     >
@@ -419,7 +579,7 @@ export default function MasterCurriculumManager({
                 {/* Book Body: Chapters & Topics */}
                 {isBookExpanded && (
                   <div className="p-4 sm:p-5 space-y-4">
-                    {/* Inline Add Chapter Form */}
+                    {/* Inline Add Chapter / Module Form */}
                     <div className="flex items-center gap-2 rounded-xl border border-line bg-paper/40 p-2">
                       <FolderPlus className="size-4 text-leaf shrink-0 ml-1" />
                       <input
@@ -431,7 +591,11 @@ export default function MasterCurriculumManager({
                           }))
                         }
                         onKeyDown={(e) => e.key === "Enter" && handleAddChapter(book.id)}
-                        placeholder={`Add new chapter to ${book.name}…`}
+                        placeholder={
+                          isModuleBased
+                            ? `Add module/part (e.g. Part A: Grammar Skills or Unit 1)…`
+                            : `Add new chapter (e.g. Chapter 1: Dynamics)…`
+                        }
                         className="min-w-0 flex-1 bg-transparent px-1 text-xs outline-none placeholder:text-ink-faint/60"
                       />
                       <button
@@ -439,14 +603,14 @@ export default function MasterCurriculumManager({
                         disabled={pending || !chapterInputs[book.id]?.trim()}
                         className="shrink-0 rounded-lg bg-leaf px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
                       >
-                        Add Chapter
+                        {isModuleBased ? "+ Add Module / Part" : "+ Add Chapter"}
                       </button>
                     </div>
 
                     {/* Chapters List */}
                     {book.lessons.length === 0 ? (
                       <p className="text-center text-xs text-ink-faint py-3">
-                        No chapters added yet. Add your first chapter above.
+                        No {isModuleBased ? "modules" : "chapters"} added yet. Add your first above.
                       </p>
                     ) : (
                       <div className="space-y-3">
@@ -501,9 +665,11 @@ export default function MasterCurriculumManager({
                                       </div>
                                     ) : (
                                       <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-leaf uppercase">
-                                          CH{chIdx + 1}
-                                        </span>
+                                        {!isModuleBased && (
+                                          <span className="text-[10px] font-bold text-leaf uppercase">
+                                            CH{chIdx + 1}
+                                          </span>
+                                        )}
                                         <span
                                           onClick={() => toggleChapterExpand(chapter.id)}
                                           className="text-xs font-bold text-ink cursor-pointer hover:text-leaf truncate"
@@ -521,7 +687,7 @@ export default function MasterCurriculumManager({
                                 {!isEditingThisChapter && (
                                   <div className="flex items-center gap-1 shrink-0">
                                     <button
-                                      title="Rename chapter"
+                                      title="Rename item"
                                       onClick={() => {
                                         setEditingChapterId(chapter.id);
                                         setEditChapterName(chapter.name);
@@ -531,7 +697,7 @@ export default function MasterCurriculumManager({
                                       <Pencil className="size-3" />
                                     </button>
                                     <button
-                                      title="Delete chapter"
+                                      title="Delete item"
                                       onClick={() => handleDeleteChapter(chapter.id)}
                                       className="grid size-6 place-items-center rounded text-ink-faint hover:text-rose-600 transition"
                                     >
@@ -558,7 +724,7 @@ export default function MasterCurriculumManager({
                                       onKeyDown={(e) =>
                                         e.key === "Enter" && handleAddTopic(book.id, chapter.id)
                                       }
-                                      placeholder={`Add topic to ${chapter.name}…`}
+                                      placeholder={`Add topic or practice item…`}
                                       className="min-w-0 flex-1 bg-transparent px-1 text-[11.5px] outline-none placeholder:text-ink-faint/60"
                                     />
                                     <button
@@ -573,7 +739,7 @@ export default function MasterCurriculumManager({
                                   {/* Topics list */}
                                   {chapter.topics.length === 0 ? (
                                     <p className="text-center text-[11px] text-ink-faint py-1.5">
-                                      No topics under this chapter yet.
+                                      No topics under this item yet.
                                     </p>
                                   ) : (
                                     <ul className="space-y-1.5">
@@ -665,8 +831,8 @@ export default function MasterCurriculumManager({
       {/* Add Master Book Modal */}
       {showAddBook && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-          <div className="card w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4">
+          <div className="card w-full max-w-lg p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
                 <BookPlus className="size-4.5 text-leaf" />
                 <span>Add Master Book ({currentBatch?.name})</span>
@@ -679,34 +845,115 @@ export default function MasterCurriculumManager({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Book Name (English / Primary)
+                  Book Name (English / Primary) *
                 </label>
                 <input
                   autoFocus
                   value={bookName}
                   onChange={(e) => setBookName(e.target.value)}
-                  placeholder="e.g. Arabic 1st Paper, General Math"
+                  placeholder="e.g. Physics, Higher Math, Bangla 2nd Paper"
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
                   Bangla / Arabic Name (Optional)
                 </label>
                 <input
                   value={bookNameBn}
                   onChange={(e) => setBookNameBn(e.target.value)}
-                  placeholder="e.g. আরবি ১ম পত্র, সাধারণ গণিত"
+                  placeholder="e.g. পদার্থবিজ্ঞান, উচ্চতর গণিত"
                   className="w-full font-bengali rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Education Board
+                </label>
+                <select
+                  value={bookBoard}
+                  onChange={(e) => setBookBoard(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="general">General Education (School)</option>
+                  <option value="madrasah">Madrasah Board</option>
+                  <option value="both">Both Boards</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Class / Level
+                </label>
+                <select
+                  value={bookClassLevel}
+                  onChange={(e) => setBookClassLevel(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="ssc">SSC</option>
+                  <option value="class_10">Class 10</option>
+                  <option value="hsc">HSC</option>
+                  <option value="dakhil">Dakhil</option>
+                  <option value="alim">Alim</option>
+                  <option value="class_8">Class 8</option>
+                  <option value="all">All Classes</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Stream / Group
+                </label>
+                <select
+                  value={bookStreamGroup}
+                  onChange={(e) => setBookStreamGroup(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="all">All Groups / Universal</option>
+                  <option value="science">Science</option>
+                  <option value="humanities">Humanities</option>
+                  <option value="business_studies">Business Studies / Commerce</option>
+                  <option value="general_madrasah">General Madrasah</option>
+                  <option value="quran_hadith">Quran/Hadith Special</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Subject Category
+                </label>
+                <select
+                  value={bookSubjectType}
+                  onChange={(e) => setBookSubjectType(e.target.value as any)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="compulsory">Compulsory (আবশ্যিক)</option>
+                  <option value="group_elective">Group Elective (নৈর্বাচনিক)</option>
+                  <option value="optional">Optional / 4th (ঐচ্ছিক / ৪র্থ)</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Structure Type
+                </label>
+                <select
+                  value={bookStructureType}
+                  onChange={(e) => setBookStructureType(e.target.value as any)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="chapter">Chapter-Based (অধ্যায় ১, অধ্যায় ২...)</option>
+                  <option value="module">Skills / Module-Based (Part A: Grammar, Part B: Writing...)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2">
+            <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-line">
               <button
                 onClick={() => setShowAddBook(false)}
                 className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-semibold text-ink-soft hover:bg-paper"
@@ -728,8 +975,8 @@ export default function MasterCurriculumManager({
       {/* Edit Master Book Modal */}
       {editingBook && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-          <div className="card w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between mb-4">
+          <div className="card w-full max-w-lg p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
                 <Pencil className="size-4 text-leaf" />
                 <span>Edit Master Book</span>
@@ -742,10 +989,10 @@ export default function MasterCurriculumManager({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Book Name
+                  Book Name *
                 </label>
                 <input
                   autoFocus
@@ -755,7 +1002,7 @@ export default function MasterCurriculumManager({
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
                   Bangla / Arabic Name
                 </label>
@@ -765,9 +1012,90 @@ export default function MasterCurriculumManager({
                   className="w-full font-bengali rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Education Board
+                </label>
+                <select
+                  value={editBookBoard}
+                  onChange={(e) => setEditBookBoard(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="general">General Education (School)</option>
+                  <option value="madrasah">Madrasah Board</option>
+                  <option value="both">Both Boards</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Class / Level
+                </label>
+                <select
+                  value={editBookClassLevel}
+                  onChange={(e) => setEditBookClassLevel(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="ssc">SSC</option>
+                  <option value="class_10">Class 10</option>
+                  <option value="hsc">HSC</option>
+                  <option value="dakhil">Dakhil</option>
+                  <option value="alim">Alim</option>
+                  <option value="class_8">Class 8</option>
+                  <option value="all">All Classes</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Stream / Group
+                </label>
+                <select
+                  value={editBookStreamGroup}
+                  onChange={(e) => setEditBookStreamGroup(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="all">All Groups / Universal</option>
+                  <option value="science">Science</option>
+                  <option value="humanities">Humanities</option>
+                  <option value="business_studies">Business Studies / Commerce</option>
+                  <option value="general_madrasah">General Madrasah</option>
+                  <option value="quran_hadith">Quran/Hadith Special</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Subject Category
+                </label>
+                <select
+                  value={editBookSubjectType}
+                  onChange={(e) => setEditBookSubjectType(e.target.value as any)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="compulsory">Compulsory (আবশ্যিক)</option>
+                  <option value="group_elective">Group Elective (নৈর্বাচনিক)</option>
+                  <option value="optional">Optional / 4th (ঐচ্ছিক / ৪র্থ)</option>
+                </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-ink-soft mb-1">
+                  Structure Type
+                </label>
+                <select
+                  value={editBookStructureType}
+                  onChange={(e) => setEditBookStructureType(e.target.value as any)}
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                >
+                  <option value="chapter">Chapter-Based (অধ্যায় ১, অধ্যায় ২...)</option>
+                  <option value="module">Skills / Module-Based (Part A: Grammar, Part B: Writing...)</option>
+                </select>
+              </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2">
+            <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-line">
               <button
                 onClick={() => setEditingBook(null)}
                 className="rounded-xl border border-line bg-white px-4 py-2 text-xs font-semibold text-ink-soft hover:bg-paper"
@@ -792,8 +1120,8 @@ export default function MasterCurriculumManager({
           <div className="card w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-                <Pencil className="size-4 text-leaf" />
-                <span>Edit Class / Grade</span>
+                <GraduationCap className="size-4.5 text-leaf" />
+                <span>Edit Class / Batch</span>
               </h3>
               <button
                 onClick={() => setShowEditBatchModal(false)}
@@ -806,7 +1134,7 @@ export default function MasterCurriculumManager({
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Class / Grade Name (e.g. Alim 2027, Dakhil 2027)
+                  Batch Name
                 </label>
                 <input
                   autoFocus
@@ -818,10 +1146,10 @@ export default function MasterCurriculumManager({
 
               <div>
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Description (Optional)
+                  Description
                 </label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={editBatchDesc}
                   onChange={(e) => setEditBatchDesc(e.target.value)}
                   className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
@@ -841,7 +1169,7 @@ export default function MasterCurriculumManager({
                 disabled={pending || !editBatchName.trim()}
                 className="rounded-xl bg-leaf px-4.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
-                {pending ? "Saving…" : "Update Class"}
+                {pending ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </div>

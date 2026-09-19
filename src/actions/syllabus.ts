@@ -26,6 +26,11 @@ export interface MasterBookView {
   nameBn: string | null;
   slug: string;
   sortOrder: number;
+  board?: string | null;
+  classLevel?: string | null;
+  streamGroup?: string | null;
+  subjectType: "compulsory" | "group_elective" | "optional";
+  structureType: "chapter" | "module";
   chapters: MasterChapterView[];
 }
 
@@ -53,28 +58,18 @@ export async function getStudentCurriculumStatusAction() {
     effectiveBatchId = allBatches[0].id;
   }
 
-  // Fetch Master Curriculum for this batch (or all master books if no batch assigned)
-  const masterSubQuery = effectiveBatchId
-    ? and(isNull(subjects.userId), eq(subjects.batchId, effectiveBatchId))
-    : isNull(subjects.userId);
-
+  // Fetch all master subjects, lessons, and topics
   const [masterSubs, masterLessons, masterTops] = await Promise.all([
-    db.select().from(subjects).where(masterSubQuery).orderBy(subjects.sortOrder, subjects.id),
+    db
+      .select()
+      .from(subjects)
+      .where(isNull(subjects.userId))
+      .orderBy(subjects.sortOrder, subjects.id),
     db.select().from(lessons).where(isNull(lessons.userId)).orderBy(lessons.sortOrder, lessons.id),
     db.select().from(topics).where(isNull(topics.userId)).orderBy(topics.sortOrder, topics.id),
   ]);
 
-  // If no master books found for this specific batch, fallback to all master books
-  let finalMasterSubs = masterSubs;
-  if (finalMasterSubs.length === 0) {
-    finalMasterSubs = await db
-      .select()
-      .from(subjects)
-      .where(isNull(subjects.userId))
-      .orderBy(subjects.sortOrder, subjects.id);
-  }
-
-  const masterBooks: MasterBookView[] = finalMasterSubs.map((sub) => {
+  const masterBooks: MasterBookView[] = masterSubs.map((sub) => {
     const subChapters = masterLessons.filter((l) => l.subjectId === sub.id);
     return {
       id: sub.id,
@@ -83,6 +78,11 @@ export async function getStudentCurriculumStatusAction() {
       nameBn: sub.nameBn,
       slug: sub.slug,
       sortOrder: sub.sortOrder,
+      board: sub.board,
+      classLevel: sub.classLevel,
+      streamGroup: sub.streamGroup,
+      subjectType: (sub.subjectType as any) || "compulsory",
+      structureType: (sub.structureType as any) || "chapter",
       chapters: subChapters.map((ch) => ({
         id: ch.id,
         name: ch.name,
@@ -100,11 +100,29 @@ export async function getStudentCurriculumStatusAction() {
 
   const currentBatch = allBatches.find((b) => b.id === effectiveBatchId) || null;
 
+  // Retrieve latest student profile from DB
+  const userRows = await db
+    .select({
+      board: users.board,
+      classLevel: users.classLevel,
+      streamGroup: users.streamGroup,
+    })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+
+  const dbUser = userRows[0];
+
   return {
     ok: true,
     hasPersonalSyllabus,
     personalSubjectCount,
     userBatch: currentBatch,
+    userProfile: {
+      board: dbUser?.board || user.board || "general",
+      classLevel: dbUser?.classLevel || user.classLevel || "ssc",
+      streamGroup: dbUser?.streamGroup || user.streamGroup || "science",
+    },
     availableBatches: allBatches,
     masterBooks,
   };
@@ -112,6 +130,9 @@ export async function getStudentCurriculumStatusAction() {
 
 export interface SelectionPayload {
   batchId?: number;
+  board?: string;
+  classLevel?: string;
+  streamGroup?: string;
   selections: {
     subjectId: number;
     chapterIds: number[];
@@ -124,14 +145,20 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
     return { ok: false, error: "Please log in to initialize your syllabus." };
   }
 
-  const { selections, batchId } = payload;
+  const { selections, batchId, board, classLevel, streamGroup } = payload;
   if (!selections || selections.length === 0) {
     return { ok: false, error: "Please select at least one book to begin." };
   }
 
-  // Update user batchId if specified
-  if (batchId && batchId !== user.batchId) {
-    await db.update(users).set({ batchId }).where(eq(users.id, user.id));
+  // Update user profile info (batch, board, class, stream)
+  const userUpdates: Record<string, any> = {};
+  if (batchId && batchId !== user.batchId) userUpdates.batchId = batchId;
+  if (board) userUpdates.board = board;
+  if (classLevel) userUpdates.classLevel = classLevel;
+  if (streamGroup) userUpdates.streamGroup = streamGroup;
+
+  if (Object.keys(userUpdates).length > 0) {
+    await db.update(users).set(userUpdates).where(eq(users.id, user.id));
   }
 
   try {
@@ -157,6 +184,11 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
           slug: userSubSlug,
           nameBn: mSub.nameBn,
           sortOrder: mSub.sortOrder,
+          board: mSub.board,
+          classLevel: mSub.classLevel,
+          streamGroup: mSub.streamGroup,
+          subjectType: mSub.subjectType,
+          structureType: mSub.structureType,
         })
         .returning();
 

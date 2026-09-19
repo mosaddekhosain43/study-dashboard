@@ -15,9 +15,16 @@ interface Batch {
   slug: string;
 }
 
+interface UserProfile {
+  board?: string;
+  classLevel?: string;
+  streamGroup?: string;
+}
+
 interface Props {
   hasPersonalSyllabus: boolean;
   userBatch: Batch | null;
+  userProfile?: UserProfile;
   availableBatches: Batch[];
   masterBooks: MasterBookView[];
   groups: { subject: SubjectDto; topics: TopicDto[] }[];
@@ -27,6 +34,7 @@ interface Props {
 export default function SyllabusClientView({
   hasPersonalSyllabus,
   userBatch,
+  userProfile,
   availableBatches,
   masterBooks,
   groups,
@@ -38,6 +46,7 @@ export default function SyllabusClientView({
     return (
       <SyllabusOnboarding
         userBatch={userBatch}
+        userProfile={userProfile}
         availableBatches={availableBatches}
         masterBooks={masterBooks}
         isReconfiguring={hasPersonalSyllabus}

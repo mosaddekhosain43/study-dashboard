@@ -10,6 +10,9 @@ export interface SessionUser {
   email: string;
   role: "admin" | "teacher" | "student";
   batchId: number | null;
+  board?: string | null;
+  classLevel?: string | null;
+  streamGroup?: string | null;
 }
 
 export function hashPassword(password: string): string {

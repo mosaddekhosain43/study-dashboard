@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen,
@@ -8,13 +8,19 @@ import {
   CheckSquare,
   ChevronDown,
   ChevronRight,
-  FolderPlus,
   GraduationCap,
   Layers,
   Sparkles,
   Square,
   ArrowRight,
-  RotateCcw,
+  School,
+  Building2,
+  Atom,
+  Briefcase,
+  BookMarked,
+  HelpCircle,
+  Compass,
+  BookmarkCheck,
 } from "lucide-react";
 import {
   initializeStudentSyllabusAction,
@@ -27,69 +33,198 @@ interface Batch {
   slug: string;
 }
 
+interface UserProfile {
+  board?: string;
+  classLevel?: string;
+  streamGroup?: string;
+}
+
 interface Props {
   userBatch: Batch | null;
+  userProfile?: UserProfile;
   availableBatches: Batch[];
   masterBooks: MasterBookView[];
   isReconfiguring?: boolean;
   onCancel?: () => void;
 }
 
+export type BoardType = "general" | "madrasah";
+export type ClassLevel = "ssc" | "class_10" | "hsc" | "dakhil" | "alim" | "class_8";
+export type StreamGroup =
+  | "science"
+  | "humanities"
+  | "business_studies"
+  | "general_madrasah"
+  | "quran_hadith";
+
 export default function SyllabusOnboarding({
   userBatch,
+  userProfile,
   availableBatches,
   masterBooks,
   isReconfiguring = false,
   onCancel,
 }: Props) {
   const router = useRouter();
-  const [selectedBatchId, setSelectedBatchId] = useState<number>(
-    userBatch?.id || availableBatches[0]?.id || 1
-  );
 
-  // Filter books for currently selected batch (or general master books)
-  const currentBooks = useMemo(() => {
-    const matched = masterBooks.filter(
-      (b) => b.batchId === selectedBatchId || b.batchId === null
-    );
-    return matched.length > 0 ? matched : masterBooks;
-  }, [masterBooks, selectedBatchId]);
-
-  // Selected books: Record<bookId, boolean> (default: all checked)
-  const [selectedBooks, setSelectedBooks] = useState<Record<number, boolean>>(() => {
-    const initial: Record<number, boolean> = {};
-    for (const b of masterBooks) {
-      initial[b.id] = true;
+  // ── Step A: Board Selection ──
+  const [board, setBoard] = useState<BoardType>(() => {
+    if (userProfile?.board === "general" || userProfile?.board === "madrasah") {
+      return userProfile.board as BoardType;
     }
-    return initial;
+    // Infer from userBatch name if possible
+    if (userBatch?.name.toLowerCase().includes("ssc") || userBatch?.name.toLowerCase().includes("school")) {
+      return "general";
+    }
+    return "general";
   });
 
-  // Selected chapters per book: Record<bookId, Record<chapterId, boolean>> (default: all checked)
+  // ── Step B: Class / Level Selection ──
+  const [classLevel, setClassLevel] = useState<ClassLevel>(() => {
+    if (userProfile?.classLevel) return userProfile.classLevel as ClassLevel;
+    return board === "general" ? "ssc" : "dakhil";
+  });
+
+  // When board changes, ensure valid class level
+  const handleBoardChange = (newBoard: BoardType) => {
+    setBoard(newBoard);
+    if (newBoard === "general") {
+      if (classLevel === "dakhil" || classLevel === "alim" || classLevel === "class_8") {
+        setClassLevel("ssc");
+      }
+      setStreamGroup("science");
+    } else {
+      if (classLevel === "ssc" || classLevel === "class_10" || classLevel === "hsc") {
+        setClassLevel("dakhil");
+      }
+      setStreamGroup("general_madrasah");
+    }
+  };
+
+  // ── Step C: Stream / Group Selection ──
+  const [streamGroup, setStreamGroup] = useState<StreamGroup>(() => {
+    if (userProfile?.streamGroup) return userProfile.streamGroup as StreamGroup;
+    return board === "general" ? "science" : "general_madrasah";
+  });
+
+  // Auto-select matching batchId
+  const matchingBatchId = useMemo(() => {
+    const slugKey = classLevel === "class_10" ? "class-10" : classLevel;
+    const found = availableBatches.find((b) =>
+      b.slug.toLowerCase().includes(slugKey.toLowerCase()) ||
+      b.name.toLowerCase().includes(slugKey.toLowerCase())
+    );
+    return found ? found.id : (userBatch?.id || availableBatches[0]?.id || 1);
+  }, [classLevel, availableBatches, userBatch]);
+
+  const [selectedBatchId, setSelectedBatchId] = useState<number>(matchingBatchId);
+
+  useEffect(() => {
+    setSelectedBatchId(matchingBatchId);
+  }, [matchingBatchId]);
+
+  // ── Filtered Master Books Based on Board, Class, and Group ──
+  const filteredBooks = useMemo(() => {
+    return masterBooks.filter((book) => {
+      // 1. Board filter
+      if (book.board && book.board !== "both" && book.board !== board) {
+        return false;
+      }
+      // 2. Class Level filter
+      if (book.classLevel && book.classLevel !== "all") {
+        // SSC / Class 10 share books in general curriculum
+        if (
+          (classLevel === "ssc" || classLevel === "class_10") &&
+          (book.classLevel === "ssc" || book.classLevel === "class_10")
+        ) {
+          // match
+        } else if (book.classLevel !== classLevel) {
+          return false;
+        }
+      }
+      // 3. Stream Group filter
+      if (book.streamGroup && book.streamGroup !== "all") {
+        if (book.streamGroup !== streamGroup) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [masterBooks, board, classLevel, streamGroup]);
+
+  // Group books by subjectType: Compulsory, Group Elective, Optional
+  const categorizedBooks = useMemo(() => {
+    const compulsory = filteredBooks.filter((b) => b.subjectType === "compulsory");
+    const elective = filteredBooks.filter((b) => b.subjectType === "group_elective");
+    const optional = filteredBooks.filter((b) => b.subjectType === "optional");
+
+    // If no explicit tags exist (e.g. legacy books), default them all to compulsory
+    if (compulsory.length === 0 && elective.length === 0 && optional.length === 0) {
+      return { compulsory: filteredBooks, elective: [], optional: [] };
+    }
+
+    return { compulsory, elective, optional };
+  }, [filteredBooks]);
+
+  // ── Selected books state: Record<bookId, boolean> ──
+  // Compulsory & Elective default to TRUE, Optional defaults to TRUE for first 1
+  const [selectedBooks, setSelectedBooks] = useState<Record<number, boolean>>({});
+
+  // Reset/Initialize selection when filteredBooks change
+  useEffect(() => {
+    setSelectedBooks((prev) => {
+      const next: Record<number, boolean> = { ...prev };
+      for (const b of filteredBooks) {
+        if (next[b.id] === undefined) {
+          // Default compulsory and electives to checked; optional to unchecked unless configured
+          next[b.id] = b.subjectType !== "optional";
+        }
+      }
+      return next;
+    });
+  }, [filteredBooks]);
+
+  // ── Selected chapters per book: Record<bookId, Record<chapterId, boolean>> ──
   const [selectedChapters, setSelectedChapters] = useState<
     Record<number, Record<number, boolean>>
-  >(() => {
-    const initial: Record<number, Record<number, boolean>> = {};
-    for (const b of masterBooks) {
-      initial[b.id] = {};
-      for (const ch of b.chapters) {
-        initial[b.id][ch.id] = true;
+  >({});
+
+  useEffect(() => {
+    setSelectedChapters((prev) => {
+      const next = { ...prev };
+      for (const b of filteredBooks) {
+        if (!next[b.id]) {
+          next[b.id] = {};
+          for (const ch of b.chapters) {
+            next[b.id][ch.id] = true; // all chapters checked by default
+          }
+        }
       }
+      return next;
+    });
+  }, [filteredBooks]);
+
+  // Currently active book for chapter/module inspection
+  const [activeBookId, setActiveBookId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (filteredBooks.length > 0) {
+      // Keep active if still in filtered list, else select first
+      if (!activeBookId || !filteredBooks.some((b) => b.id === activeBookId)) {
+        setActiveBookId(filteredBooks[0].id);
+      }
+    } else {
+      setActiveBookId(null);
     }
-    return initial;
-  });
+  }, [filteredBooks, activeBookId]);
 
-  // Currently active/expanded book for chapter selection
-  const [activeBookId, setActiveBookId] = useState<number | null>(
-    currentBooks[0]?.id ?? null
-  );
-
-  // Expanded chapters to view topics inside: Record<chapterId, boolean>
+  // Expanded chapters for viewing subtopics: Record<chapterId, boolean>
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({});
 
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Toggle book selection
+  // Toggle single book selection
   const toggleBook = (bookId: number) => {
     setSelectedBooks((prev) => ({
       ...prev,
@@ -97,7 +232,7 @@ export default function SyllabusOnboarding({
     }));
   };
 
-  // Toggle chapter selection
+  // Toggle single chapter selection
   const toggleChapter = (bookId: number, chapterId: number) => {
     setSelectedChapters((prev) => {
       const bookChs = { ...(prev[bookId] || {}) };
@@ -126,7 +261,7 @@ export default function SyllabusOnboarding({
     });
   };
 
-  // Toggle topic expansion inside a chapter
+  // Toggle topic accordion
   const toggleTopicExpand = (chapterId: number) => {
     setExpandedChapters((prev) => ({
       ...prev,
@@ -134,13 +269,13 @@ export default function SyllabusOnboarding({
     }));
   };
 
-  // Quick stats calculations
+  // Calculate live statistics
   const stats = useMemo(() => {
     let bookCount = 0;
     let chapterCount = 0;
     let topicCount = 0;
 
-    for (const b of currentBooks) {
+    for (const b of filteredBooks) {
       if (selectedBooks[b.id]) {
         bookCount++;
         const bChapters = selectedChapters[b.id] || {};
@@ -154,13 +289,13 @@ export default function SyllabusOnboarding({
     }
 
     return { bookCount, chapterCount, topicCount };
-  }, [currentBooks, selectedBooks, selectedChapters]);
+  }, [filteredBooks, selectedBooks, selectedChapters]);
 
-  // Submit and initialize syllabus
+  // Submit and save student syllabus
   const handleSaveSyllabus = () => {
     setError(null);
 
-    const selections = currentBooks
+    const selections = filteredBooks
       .filter((b) => selectedBooks[b.id])
       .map((b) => {
         const bChapters = selectedChapters[b.id] || {};
@@ -175,13 +310,16 @@ export default function SyllabusOnboarding({
       .filter((s) => s.chapterIds.length > 0);
 
     if (selections.length === 0) {
-      setError("Please select at least one book and at least one chapter.");
+      setError("Please select at least one subject and at least one chapter/module.");
       return;
     }
 
     startTransition(async () => {
       const res = await initializeStudentSyllabusAction({
         batchId: selectedBatchId,
+        board,
+        classLevel,
+        streamGroup,
         selections,
       });
 
@@ -194,60 +332,263 @@ export default function SyllabusOnboarding({
     });
   };
 
-  const activeBook = currentBooks.find((b) => b.id === activeBookId) || currentBooks[0];
+  const activeBook = filteredBooks.find((b) => b.id === activeBookId) || filteredBooks[0];
 
   return (
     <div className="space-y-6">
-      {/* Hero / Header */}
+      {/* ── Header Card ────────────────────────────────────────────────────────── */}
       <div className="card rise relative overflow-hidden p-5 sm:p-7 border border-line bg-card shadow-sm">
         <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-leaf to-glow" />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-leaf">
               <Sparkles className="size-4" />
-              <span>Personalized Syllabus Setup</span>
+              <span>NCTB Curriculum & Onboarding</span>
             </div>
             <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-              Choose Your Curriculum & Chapters
+              Student Syllabus & Stream Setup
             </h1>
-            <p className="mt-1 text-xs sm:text-[13px] text-ink-faint max-w-2xl">
-              Select the books and specific exam chapters you are preparing for. You can
-              add custom subjects or modify chapters anytime later from your personal dashboard.
+            <p className="mt-1 text-xs sm:text-[13.5px] text-ink-faint max-w-2xl">
+              Select your Education Board, Class, and Stream. The system automatically organizes
+              compulsory subjects, group electives, and optional subjects according to the official NCTB curriculum.
             </p>
           </div>
 
-          {/* Class / Batch Selector */}
-          <div className="shrink-0 flex items-center gap-2 rounded-2xl border border-line bg-paper/60 p-2 sm:p-2.5">
-            <GraduationCap className="size-4 text-leaf shrink-0 ml-1" />
-            <div className="text-left">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                Your Class / Batch
+          {/* Quick stats counter badge */}
+          <div className="shrink-0 flex items-center gap-3 rounded-2xl border border-line bg-paper/60 p-3">
+            <div className="text-right">
+              <span className="block text-[10.5px] font-bold uppercase tracking-wider text-ink-faint">
+                Total Selected
               </span>
-              <select
-                value={selectedBatchId}
-                onChange={(e) => setSelectedBatchId(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-ink outline-none cursor-pointer"
+              <p className="text-sm font-bold text-ink">
+                <span className="text-leaf">{stats.bookCount}</span> Books ·{" "}
+                <span className="text-emerald-700">{stats.chapterCount}</span> Chapters/Parts
+              </p>
+            </div>
+            <BookmarkCheck className="size-6 text-leaf shrink-0" />
+          </div>
+        </div>
+
+        {/* ── Step 1: Board & Stream Selectors ─────────────────────────────────── */}
+        <div className="mt-6 pt-5 border-t border-line/70 grid gap-4 md:grid-cols-3">
+          {/* Board Selector */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
+              <School className="size-3.5 text-leaf" />
+              <span>1. Education Board</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleBoardChange("general")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition ${
+                  board === "general"
+                    ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                    : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                }`}
               >
-                {availableBatches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                <School className="size-4 shrink-0" />
+                <span>General (School)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBoardChange("madrasah")}
+                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition ${
+                  board === "madrasah"
+                    ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                    : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                }`}
+              >
+                <Building2 className="size-4 shrink-0" />
+                <span>Madrasah Board</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Class / Level Selector */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
+              <GraduationCap className="size-3.5 text-leaf" />
+              <span>2. Class / Level</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {board === "general" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("ssc")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "ssc"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    SSC
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("class_10")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "class_10"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    Class 10
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("hsc")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "hsc"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    HSC
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("dakhil")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "dakhil"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    Dakhil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("alim")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "alim"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    Alim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClassLevel("class_8")}
+                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
+                      classLevel === "class_8"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    Class 8
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Group / Stream Selector */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
+              <Compass className="size-3.5 text-leaf" />
+              <span>3. Group / Stream</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {board === "general" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("science")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "science"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <Atom className="size-3.5" />
+                    <span>Science</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("humanities")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "humanities"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <BookMarked className="size-3.5" />
+                    <span>Humanities</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("business_studies")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "business_studies"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <Briefcase className="size-3.5" />
+                    <span>Commerce</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("general_madrasah")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "general_madrasah"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <BookOpen className="size-3.5" />
+                    <span>General</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("science")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "science"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <Atom className="size-3.5" />
+                    <span>Science</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStreamGroup("quran_hadith")}
+                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
+                      streamGroup === "quran_hadith"
+                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
+                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
+                    }`}
+                  >
+                    <Building2 className="size-3.5" />
+                    <span>Hifz/Special</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Live Selection Summary Banner */}
+        {/* ── Action bar & Live Summary ────────────────────────────────────────── */}
         <div className="mt-5 pt-4 border-t border-line/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-4 sm:gap-6 text-xs font-semibold text-ink">
             <span className="flex items-center gap-1.5">
               <BookOpen className="size-4 text-leaf" />
-              <strong className="text-leaf font-bold">{stats.bookCount}</strong> Books Selected
+              <strong className="text-leaf font-bold">{stats.bookCount}</strong> Books
             </span>
             <span className="flex items-center gap-1.5">
               <Layers className="size-4 text-emerald-600" />
-              <strong className="text-emerald-700 font-bold">{stats.chapterCount}</strong> Chapters
+              <strong className="text-emerald-700 font-bold">{stats.chapterCount}</strong> Chapters/Parts
             </span>
             <span className="flex items-center gap-1.5 text-ink-faint">
               <Check className="size-4 text-amber-600" />
@@ -288,109 +629,93 @@ export default function SyllabusOnboarding({
         )}
       </div>
 
-      {/* Main Layout: Left = Books Selection, Right = Chapter & Topic Selection */}
+      {/* ── Main Layout: Left = Books Selection, Right = Chapter/Module Drilldown ─ */}
       <div className="grid gap-6 lg:grid-cols-12">
-        {/* Step 1: Books List (4 cols on lg) */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="font-display text-sm font-bold tracking-tight text-ink flex items-center gap-2">
-              <span className="grid size-5 place-items-center rounded-full bg-leaf text-white text-[11px] font-bold">
-                1
-              </span>
-              <span>Available Books for Your Class</span>
-            </h2>
-            <span className="text-[11px] font-semibold text-ink-faint">
-              {currentBooks.filter((b) => selectedBooks[b.id]).length}/{currentBooks.length} Selected
-            </span>
-          </div>
+        {/* Left Column: Categorized Books List (5 cols on lg) */}
+        <div className="lg:col-span-5 space-y-5">
+          {/* Section 1: Compulsory Subjects */}
+          {categorizedBooks.compulsory.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-leaf" />
+                  <span>Compulsory Subjects (আবশ্যিক বিষয়)</span>
+                </h3>
+                <span className="text-[11px] font-semibold text-leaf">
+                  {categorizedBooks.compulsory.filter((b) => selectedBooks[b.id]).length}/
+                  {categorizedBooks.compulsory.length}
+                </span>
+              </div>
 
-          <div className="space-y-2">
-            {currentBooks.map((book, idx) => {
-              const isChecked = Boolean(selectedBooks[book.id]);
-              const isActive = activeBook?.id === book.id;
-              const bookChs = selectedChapters[book.id] || {};
-              const selectedChCount = book.chapters.filter((ch) => bookChs[ch.id]).length;
+              <div className="space-y-1.5">
+                {categorizedBooks.compulsory.map((book) => renderBookRow(book))}
+              </div>
+            </div>
+          )}
 
-              return (
-                <div
-                  key={book.id}
-                  onClick={() => setActiveBookId(book.id)}
-                  className={`group flex items-center justify-between gap-3 rounded-2xl border p-3 sm:px-4 cursor-pointer transition ${
-                    isActive
-                      ? "border-leaf bg-leaf-soft/30 shadow-xs"
-                      : "border-line bg-card hover:border-leaf/50 hover:bg-paper/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Checkbox */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleBook(book.id);
-                      }}
-                      className="grid size-6 place-items-center rounded-lg text-leaf hover:opacity-80 shrink-0"
-                    >
-                      {isChecked ? (
-                        <CheckSquare className="size-5 fill-leaf text-white" />
-                      ) : (
-                        <Square className="size-5 text-ink-faint" />
-                      )}
-                    </button>
+          {/* Section 2: Group Elective Subjects */}
+          {categorizedBooks.elective.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span>Group Electives (বিভাগীয় নৈর্বাচনিক বিষয়)</span>
+                </h3>
+                <span className="text-[11px] font-semibold text-emerald-700">
+                  {categorizedBooks.elective.filter((b) => selectedBooks[b.id]).length}/
+                  {categorizedBooks.elective.length}
+                </span>
+              </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-ink-faint tabular-nums">
-                          #{idx + 1}
-                        </span>
-                        <p
-                          className={`text-[13.5px] font-semibold truncate ${
-                            isChecked ? "text-ink" : "text-ink-faint line-through"
-                          }`}
-                        >
-                          {book.name}
-                        </p>
-                      </div>
-                      <p className="font-bengali text-[11px] text-ink-faint truncate">
-                        {book.nameBn || "সাধারণ বিষয়"}
-                      </p>
-                    </div>
-                  </div>
+              <div className="space-y-1.5">
+                {categorizedBooks.elective.map((book) => renderBookRow(book))}
+              </div>
+            </div>
+          )}
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`rounded-lg px-2 py-0.5 text-[10.5px] font-semibold ${
-                        selectedChCount > 0
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {selectedChCount}/{book.chapters.length} ch
-                    </span>
-                    <ChevronRight
-                      className={`size-4 transition-transform ${
-                        isActive ? "text-leaf translate-x-0.5" : "text-ink-faint"
-                      }`}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* Section 3: Optional / 4th Subject */}
+          {categorizedBooks.optional.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-amber-500" />
+                  <span>Optional / 4th Subject (ঐচ্ছিক / ৪র্থ বিষয়)</span>
+                </h3>
+                <span className="text-[11px] font-semibold text-amber-700">
+                  {categorizedBooks.optional.filter((b) => selectedBooks[b.id]).length}/
+                  {categorizedBooks.optional.length}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                {categorizedBooks.optional.map((book) => renderBookRow(book))}
+              </div>
+            </div>
+          )}
+
+          {filteredBooks.length === 0 && (
+            <div className="card p-8 text-center text-xs text-ink-faint border-dashed border-line">
+              No subjects found for this selection. Please adjust your Board or Class filters.
+            </div>
+          )}
         </div>
 
-        {/* Step 2 & 3: Chapter & Topic Level View (7 cols on lg) */}
+        {/* Right Column: Chapter & Module Drilldown View (7 cols on lg) */}
         <div className="lg:col-span-7 space-y-3">
           {activeBook ? (
             <div className="card p-4 sm:p-5 border border-line bg-card shadow-sm space-y-4">
-              {/* Active Book Chapter Header */}
+              {/* Active Book Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-leaf">
                     <span className="grid size-4 place-items-center rounded-full bg-leaf text-white text-[10px]">
-                      2
+                      ✓
                     </span>
-                    <span>Select Exam Chapters</span>
+                    <span>
+                      {activeBook.structureType === "module"
+                        ? "Skills & Module-Based Subject (মডিউল বিন্যাস)"
+                        : "Chapter-Based Curriculum (অধ্যায় বিন্যাস)"}
+                    </span>
                   </div>
                   <h3 className="font-display text-lg font-bold text-ink flex items-center gap-2">
                     <span>{activeBook.name}</span>
@@ -402,7 +727,7 @@ export default function SyllabusOnboarding({
                   </h3>
                 </div>
 
-                {/* "Select All" Toggle Button */}
+                {/* "Select All" Chapters/Modules Toggle Button */}
                 {activeBook.chapters.length > 0 && (
                   <button
                     type="button"
@@ -419,17 +744,32 @@ export default function SyllabusOnboarding({
                     ) : (
                       <>
                         <Square className="size-3.5 text-ink-faint" />
-                        <span>Select All Chapters</span>
+                        <span>
+                          {activeBook.structureType === "module"
+                            ? "Select All Modules"
+                            : "Select All Chapters"}
+                        </span>
                       </>
                     )}
                   </button>
                 )}
               </div>
 
-              {/* Chapters List */}
+              {/* Module/Skills Information Notice for Module-based Subjects */}
+              {activeBook.structureType === "module" && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-2.5 text-xs text-emerald-800 flex items-center gap-2">
+                  <BookOpen className="size-4 text-emerald-600 shrink-0" />
+                  <span>
+                    This subject is organized by <strong>parts, skills, and grammar sections</strong> rather
+                    than traditional chapters. Select the modules included in your test exam.
+                  </span>
+                </div>
+              )}
+
+              {/* Chapters / Modules List */}
               {activeBook.chapters.length === 0 ? (
                 <div className="py-8 text-center text-xs text-ink-faint border border-dashed border-line rounded-xl">
-                  No chapters defined yet for this book.
+                  No chapters or modules defined yet for this book.
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -448,7 +788,7 @@ export default function SyllabusOnboarding({
                             : "border-line/60 bg-paper/10 opacity-60"
                         }`}
                       >
-                        {/* Chapter Header */}
+                        {/* Chapter / Module Header */}
                         <div className="flex items-center justify-between gap-3 p-3 sm:px-4">
                           <div className="flex items-center gap-3 min-w-0">
                             <button
@@ -465,6 +805,10 @@ export default function SyllabusOnboarding({
 
                             <div className="min-w-0">
                               <p className="text-xs sm:text-[13px] font-bold text-ink">
+                                {/* If module-based, do not force CH 1 prefix */}
+                                {activeBook.structureType === "chapter" && !ch.name.toLowerCase().includes("chapter") && !ch.name.includes("অধ্যায়") ? (
+                                  <span className="text-leaf mr-1.5 font-bold">CH {chIdx + 1}:</span>
+                                ) : null}
                                 {ch.name}
                               </p>
                               <p className="text-[10.5px] text-ink-faint">
@@ -473,7 +817,7 @@ export default function SyllabusOnboarding({
                             </div>
                           </div>
 
-                          {/* Step 3: Topic-Level View Accordion Toggle */}
+                          {/* Topic-Level Drilldown Toggle */}
                           {ch.topics.length > 0 && (
                             <button
                               type="button"
@@ -490,14 +834,14 @@ export default function SyllabusOnboarding({
                           )}
                         </div>
 
-                        {/* Topics View Inside Chapter */}
+                        {/* Topics View Inside Chapter / Module */}
                         {isTopicsExpanded && ch.topics.length > 0 && (
                           <div className="border-t border-line/60 bg-white/80 p-3 sm:px-4 rounded-b-2xl">
                             <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-faint mb-2">
-                              Included Sub-topics / Lessons:
+                              Sub-topics & Practice Items:
                             </p>
                             <ul className="space-y-1.5">
-                              {ch.topics.map((tp, tIdx) => (
+                              {ch.topics.map((tp) => (
                                 <li
                                   key={tp.id}
                                   className="flex items-center gap-2 text-xs text-ink-soft py-0.5"
@@ -517,11 +861,80 @@ export default function SyllabusOnboarding({
             </div>
           ) : (
             <div className="card p-8 text-center text-xs text-ink-faint border-dashed border-line">
-              Select a book on the left to review and customize chapters.
+              Select a book on the left to review and customize chapters/modules.
             </div>
           )}
         </div>
       </div>
     </div>
   );
+
+  // Helper renderer for a single book card
+  function renderBookRow(book: MasterBookView) {
+    const isChecked = Boolean(selectedBooks[book.id]);
+    const isActive = activeBook?.id === book.id;
+    const bookChs = selectedChapters[book.id] || {};
+    const selectedChCount = book.chapters.filter((ch) => bookChs[ch.id]).length;
+
+    return (
+      <div
+        key={book.id}
+        onClick={() => setActiveBookId(book.id)}
+        className={`group flex items-center justify-between gap-3 rounded-2xl border p-2.5 sm:px-3.5 cursor-pointer transition ${
+          isActive
+            ? "border-leaf bg-leaf-soft/30 shadow-xs"
+            : "border-line bg-card hover:border-leaf/50 hover:bg-paper/50"
+        }`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          {/* Checkbox */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleBook(book.id);
+            }}
+            className="grid size-6 place-items-center rounded-lg text-leaf hover:opacity-80 shrink-0"
+          >
+            {isChecked ? (
+              <CheckSquare className="size-5 fill-leaf text-white" />
+            ) : (
+              <Square className="size-5 text-ink-faint" />
+            )}
+          </button>
+
+          <div className="min-w-0">
+            <p
+              className={`text-[13px] font-semibold truncate ${
+                isChecked ? "text-ink" : "text-ink-faint line-through"
+              }`}
+            >
+              {book.name}
+            </p>
+            <p className="font-bengali text-[11px] text-ink-faint truncate">
+              {book.nameBn || "সাধারণ পাঠ্য"}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`rounded-lg px-2 py-0.5 text-[10px] font-semibold ${
+              selectedChCount > 0
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-slate-100 text-slate-500"
+            }`}
+          >
+            {selectedChCount}/{book.chapters.length}{" "}
+            {book.structureType === "module" ? "parts" : "ch"}
+          </span>
+          <ChevronRight
+            className={`size-4 transition-transform ${
+              isActive ? "text-leaf translate-x-0.5" : "text-ink-faint"
+            }`}
+          />
+        </div>
+      </div>
+    );
+  }
 }

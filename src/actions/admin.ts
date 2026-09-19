@@ -270,6 +270,11 @@ export async function createMasterSubjectAction(data: {
   name: string;
   nameBn?: string;
   sortOrder?: number;
+  board?: string;
+  classLevel?: string;
+  streamGroup?: string;
+  subjectType?: "compulsory" | "group_elective" | "optional";
+  structureType?: "chapter" | "module";
 }) {
   await requireAdmin();
   const name = data.name.trim();
@@ -286,14 +291,24 @@ export async function createMasterSubjectAction(data: {
         slug,
         nameBn: data.nameBn?.trim() || null,
         sortOrder: data.sortOrder ?? 0,
+        board: data.board || "general",
+        classLevel: data.classLevel || "ssc",
+        streamGroup: data.streamGroup || "all",
+        subjectType: data.subjectType || "compulsory",
+        structureType: data.structureType || "chapter",
       })
       .returning();
 
-    // Default first chapter for convenience
+    // Default first chapter or module for convenience
+    const defaultFirstUnitName =
+      data.structureType === "module"
+        ? "Part A: Foundations / বিষয়বস্তু ও ধারণা"
+        : "Chapter 1 / অধ্যায় ১";
+
     await db.insert(lessons).values({
       subjectId: sub.id,
       userId: null,
-      name: "Chapter 1 / অধ্যায় ১",
+      name: defaultFirstUnitName,
       sortOrder: 1,
     });
 
@@ -306,7 +321,17 @@ export async function createMasterSubjectAction(data: {
 
 export async function updateMasterSubjectAction(
   subjectId: number,
-  data: { name: string; nameBn?: string; batchId?: number; sortOrder?: number }
+  data: {
+    name: string;
+    nameBn?: string;
+    batchId?: number;
+    sortOrder?: number;
+    board?: string;
+    classLevel?: string;
+    streamGroup?: string;
+    subjectType?: "compulsory" | "group_elective" | "optional";
+    structureType?: "chapter" | "module";
+  }
 ) {
   await requireAdmin();
   const name = data.name.trim();
@@ -320,6 +345,11 @@ export async function updateMasterSubjectAction(
         nameBn: data.nameBn?.trim() || null,
         ...(data.batchId ? { batchId: data.batchId } : {}),
         ...(typeof data.sortOrder === "number" ? { sortOrder: data.sortOrder } : {}),
+        ...(data.board ? { board: data.board } : {}),
+        ...(data.classLevel ? { classLevel: data.classLevel } : {}),
+        ...(data.streamGroup ? { streamGroup: data.streamGroup } : {}),
+        ...(data.subjectType ? { subjectType: data.subjectType } : {}),
+        ...(data.structureType ? { structureType: data.structureType } : {}),
       })
       .where(and(eq(subjects.id, subjectId), isNull(subjects.userId)));
 

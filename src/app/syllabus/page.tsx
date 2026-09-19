@@ -82,6 +82,7 @@ export default async function SyllabusPage() {
     <SyllabusClientView
       hasPersonalSyllabus={status.hasPersonalSyllabus ?? false}
       userBatch={status.userBatch ?? null}
+      userProfile={status.userProfile}
       availableBatches={status.availableBatches ?? []}
       masterBooks={status.masterBooks ?? []}
       groups={groups}

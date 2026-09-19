@@ -35,6 +35,9 @@ export const users = pgTable(
     batchId: integer("batch_id").references(() => batches.id, {
       onDelete: "set null",
     }),
+    board: text("board"), // 'general' | 'madrasah'
+    classLevel: text("class_level"), // 'class_10' | 'ssc' | 'dakhil' | 'hsc' | 'alim'
+    streamGroup: text("stream_group"), // 'science' | 'humanities' | 'business_studies' | 'general_madrasah' | 'quran_hadith'
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -136,6 +139,11 @@ export const subjects = pgTable(
     slug: text("slug").notNull(),
     nameBn: text("name_bn"),
     sortOrder: integer("sort_order").notNull().default(0),
+    board: text("board"), // 'general' | 'madrasah' | 'both'
+    classLevel: text("class_level"), // 'class_10' | 'ssc' | 'dakhil' | 'hsc' | 'alim' | 'all'
+    streamGroup: text("stream_group"), // 'science' | 'humanities' | 'business_studies' | 'general_madrasah' | 'quran_hadith' | 'all'
+    subjectType: text("subject_type").notNull().default("compulsory"), // 'compulsory' | 'group_elective' | 'optional'
+    structureType: text("structure_type").notNull().default("chapter"), // 'chapter' | 'module'
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -143,6 +151,8 @@ export const subjects = pgTable(
   (t) => [
     index("subjects_batch_idx").on(t.batchId),
     index("subjects_user_idx").on(t.userId),
+    index("subjects_board_idx").on(t.board),
+    index("subjects_class_idx").on(t.classLevel),
   ]
 );
 

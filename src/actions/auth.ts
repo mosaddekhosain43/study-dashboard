@@ -45,6 +45,9 @@ export async function loginAction(formData: FormData) {
     email: user.email,
     role: effectiveRole as "admin" | "teacher" | "student",
     batchId: user.batchId,
+    board: user.board,
+    classLevel: user.classLevel,
+    streamGroup: user.streamGroup,
   });
 
   revalidatePath("/", "layout");
