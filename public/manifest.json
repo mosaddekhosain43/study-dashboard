@@ -1,16 +1,23 @@
 {
   "name": "Study Dashboard",
-  "short_name": "Study Dashboard",
-  "description": "Study Tracker and Classroom",
+  "short_name": "Study",
+  "description": "Personal study tracking and classroom dashboard",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f2ec",
-  "theme_color": "#0d1b14",
+  "background_color": "#0d1b14",
+  "theme_color": "#0c7a5b",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon.png",
