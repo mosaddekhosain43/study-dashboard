@@ -2,7 +2,7 @@
 
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { db, initializeDb } from "@/db";
 import { batches, lessons, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -35,6 +35,7 @@ export interface MasterBookView {
 }
 
 export async function getStudentCurriculumStatusAction() {
+  await initializeDb();
   const user = await getCurrentUser();
   if (!user) {
     return { ok: false, error: "Please sign in to access syllabus setup." };

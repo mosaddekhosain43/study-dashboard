@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getAdminDataAction, getMasterCurriculumAction } from "@/actions/admin";
+import { initializeDb } from "@/db";
 import AdminClient from "./AdminClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  await initializeDb();
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     redirect("/login?relogin=1");

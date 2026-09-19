@@ -204,23 +204,35 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // 1. Seed default batches (SSC 2027, HSC 2027, Dakhil 2027, Alim 2027)
-    await rawQuery(
-      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
-      ["SSC 2027", "ssc-2027", "SSC Examination Batch 2027 (General Education Board)"]
-    );
-    await rawQuery(
-      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
-      ["HSC 2027", "hsc-2027", "HSC Examination Batch 2027 (General Education Board)"]
-    );
-    await rawQuery(
-      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
-      ["Dakhil 2027", "dakhil-2027", "Dakhil Examination Batch 2027 (Madrasah Board)"]
-    );
-    await rawQuery(
-      "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3) ON CONFLICT (slug) DO NOTHING",
-      ["Alim 2027", "alim-2027", "Alim 2nd Year Examination Batch 2027 (Madrasah Board)"]
-    );
+    // 1. Seed default batches safely without unique constraint collision
+    try {
+      const existingBatchesRes = await rawQuery("SELECT id, name, slug FROM batches");
+      const existingBatches = existingBatchesRes.rows || existingBatchesRes || [];
+      const hasBatch = (slug: string, name: string) =>
+        existingBatches.some((b: any) => b.slug === slug || b.name === name);
+
+      const defaultBatches = [
+        ["SSC 2027", "ssc-2027", "SSC Examination Batch 2027 (General Education Board)"],
+        ["HSC 2027", "hsc-2027", "HSC Examination Batch 2027 (General Education Board)"],
+        ["Dakhil 2027", "dakhil-2027", "Dakhil Examination Batch 2027 (Madrasah Board)"],
+        ["Alim 2027", "alim-2027", "Alim 2nd Year Examination Batch 2027 (Madrasah Board)"],
+      ];
+
+      for (const [name, slug, description] of defaultBatches) {
+        if (!hasBatch(slug, name)) {
+          try {
+            await rawQuery(
+              "INSERT INTO batches (name, slug, description) VALUES ($1, $2, $3)",
+              [name, slug, description]
+            );
+          } catch {
+            // ignore duplicate
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
 
     // Clean up deprecated batches and legacy class levels
     try {
@@ -247,109 +259,111 @@ export async function runInitAndSeed(
       if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
     }
 
-    // 2. Seed default legacy subjects if empty
-    const existingSubjects = await rawQuery("SELECT COUNT(*) as count FROM subjects WHERE user_id IS NULL");
-    const subCount = Number(existingSubjects.rows?.[0]?.count || existingSubjects[0]?.count || 0);
-    if (subCount === 0) {
-      for (let i = 0; i < SUBJECT_DEFS.length; i++) {
-        const s = SUBJECT_DEFS[i];
-        await rawQuery(
-          "INSERT INTO subjects (batch_id, name, slug, name_bn, sort_order, board, class_level, stream_group, subject_type, structure_type) VALUES ($1, $2, $3, $4, $5, 'madrasah', 'alim', 'all', 'compulsory', 'chapter') ON CONFLICT DO NOTHING",
-          [batchMap["alim"] || firstBatchId, s.name, s.slug, s.nameBn, i + 1]
-        );
+    // 2. Remove old legacy stub master subjects (which only had 0 or dummy topics)
+    try {
+      const legacyStubSlugs = [
+        "bangla-1", "bangla-2", "english-1", "english-2",
+        "aqaid-1", "aqaid-2", "hadith", "quran", "ict",
+        "balaghat", "arabic-1", "arabic-2", "civics"
+      ];
+      for (const oldSlug of legacyStubSlugs) {
+        await rawQuery("DELETE FROM subjects WHERE user_id IS NULL AND slug = $1", [oldSlug]);
       }
-    } else {
-      // Ensure master subjects have default board/class if null
-      await rawQuery(
-        "UPDATE subjects SET board = 'madrasah', class_level = 'alim', subject_type = 'compulsory', structure_type = 'chapter' WHERE user_id IS NULL AND board IS NULL"
-      );
+    } catch {
+      // ignore
     }
 
-    // 3. Seed comprehensive NCTB Curriculum data (SSC, HSC, Dakhil, Alim)
+    // 3. Seed comprehensive NCTB Curriculum data (SSC, HSC, Dakhil, Alim - 40 authentic books)
     try {
-      // Fetch all existing master subject slugs
-      const existingSlugsRes = await rawQuery("SELECT slug FROM subjects WHERE user_id IS NULL");
-      const existingSlugs = new Set(
-        (existingSlugsRes.rows || existingSlugsRes || []).map((r: any) => r.slug)
-      );
+      const existingSlugsRes = await rawQuery("SELECT id, slug FROM subjects WHERE user_id IS NULL");
+      const existingRows = existingSlugsRes.rows || existingSlugsRes || [];
+      const existingMap = new Map<string, number>();
+      for (const r of existingRows) {
+        existingMap.set(r.slug, r.id);
+      }
 
       for (let i = 0; i < NCTB_CURRICULUM_DATA.length; i++) {
         const def = NCTB_CURRICULUM_DATA[i];
-        if (existingSlugs.has(def.slug)) continue;
-
         const effectiveBatchId = batchMap[def.classLevel] || firstBatchId;
 
-        const subRes = await rawQuery(
-          `INSERT INTO subjects (batch_id, user_id, name, name_bn, slug, sort_order, board, class_level, stream_group, subject_type, structure_type)
-           VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-           RETURNING id`,
-          [
-            effectiveBatchId,
-            def.name,
-            def.nameBn,
-            def.slug,
-            i + 1,
-            def.board,
-            def.classLevel,
-            def.streamGroup,
-            def.subjectType,
-            def.structureType,
-          ]
-        );
+        let subId = existingMap.get(def.slug);
+        if (!subId) {
+          const subRes = await rawQuery(
+            `INSERT INTO subjects (batch_id, user_id, name, name_bn, slug, sort_order, board, class_level, stream_group, subject_type, structure_type)
+             VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             RETURNING id`,
+            [
+              effectiveBatchId,
+              def.name,
+              def.nameBn,
+              def.slug,
+              i + 1,
+              def.board,
+              def.classLevel,
+              def.streamGroup,
+              def.subjectType,
+              def.structureType,
+            ]
+          );
+          subId = subRes.rows?.[0]?.id || subRes[0]?.id;
+          if (subId) existingMap.set(def.slug, subId);
+        } else {
+          // Update metadata in case board or classLevel changed
+          await rawQuery(
+            `UPDATE subjects SET batch_id = $1, name = $2, name_bn = $3, sort_order = $4, board = $5, class_level = $6, stream_group = $7, subject_type = $8, structure_type = $9
+             WHERE id = $10`,
+            [
+              effectiveBatchId,
+              def.name,
+              def.nameBn,
+              i + 1,
+              def.board,
+              def.classLevel,
+              def.streamGroup,
+              def.subjectType,
+              def.structureType,
+              subId,
+            ]
+          );
+        }
 
-        const subId = subRes.rows?.[0]?.id || subRes[0]?.id;
         if (!subId) continue;
 
-        for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
-          const ch = def.chaptersOrModules[chIdx];
-          const lessonRes = await rawQuery(
-            `INSERT INTO lessons (subject_id, user_id, name, sort_order)
-             VALUES ($1, NULL, $2, $3)
-             RETURNING id`,
-            [subId, ch.name, chIdx + 1]
-          );
-          const lessonId = lessonRes.rows?.[0]?.id || lessonRes[0]?.id;
-          if (!lessonId) continue;
+        // Check how many topics exist for this master subject
+        const topicCountRes = await rawQuery(
+          "SELECT count(*) as count FROM topics WHERE subject_id = $1 AND user_id IS NULL",
+          [subId]
+        );
+        const topCount = Number(topicCountRes.rows?.[0]?.count || topicCountRes[0]?.count || 0);
 
-          for (let topIdx = 0; topIdx < ch.topics.length; topIdx++) {
-            await rawQuery(
-              `INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status)
-               VALUES ($1, $2, NULL, $3, $4, 'not_started')`,
-              [subId, lessonId, ch.topics[topIdx], topIdx + 1]
+        // If no topics exist, populate authentic NCTB chapters and topics
+        if (topCount === 0) {
+          // Clean any empty lessons first
+          await rawQuery("DELETE FROM lessons WHERE subject_id = $1 AND user_id IS NULL", [subId]);
+
+          for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
+            const ch = def.chaptersOrModules[chIdx];
+            const lessonRes = await rawQuery(
+              `INSERT INTO lessons (subject_id, user_id, name, sort_order)
+               VALUES ($1, NULL, $2, $3)
+               RETURNING id`,
+              [subId, ch.name, chIdx + 1]
             );
+            const lessonId = lessonRes.rows?.[0]?.id || lessonRes[0]?.id;
+            if (!lessonId) continue;
+
+            for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+              await rawQuery(
+                `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, sort_order, status)
+                 VALUES ($1, $2, NULL, $3, $4, $5, 'not_started')`,
+                [subId, lessonId, ch.topics[tIdx], ch.name, tIdx + 1]
+              );
+            }
           }
         }
       }
     } catch (nctbErr) {
       console.error("Error seeding NCTB curriculum:", nctbErr);
-    }
-
-    // 3. Seed default Master Chapters (Lessons) & Topics for master subjects if empty
-    try {
-      const masterSubjects = await rawQuery("SELECT id, name FROM subjects WHERE user_id IS NULL");
-      const mSubRows = masterSubjects.rows || masterSubjects || [];
-      for (const sub of mSubRows) {
-        const existingMasterLessons = await rawQuery("SELECT count(*) as count FROM lessons WHERE subject_id = $1 AND user_id IS NULL", [sub.id]);
-        const lCount = Number(existingMasterLessons.rows?.[0]?.count || existingMasterLessons[0]?.count || 0);
-        if (lCount === 0) {
-          // Add default chapters
-          const ch1 = await rawQuery("INSERT INTO lessons (subject_id, user_id, name, sort_order) VALUES ($1, NULL, $2, 1) RETURNING id", [sub.id, "অধ্যায় ১: মৌলিক ধারণা (Chapter 1)"]);
-          const ch1Id = ch1.rows?.[0]?.id || ch1[0]?.id;
-          if (ch1Id) {
-            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 1, 'not_started')", [sub.id, ch1Id, "ভূমিকা ও পটভূমি (Introduction & Background)"]);
-            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 2, 'not_started')", [sub.id, ch1Id, "প্রধান পাঠ ও পর্যালোচনা (Core Concepts & Analysis)"]);
-          }
-
-          const ch2 = await rawQuery("INSERT INTO lessons (subject_id, user_id, name, sort_order) VALUES ($1, NULL, $2, 2) RETURNING id", [sub.id, "অধ্যায় ২: প্রয়োগ ও অনুশীলন (Chapter 2)"]);
-          const ch2Id = ch2.rows?.[0]?.id || ch2[0]?.id;
-          if (ch2Id) {
-            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 1, 'not_started')", [sub.id, ch2Id, "গুরুত্বপূর্ণ প্রশ্নোত্তর (Important Questions)"]);
-            await rawQuery("INSERT INTO topics (subject_id, lesson_id, user_id, name, sort_order, status) VALUES ($1, $2, NULL, $3, 2, 'not_started')", [sub.id, ch2Id, "পরীক্ষামূলক মডেল টেস্ট (Model Practice)"]);
-          }
-        }
-      }
-    } catch {
-      // ignore
     }
 
     // 4. Seed default Admin account (admin@alim.edu / admin123)

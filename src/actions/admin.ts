@@ -2,7 +2,7 @@
 
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { db, initializeDb } from "@/db";
 import {
   batches,
   batchMaterials,
@@ -14,8 +14,10 @@ import {
   users,
 } from "@/db/schema";
 import { getCurrentUser, hashPassword } from "@/lib/auth";
+import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
 
 async function requireAdmin() {
+  await initializeDb();
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") {
     throw new Error("Unauthorized: Admin access required.");
@@ -491,3 +493,129 @@ export async function deleteMasterTopicAction(topicId: number) {
     return { ok: false, error: err?.message || "Failed to delete master topic." };
   }
 }
+
+export async function syncNctbCurriculumAction(options?: { forceReset?: boolean }) {
+  await requireAdmin();
+
+  try {
+    // 1. Fetch batches and build mapping
+    const allBatches = await db.select().from(batches);
+    const batchMap: Record<string, number> = {};
+    for (const b of allBatches) {
+      if (b.slug?.includes("ssc")) batchMap["ssc"] = b.id;
+      if (b.slug?.includes("hsc")) batchMap["hsc"] = b.id;
+      if (b.slug?.includes("dakhil")) batchMap["dakhil"] = b.id;
+      if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
+    }
+    const defaultBatchId = allBatches[0]?.id || 1;
+
+    // 2. Remove legacy stub subjects
+    const legacyStubSlugs = [
+      "bangla-1", "bangla-2", "english-1", "english-2",
+      "aqaid-1", "aqaid-2", "hadith", "quran", "ict",
+      "balaghat", "arabic-1", "arabic-2", "civics"
+    ];
+    await db
+      .delete(subjects)
+      .where(and(isNull(subjects.userId), inArray(subjects.slug, legacyStubSlugs)));
+
+    // 3. Sync each subject from NCTB_CURRICULUM_DATA
+    for (let i = 0; i < NCTB_CURRICULUM_DATA.length; i++) {
+      const def = NCTB_CURRICULUM_DATA[i];
+      const effectiveBatchId = batchMap[def.classLevel] || defaultBatchId;
+
+      const [existingSub] = await db
+        .select()
+        .from(subjects)
+        .where(and(isNull(subjects.userId), eq(subjects.slug, def.slug)))
+        .limit(1);
+
+      let subId: number;
+      if (!existingSub) {
+        const [inserted] = await db
+          .insert(subjects)
+          .values({
+            batchId: effectiveBatchId,
+            userId: null,
+            name: def.name,
+            nameBn: def.nameBn,
+            slug: def.slug,
+            sortOrder: i + 1,
+            board: def.board,
+            classLevel: def.classLevel,
+            streamGroup: def.streamGroup,
+            subjectType: def.subjectType,
+            structureType: def.structureType,
+          })
+          .returning();
+        subId = inserted.id;
+      } else {
+        subId = existingSub.id;
+        await db
+          .update(subjects)
+          .set({
+            batchId: effectiveBatchId,
+            name: def.name,
+            nameBn: def.nameBn,
+            sortOrder: i + 1,
+            board: def.board,
+            classLevel: def.classLevel,
+            streamGroup: def.streamGroup,
+            subjectType: def.subjectType,
+            structureType: def.structureType,
+          })
+          .where(eq(subjects.id, subId));
+      }
+
+      // Check existing topics
+      const existingTopics = await db
+        .select()
+        .from(topics)
+        .where(and(isNull(topics.userId), eq(topics.subjectId, subId)));
+
+      if (options?.forceReset || existingTopics.length === 0) {
+        // Delete existing lessons & topics for this subject
+        await db
+          .delete(topics)
+          .where(and(isNull(topics.userId), eq(topics.subjectId, subId)));
+        await db
+          .delete(lessons)
+          .where(and(isNull(lessons.userId), eq(lessons.subjectId, subId)));
+
+        for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
+          const ch = def.chaptersOrModules[chIdx];
+          const [lesson] = await db
+            .insert(lessons)
+            .values({
+              subjectId: subId,
+              userId: null,
+              name: ch.name,
+              sortOrder: chIdx + 1,
+            })
+            .returning();
+
+          for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+            await db.insert(topics).values({
+              subjectId: subId,
+              lessonId: lesson.id,
+              userId: null,
+              name: ch.topics[tIdx],
+              chapter: ch.name,
+              sortOrder: tIdx + 1,
+              status: "not_started",
+            });
+          }
+        }
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/syllabus");
+    revalidatePath("/register");
+    return { ok: true, count: NCTB_CURRICULUM_DATA.length };
+  } catch (err: any) {
+    console.error("NCTB sync error:", err);
+    return { ok: false, error: err?.message || "Failed to sync NCTB curriculum." };
+  }
+}
+

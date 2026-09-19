@@ -22,6 +22,7 @@ import {
   Briefcase,
   BookMarked,
   Tag,
+  RefreshCw,
 } from "lucide-react";
 import {
   createMasterSubjectAction,
@@ -36,6 +37,7 @@ import {
   createBatchAction,
   updateBatchAction,
   deleteBatchAction,
+  syncNctbCurriculumAction,
 } from "@/actions/admin";
 
 interface TopicItem {
@@ -227,6 +229,23 @@ export default function MasterCurriculumManager({
     });
   };
 
+  const handleSyncNctb = () => {
+    if (
+      !confirm(
+        "This will verify and synchronize all 40 official NCTB curriculum books, chapters, and topics for SSC, HSC, Dakhil, and Alim. Proceed?"
+      )
+    )
+      return;
+    startTransition(async () => {
+      const res = await syncNctbCurriculumAction({ forceReset: true });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        setMsg(res.error || "Failed to sync NCTB curriculum");
+      }
+    });
+  };
+
   // ── Chapter Handlers ──
   const handleAddChapter = (subjectId: number) => {
     const val = chapterInputs[subjectId]?.trim();
@@ -388,6 +407,16 @@ export default function MasterCurriculumManager({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleSyncNctb}
+              disabled={pending}
+              title="Verify and synchronize all official NCTB books, chapters, and topics"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-bold text-sky-800 shadow-xs transition hover:bg-sky-100 disabled:opacity-50 shrink-0"
+            >
+              <RefreshCw className={`size-3.5 ${pending ? "animate-spin" : ""}`} />
+              <span>Sync NCTB Curriculum</span>
+            </button>
+
             <button
               onClick={() => setShowAddBook(true)}
               className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-leaf-deep shrink-0"
