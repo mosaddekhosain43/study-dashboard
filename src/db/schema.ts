@@ -206,6 +206,9 @@ export const topics = pgTable(
     status: text("status").notNull().default("not_started"), // completed | in_progress | not_completed | not_started
     notes: text("notes"),
     completedAt: text("completed_at"), // date key yyyy-mm-dd
+    lastRevisedAt: text("last_revised_at"), // date key yyyy-mm-dd of last revision
+    revisionCount: integer("revision_count").notNull().default(0), // 0, 1, 2, 3+
+    nextRevisionDue: text("next_revision_due"), // date key yyyy-mm-dd
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

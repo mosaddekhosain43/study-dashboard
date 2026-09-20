@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS topics (
   status TEXT NOT NULL DEFAULT 'not_started',
   notes TEXT,
   completed_at TEXT,
+  last_revised_at TEXT,
+  revision_count INTEGER NOT NULL DEFAULT 0,
+  next_revision_due TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -167,6 +170,11 @@ export async function runInitAndSeed(
       await rawExec(
         "ALTER TABLE subjects ADD COLUMN IF NOT EXISTS structure_type TEXT NOT NULL DEFAULT 'chapter';"
       );
+      await rawExec("ALTER TABLE topics ADD COLUMN IF NOT EXISTS last_revised_at TEXT;");
+      await rawExec(
+        "ALTER TABLE topics ADD COLUMN IF NOT EXISTS revision_count INTEGER NOT NULL DEFAULT 0;"
+      );
+      await rawExec("ALTER TABLE topics ADD COLUMN IF NOT EXISTS next_revision_due TEXT;");
     } catch {
       // ignore
     }

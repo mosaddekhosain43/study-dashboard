@@ -16,6 +16,7 @@ import {
   Timer,
   TrendingUp,
   XCircle,
+  Compass,
 } from "lucide-react";
 import UpdateFeed from "@/components/UpdateFeed";
 import ClassroomCard from "@/components/ClassroomCard";
@@ -30,6 +31,7 @@ import {
 import { redirect } from "next/navigation";
 import { formatLong, formatMinutes, relativeDay, todayKey } from "@/lib/dates";
 import { getDashboardData, getStudentClassroomData, getSubjects } from "@/lib/queries";
+import { getStudentStudyPlanAction } from "@/actions/planner";
 import { STATUS_META } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -47,11 +49,13 @@ export default async function DashboardPage() {
     redirect("/teacher");
   }
 
-  const [data, subjects, classroom] = await Promise.all([
+  const [data, subjects, classroom, planRes] = await Promise.all([
     getDashboardData(),
     getSubjects(),
     getStudentClassroomData(),
+    getStudentStudyPlanAction(),
   ]);
+  const studyPlan = planRes?.ok ? planRes.plan : null;
   const subjectOpts = subjects.map((s) => ({ id: s.id, name: s.name }));
   const today = formatLong(todayKey());
 
@@ -100,6 +104,54 @@ export default async function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {/* ── Today's Action Routine & Revision Alerts ───────── */}
+      {studyPlan && studyPlan.pace.totalTopics > 0 && (
+        <div className="card rise p-5 border-leaf/30 bg-gradient-to-r from-leaf-soft/30 via-card to-amber-50/40 flex flex-col md:flex-row md:items-center justify-between gap-5 shadow-xs">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-xl bg-leaf text-white shadow-xs">
+                <Compass className="size-4" />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-leaf">
+                আজকের স্টাডি রুটিন ও রিভিশন গাইড
+              </span>
+              {studyPlan.revisions.dueToday.length > 0 && (
+                <span className="rounded-full bg-amber-100 text-amber-800 text-[10.5px] font-bold px-2 py-0.5 border border-amber-300">
+                  {studyPlan.revisions.dueToday.length}টি রিভিশন বকেয়া
+                </span>
+              )}
+            </div>
+            <h2 className="font-display text-base font-bold text-ink">
+              আজকের লক্ষ্য: {studyPlan.pace.topicsPerDay}টি টপিক · {studyPlan.pace.recommendedDailyHoursStr} পড়ার সময়
+            </h2>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-faint">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-amber-500" />
+                <strong>সকাল:</strong> গণিত, বিজ্ঞান ও মূল তত্ত্ব
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-sky-500" />
+                <strong>দুপুর:</strong> সাহিত্য, পঠন ও নোট
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-indigo-500" />
+                <strong>রাত:</strong> লিখিত অনুশীলন ও রিভিশন
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/planner"
+              className="inline-flex items-center gap-2 rounded-xl bg-leaf hover:bg-leaf-deep text-white px-4 py-2.5 text-xs font-bold transition shadow-xs"
+            >
+              <span>পূর্ণাঙ্গ রুটিন ও রিভিশন দেখুন</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Classroom Tasks & Materials (if enrolled in a batch) ─ */}
       {classroom && (
