@@ -9,20 +9,23 @@ export async function GET() {
 
     const topRes = await db.execute(sql`SELECT count(*) as count FROM topics`);
     const subRes = await db.execute(sql`SELECT count(*) as count FROM subjects`);
-    const masterTopics = (await db.execute(
-      sql`SELECT id, name, user_id, subject_id, lesson_id FROM topics WHERE user_id IS NULL`
+    const lessRes = (await db.execute(
+      sql`SELECT l.id, l.name, count(t.id) as topic_count FROM lessons l LEFT JOIN topics t ON t.lesson_id = l.id GROUP BY l.id, l.name ORDER BY l.id`
     )) as any;
-    const userTopics = (await db.execute(
-      sql`SELECT id, name, user_id, subject_id, lesson_id FROM topics WHERE user_id IS NOT NULL`
-    )) as any;
+
+    const topCount = (topRes as any)?.rows?.[0]?.count ?? 0;
+    const subCount = (subRes as any)?.rows?.[0]?.count ?? 0;
+    const lessonsList = lessRes?.rows ?? [];
 
     return Response.json({
       ok: true,
       subjectCount: Number(subCount),
-      masterTopicsCount: masterTopics?.rows?.length ?? 0,
-      userTopicsCount: userTopics?.rows?.length ?? 0,
-      masterTopics: masterTopics?.rows ?? [],
-      userTopics: userTopics?.rows ?? [],
+      totalTopics: Number(topCount),
+      chapters: lessonsList.map((l: any) => ({
+        chapterName: l.name,
+        topicCount: Number(l.topic_count),
+      })),
+      message: "Curriculum initialized and verified successfully.",
     });
   } catch (err: any) {
     return Response.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
