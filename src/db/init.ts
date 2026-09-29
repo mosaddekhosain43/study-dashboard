@@ -247,14 +247,13 @@ export async function runInitAndSeed(
       await rawExec("DELETE FROM batches WHERE slug IN ('ssc-2027', 'hsc-2027', 'dakhil-2027', 'class-10', 'class-8');");
       await rawExec("UPDATE users SET class_level = 'alim', board = 'madrasah', stream_group = 'all';");
 
-      // One-time master reset to ensure all students see the clean 26 BOM books
-      const hasReset = await rawQuery("SELECT value FROM settings WHERE key = 'v3_curriculum_reset_26' LIMIT 1");
+      // One-time reset to clear all topics and lessons as requested by user
+      const hasReset = await rawQuery("SELECT value FROM settings WHERE key = 'v4_clear_all_topics' LIMIT 1");
       const resetDone = hasReset.rows?.[0] || hasReset[0];
       if (!resetDone) {
         await rawExec("DELETE FROM topics;");
         await rawExec("DELETE FROM lessons;");
-        await rawExec("DELETE FROM subjects;");
-        await rawExec("INSERT INTO settings (key, value) VALUES ('v3_curriculum_reset_26', 'done');");
+        await rawExec("INSERT INTO settings (key, value) VALUES ('v4_clear_all_topics', 'done');");
       }
     } catch {
       // ignore
@@ -271,16 +270,10 @@ export async function runInitAndSeed(
       if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
     }
 
-    // 2. Remove old legacy stub master subjects (which only had 0 or dummy topics)
+    // 2. Remove obsolete subjects not in official 26 Alim curriculum
     try {
-      const legacyStubSlugs = [
-        "bangla-1", "bangla-2", "english-1", "english-2",
-        "aqaid-1", "aqaid-2", "hadith", "quran", "ict",
-        "balaghat", "arabic-1", "arabic-2", "civics"
-      ];
-      for (const oldSlug of legacyStubSlugs) {
-        await rawQuery("DELETE FROM subjects WHERE user_id IS NULL AND slug = $1", [oldSlug]);
-      }
+      const validSlugs = NCTB_CURRICULUM_DATA.map((s) => `'${s.slug}'`).join(",");
+      await rawExec(`DELETE FROM subjects WHERE slug NOT IN (${validSlugs});`);
     } catch {
       // ignore
     }
