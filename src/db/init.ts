@@ -261,8 +261,17 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // 3. Seed comprehensive NCTB Curriculum data (SSC, HSC, Dakhil, Alim - 40 authentic books)
+    // 3. Seed comprehensive NCTB Curriculum data
     try {
+      // Deduplicate master subjects by slug
+      await rawQuery(
+        "DELETE FROM subjects WHERE user_id IS NULL AND id NOT IN (SELECT min(id) FROM subjects WHERE user_id IS NULL GROUP BY slug)"
+      );
+
+      // Clean master lessons and topics before seeding curriculum
+      await rawQuery("DELETE FROM topics WHERE user_id IS NULL");
+      await rawQuery("DELETE FROM lessons WHERE user_id IS NULL");
+
       const existingSlugsRes = await rawQuery("SELECT id, slug FROM subjects WHERE user_id IS NULL");
       const existingRows = existingSlugsRes.rows || existingSlugsRes || [];
       const existingMap = new Map<string, number>();
