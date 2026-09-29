@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 export interface MasterTopicView {
   id: number;
   name: string;
+  notes?: string | null;
   sortOrder: number;
 }
 
@@ -93,6 +94,7 @@ export async function getStudentCurriculumStatusAction() {
           .map((t) => ({
             id: t.id,
             name: t.name,
+            notes: t.notes,
             sortOrder: t.sortOrder,
           })),
       })),
@@ -234,6 +236,8 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
             lessonId: personalLesson.id,
             userId: user.id,
             name: mT.name,
+            chapter: mChapter.name,
+            notes: mT.notes,
             sortOrder: mT.sortOrder,
             status: "not_started",
           });

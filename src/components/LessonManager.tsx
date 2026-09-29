@@ -542,8 +542,8 @@ export default function LessonManager({
                                           <span>updated {t.updatedAt.slice(0, 10)}</span>
                                         )}
                                         {t.notes && (
-                                          <span className="italic text-ink-soft">
-                                            note: {t.notes}
+                                          <span className="block w-full mt-1.5 whitespace-pre-line text-[12px] text-ink-soft not-italic border-t border-line/60 pt-1" dir="auto">
+                                            {t.notes}
                                           </span>
                                         )}
                                       </div>

@@ -592,12 +592,16 @@ export async function syncNctbCurriculumAction(options?: { forceReset?: boolean 
             .returning();
 
           for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+            const topicItem = ch.topics[tIdx];
+            const topicName = typeof topicItem === "string" ? topicItem : topicItem.name;
+            const topicNotes = typeof topicItem === "string" ? null : topicItem.notes || null;
             await db.insert(topics).values({
               subjectId: subId,
               lessonId: lesson.id,
               userId: null,
-              name: ch.topics[tIdx],
+              name: topicName,
               chapter: ch.name,
+              notes: topicNotes,
               sortOrder: tIdx + 1,
               status: "not_started",
             });

@@ -242,14 +242,6 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // Unconditionally wipe all topics and lessons as requested by user
-    try {
-      await rawExec("DELETE FROM topics;");
-      await rawExec("DELETE FROM lessons;");
-    } catch {
-      // ignore
-    }
-
     const firstBatchRes = await rawQuery("SELECT id FROM batches ORDER BY id ASC LIMIT 1");
     const firstBatchId = firstBatchRes.rows?.[0]?.id || firstBatchRes[0]?.id || 1;
 
@@ -341,10 +333,13 @@ export async function runInitAndSeed(
           if (!lessonId) continue;
 
           for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+            const topicItem = ch.topics[tIdx];
+            const topicName = typeof topicItem === "string" ? topicItem : topicItem.name;
+            const topicNotes = typeof topicItem === "string" ? null : topicItem.notes || null;
             await rawQuery(
-              `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, sort_order, status)
-               VALUES ($1, $2, NULL, $3, $4, $5, 'not_started')`,
-              [subId, lessonId, ch.topics[tIdx], ch.name, tIdx + 1]
+              `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, notes, sort_order, status)
+               VALUES ($1, $2, NULL, $3, $4, $5, $6, 'not_started')`,
+              [subId, lessonId, topicName, ch.name, topicNotes, tIdx + 1]
             );
           }
         }

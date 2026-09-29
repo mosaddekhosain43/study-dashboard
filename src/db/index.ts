@@ -100,8 +100,8 @@ if (shouldUsePg && databaseUrl) {
 
 // Auto-run schema creation & seeding on first boot
 let initPromise: Promise<void> | null = null;
-export async function initializeDb() {
-  if (!initPromise) {
+export async function initializeDb(force = false) {
+  if (!initPromise || force) {
     initPromise = (async () => {
       await runInitAndSeed(rawQueryFn, rawExecFn);
     })();
@@ -116,4 +116,4 @@ if (process.env.NEXT_PHASE !== "phase-production-build") {
 }
 
 export const db = dbInstance as NodePgDatabase<typeof schema>;
-export { rawQueryFn };
+export { rawQueryFn, rawExecFn };
