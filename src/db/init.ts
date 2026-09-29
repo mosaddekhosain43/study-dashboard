@@ -242,19 +242,10 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // Clean up non-Alim batches, non-Alim master subjects, and normalize user profiles
+    // Unconditionally wipe all topics and lessons as requested by user
     try {
-      await rawExec("DELETE FROM batches WHERE slug IN ('ssc-2027', 'hsc-2027', 'dakhil-2027', 'class-10', 'class-8');");
-      await rawExec("UPDATE users SET class_level = 'alim', board = 'madrasah', stream_group = 'all';");
-
-      // One-time reset to clear all topics and lessons as requested by user
-      const hasReset = await rawQuery("SELECT value FROM settings WHERE key = 'v4_clear_all_topics' LIMIT 1");
-      const resetDone = hasReset.rows?.[0] || hasReset[0];
-      if (!resetDone) {
-        await rawExec("DELETE FROM topics;");
-        await rawExec("DELETE FROM lessons;");
-        await rawExec("INSERT INTO settings (key, value) VALUES ('v4_clear_all_topics', 'done');");
-      }
+      await rawExec("DELETE FROM topics;");
+      await rawExec("DELETE FROM lessons;");
     } catch {
       // ignore
     }
