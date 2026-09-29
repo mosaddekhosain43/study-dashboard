@@ -63,28 +63,44 @@ export const STATUS_META: Record<
   },
 };
 
-// ── The 13 Alim 2nd-year papers ─────────────────────────────────────────────
+// ── Official Alim subjects and papers (BOM / Madrasah Board) ─────────────────
 
 export interface SubjectDef {
   name: string;
   slug: string;
   nameBn: string;
+  code?: string;
 }
 
 export const SUBJECT_DEFS: SubjectDef[] = [
-  { name: "Bangla 1st Paper", slug: "bangla-1", nameBn: "বাংলা ১ম পত্র" },
-  { name: "Bangla 2nd Paper", slug: "bangla-2", nameBn: "বাংলা ২য় পত্র" },
-  { name: "English 1st Paper", slug: "english-1", nameBn: "ইংরেজি ১ম পত্র" },
-  { name: "English 2nd Paper", slug: "english-2", nameBn: "ইংরেজি ২য় পত্র" },
-  { name: "Aqaid 1st Paper", slug: "aqaid-1", nameBn: "আকাইদ ১ম পত্র" },
-  { name: "Aqaid 2nd Paper", slug: "aqaid-2", nameBn: "আকাইদ ২য় পত্র" },
-  { name: "Hadith", slug: "hadith", nameBn: "হাদিস" },
-  { name: "Quran", slug: "quran", nameBn: "কুরআন" },
-  { name: "ICT", slug: "ict", nameBn: "আইসিটি" },
-  { name: "Balaghat", slug: "balaghat", nameBn: "বালাগাত" },
-  { name: "Arabic 1st Paper", slug: "arabic-1", nameBn: "আরবি ১ম পত্র" },
-  { name: "Arabic 2nd Paper", slug: "arabic-2", nameBn: "আরবি ২য় পত্র" },
-  { name: "Civics (Pouroniti)", slug: "civics", nameBn: "পৌরনীতি" },
+  { name: "Quran Mazid", slug: "alim-quran-mazid", nameBn: "কুরআন মাজিদ (২০১)", code: "201" },
+  { name: "Hadith & Usulul Hadith", slug: "alim-hadith", nameBn: "হাদিস ও উসূলুল হাদিস (২০২)", code: "202" },
+  { name: "Fiqh 1st Paper", slug: "alim-fiqh-1", nameBn: "আল ফিকহ ১ম পত্র (২০৩)", code: "203" },
+  { name: "Fiqh 2nd Paper", slug: "alim-fiqh-2", nameBn: "আল ফিকহ ২য় পত্র (২০৪)", code: "204" },
+  { name: "Arabic 1st Paper", slug: "alim-arabic-1", nameBn: "আরবি ১ম পত্র (২০৫)", code: "205" },
+  { name: "Arabic 2nd Paper", slug: "alim-arabic-2", nameBn: "আরবি ২য় পত্র (২০৬)", code: "206" },
+  { name: "Arabic (Science)", slug: "alim-arabic-science", nameBn: "আরবি (বিজ্ঞান বিভাগ) (২২৩)", code: "223" },
+  { name: "Balaghat & Mantiq", slug: "alim-balaghat-mantiq", nameBn: "বালাগাত ও মানতিক (২১০)", code: "210" },
+  { name: "Islamic History", slug: "alim-islamic-history", nameBn: "ইসলামের ইতিহাস (২০৯)", code: "209" },
+  { name: "Bangla 1st Paper", slug: "alim-bangla-1", nameBn: "বাংলা ১ম পত্র (২৩৬)", code: "236" },
+  { name: "Bangla 2nd Paper", slug: "alim-bangla-2", nameBn: "বাংলা ২য় পত্র (২৩৭)", code: "237" },
+  { name: "English 1st Paper", slug: "alim-english-1", nameBn: "ইংরেজি ১ম পত্র (২৩৮)", code: "238" },
+  { name: "English 2nd Paper", slug: "alim-english-2", nameBn: "ইংরেজি ২য় পত্র (২৩৯)", code: "239" },
+  { name: "ICT", slug: "alim-ict", nameBn: "তথ্য ও যোগাযোগ প্রযুক্তি (২৪০)", code: "240" },
+  { name: "Civics 1st Paper", slug: "alim-civics-1", nameBn: "পৌরনীতি ও সুশাসন ১ম পত্র (২৪১)", code: "241" },
+  { name: "Civics 2nd Paper", slug: "alim-civics-2", nameBn: "পৌরনীতি ও সুশাসন ২য় পত্র (২৪২)", code: "242" },
+  { name: "Economics 1st Paper", slug: "alim-economics-1", nameBn: "অর্থনীতি ১ম পত্র (২১৩)", code: "213" },
+  { name: "Economics 2nd Paper", slug: "alim-economics-2", nameBn: "অর্থনীতি ২য় পত্র (২১৪)", code: "214" },
+  { name: "Physics 1st Paper", slug: "alim-physics-1", nameBn: "পদার্থবিজ্ঞান ১ম পত্র (২২৪)", code: "224" },
+  { name: "Physics 2nd Paper", slug: "alim-physics-2", nameBn: "পদার্থবিজ্ঞান ২য় পত্র (২২৫)", code: "225" },
+  { name: "Chemistry 1st Paper", slug: "alim-chemistry-1", nameBn: "রসায়ন ১ম পত্র (২২৬)", code: "226" },
+  { name: "Chemistry 2nd Paper", slug: "alim-chemistry-2", nameBn: "রসায়ন ২য় পত্র (২২৭)", code: "227" },
+  { name: "Biology 1st Paper", slug: "alim-biology-1", nameBn: "জীববিজ্ঞান ১ম পত্র (২৩০)", code: "230" },
+  { name: "Biology 2nd Paper", slug: "alim-biology-2", nameBn: "জীববিজ্ঞান ২য় পত্র (২৩১)", code: "231" },
+  { name: "Higher Math 1st Paper", slug: "alim-higher-math-1", nameBn: "উচ্চতর গণিত ১ম পত্র (২২৮)", code: "228" },
+  { name: "Higher Math 2nd Paper", slug: "alim-higher-math-2", nameBn: "উচ্চতর গণিত ২য় পত্র (২২৯)", code: "229" },
+  { name: "Tajweed 1st Paper", slug: "alim-tajweed-1", nameBn: "তাজবিদ ১ম পত্র (মুজাব্বিদ)", code: "taj-1" },
+  { name: "Tajweed 2nd Paper", slug: "alim-tajweed-2", nameBn: "তাজবিদ ২য় পত্র (মুজাব্বিদ)", code: "taj-2" },
 ];
 
 // ── Settings keys ───────────────────────────────────────────────────────────

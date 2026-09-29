@@ -164,6 +164,11 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
   }
 
   try {
+    // Clear old personal syllabus so the student's fresh selection takes effect
+    await db.delete(topics).where(eq(topics.userId, user.id));
+    await db.delete(lessons).where(eq(lessons.userId, user.id));
+    await db.delete(subjects).where(eq(subjects.userId, user.id));
+
     // For each selected master subject
     for (const sel of selections) {
       const masterSubRows = await db

@@ -131,7 +131,33 @@ export interface ItemDto {
 
 export async function getSubjects(): Promise<SubjectDto[]> {
   await ensureSeeded();
-  return db.select().from(subjects).orderBy(subjects.sortOrder, subjects.id);
+  const user = await getCurrentUser();
+
+  if (user) {
+    const userPersonalSubs = await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user.id))
+      .orderBy(subjects.sortOrder, subjects.id);
+    if (userPersonalSubs.length > 0) {
+      return userPersonalSubs as SubjectDto[];
+    }
+  }
+
+  const masterSubs = (await db
+    .select()
+    .from(subjects)
+    .where(isNull(subjects.userId))
+    .orderBy(subjects.sortOrder, subjects.id)) as any[];
+
+  const userStream = user?.streamGroup;
+  if (userStream && userStream !== "all") {
+    return masterSubs.filter(
+      (s) => !s.streamGroup || s.streamGroup === "all" || s.streamGroup === userStream
+    ) as SubjectDto[];
+  }
+
+  return masterSubs as SubjectDto[];
 }
 
 function toStatus(s: string): StudyStatus {
@@ -169,9 +195,20 @@ export async function getSubjectStats(): Promise<SubjectStats[]> {
   }
 
   const usePersonal = userPersonalSubs.length > 0;
-  const subRows = usePersonal
-    ? userPersonalSubs
-    : await db.select().from(subjects).where(isNull(subjects.userId)).orderBy(subjects.sortOrder, subjects.id);
+  let fallbackSubs = await db
+    .select()
+    .from(subjects)
+    .where(isNull(subjects.userId))
+    .orderBy(subjects.sortOrder, subjects.id);
+
+  const userStream = user?.streamGroup;
+  if (userStream && userStream !== "all") {
+    fallbackSubs = fallbackSubs.filter(
+      (s: any) => !s.streamGroup || s.streamGroup === "all" || s.streamGroup === userStream
+    );
+  }
+
+  const subRows = usePersonal ? userPersonalSubs : fallbackSubs;
 
   const topRows = usePersonal && user
     ? await db.select().from(topics).where(eq(topics.userId, user.id))

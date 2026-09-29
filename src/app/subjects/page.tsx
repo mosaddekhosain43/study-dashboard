@@ -20,7 +20,9 @@ export default async function SubjectsPage() {
           <h1 className="font-display text-[30px] font-bold leading-none tracking-tight text-ink sm:text-[34px]">
             Subjects & Papers
           </h1>
-          <p className="mt-1 text-[13.5px] text-ink-faint">All 13 papers. Click any subject for chapter-level detail.</p>
+          <p className="mt-1 text-[13.5px] text-ink-faint">
+            {stats.length > 0 ? `All ${stats.length} subjects & papers. Click any subject for chapter-level detail.` : "Click any subject for chapter-level detail."}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <AddSubjectButton />

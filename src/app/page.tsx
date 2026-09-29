@@ -71,7 +71,7 @@ export default async function DashboardPage() {
             Study Dashboard
           </h1>
           <p className="mt-1.5 text-[13.5px] text-ink-faint">
-            13 papers · Test Examination countdown active
+            {data.stats.length > 0 ? `${data.stats.length} subjects` : "Alim Examination"} · Countdown active
           </p>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2.5">
@@ -348,7 +348,7 @@ export default async function DashboardPage() {
       <section className="rise rise-4">
         <SectionHeader
           title="Subject Overview"
-          sub="All 13 papers — progress at a glance"
+          sub={`${data.stats.length > 0 ? `All ${data.stats.length} subjects` : "Subjects"} — progress at a glance`}
           action={
             <Link href="/subjects" className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-leaf hover:underline">
               View all <ArrowRight className="size-3.5" />

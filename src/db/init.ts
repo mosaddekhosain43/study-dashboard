@@ -170,6 +170,9 @@ export async function runInitAndSeed(
       await rawExec(
         "ALTER TABLE subjects ADD COLUMN IF NOT EXISTS structure_type TEXT NOT NULL DEFAULT 'chapter';"
       );
+      await rawExec(
+        "ALTER TABLE topics ADD COLUMN IF NOT EXISTS lesson_id INTEGER REFERENCES lessons(id) ON DELETE CASCADE;"
+      );
       await rawExec("ALTER TABLE topics ADD COLUMN IF NOT EXISTS last_revised_at TEXT;");
       await rawExec(
         "ALTER TABLE topics ADD COLUMN IF NOT EXISTS revision_count INTEGER NOT NULL DEFAULT 0;"
@@ -329,36 +332,27 @@ export async function runInitAndSeed(
 
         if (!subId) continue;
 
-        // Check how many topics exist for this master subject
-        const topicCountRes = await rawQuery(
-          "SELECT count(*) as count FROM topics WHERE subject_id = $1 AND user_id IS NULL",
-          [subId]
-        );
-        const topCount = Number(topicCountRes.rows?.[0]?.count || topicCountRes[0]?.count || 0);
+        // Clean master lessons and topics for this master subject and populate latest NCTB curriculum
+        await rawQuery("DELETE FROM topics WHERE subject_id = $1 AND user_id IS NULL", [subId]);
+        await rawQuery("DELETE FROM lessons WHERE subject_id = $1 AND user_id IS NULL", [subId]);
 
-        // If no topics exist, populate authentic NCTB chapters and topics
-        if (topCount === 0) {
-          // Clean any empty lessons first
-          await rawQuery("DELETE FROM lessons WHERE subject_id = $1 AND user_id IS NULL", [subId]);
+        for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
+          const ch = def.chaptersOrModules[chIdx];
+          const lessonRes = await rawQuery(
+            `INSERT INTO lessons (subject_id, user_id, name, sort_order)
+             VALUES ($1, NULL, $2, $3)
+             RETURNING id`,
+            [subId, ch.name, chIdx + 1]
+          );
+          const lessonId = lessonRes.rows?.[0]?.id || lessonRes[0]?.id;
+          if (!lessonId) continue;
 
-          for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
-            const ch = def.chaptersOrModules[chIdx];
-            const lessonRes = await rawQuery(
-              `INSERT INTO lessons (subject_id, user_id, name, sort_order)
-               VALUES ($1, NULL, $2, $3)
-               RETURNING id`,
-              [subId, ch.name, chIdx + 1]
+          for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+            await rawQuery(
+              `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, sort_order, status)
+               VALUES ($1, $2, NULL, $3, $4, $5, 'not_started')`,
+              [subId, lessonId, ch.topics[tIdx], ch.name, tIdx + 1]
             );
-            const lessonId = lessonRes.rows?.[0]?.id || lessonRes[0]?.id;
-            if (!lessonId) continue;
-
-            for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
-              await rawQuery(
-                `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, sort_order, status)
-                 VALUES ($1, $2, NULL, $3, $4, $5, 'not_started')`,
-                [subId, lessonId, ch.topics[tIdx], ch.name, tIdx + 1]
-              );
-            }
           }
         }
       }
