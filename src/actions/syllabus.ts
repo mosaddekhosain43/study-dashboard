@@ -120,9 +120,9 @@ export async function getStudentCurriculumStatusAction() {
     personalSubjectCount,
     userBatch: currentBatch,
     userProfile: {
-      board: dbUser?.board || user.board || "general",
-      classLevel: dbUser?.classLevel || user.classLevel || "ssc",
-      streamGroup: dbUser?.streamGroup || user.streamGroup || "science",
+      board: dbUser?.board || user.board || "madrasah",
+      classLevel: dbUser?.classLevel || user.classLevel || "alim",
+      streamGroup: dbUser?.streamGroup || user.streamGroup || "general_madrasah",
     },
     availableBatches: allBatches,
     masterBooks,
@@ -146,16 +146,17 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
     return { ok: false, error: "Please log in to initialize your syllabus." };
   }
 
-  const { selections, batchId, board, classLevel, streamGroup } = payload;
+  const { selections, batchId, streamGroup } = payload;
   if (!selections || selections.length === 0) {
     return { ok: false, error: "Please select at least one book to begin." };
   }
 
   // Update user profile info (batch, board, class, stream)
-  const userUpdates: Record<string, any> = {};
+  const userUpdates: Record<string, any> = {
+    board: "madrasah",
+    classLevel: "alim",
+  };
   if (batchId && batchId !== user.batchId) userUpdates.batchId = batchId;
-  if (board) userUpdates.board = board;
-  if (classLevel) userUpdates.classLevel = classLevel;
   if (streamGroup) userUpdates.streamGroup = streamGroup;
 
   if (Object.keys(userUpdates).length > 0) {

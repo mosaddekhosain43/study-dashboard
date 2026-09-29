@@ -48,13 +48,11 @@ interface Props {
   onCancel?: () => void;
 }
 
-export type BoardType = "general" | "madrasah";
-export type ClassLevel = "ssc" | "hsc" | "dakhil" | "alim";
+export type BoardType = "madrasah";
+export type ClassLevel = "alim";
 export type StreamGroup =
-  | "science"
-  | "humanities"
-  | "business_studies"
   | "general_madrasah"
+  | "science"
   | "quran_hadith";
 
 export default function SyllabusOnboarding({
@@ -67,57 +65,25 @@ export default function SyllabusOnboarding({
 }: Props) {
   const router = useRouter();
 
-  // ── Step A: Board Selection ──
-  const [board, setBoard] = useState<BoardType>(() => {
-    if (userProfile?.board === "general" || userProfile?.board === "madrasah") {
-      return userProfile.board as BoardType;
-    }
-    // Infer from userBatch name if possible
-    if (userBatch?.name.toLowerCase().includes("ssc") || userBatch?.name.toLowerCase().includes("school") || userBatch?.name.toLowerCase().includes("hsc")) {
-      return "general";
-    }
-    return "general";
-  });
+  const board: BoardType = "madrasah";
+  const classLevel: ClassLevel = "alim";
 
-  // ── Step B: Class / Level Selection ──
-  const [classLevel, setClassLevel] = useState<ClassLevel>(() => {
-    if (userProfile?.classLevel === "ssc" || userProfile?.classLevel === "hsc" || userProfile?.classLevel === "dakhil" || userProfile?.classLevel === "alim") {
-      return userProfile.classLevel as ClassLevel;
-    }
-    return board === "general" ? "ssc" : "dakhil";
-  });
-
-  // When board changes, ensure valid class level
-  const handleBoardChange = (newBoard: BoardType) => {
-    setBoard(newBoard);
-    if (newBoard === "general") {
-      if (classLevel !== "ssc" && classLevel !== "hsc") {
-        setClassLevel("ssc");
-      }
-      setStreamGroup("science");
-    } else {
-      if (classLevel !== "dakhil" && classLevel !== "alim") {
-        setClassLevel("dakhil");
-      }
-      setStreamGroup("general_madrasah");
-    }
-  };
-
-  // ── Step C: Stream / Group Selection ──
+  // ── Stream / Group Selection ──
   const [streamGroup, setStreamGroup] = useState<StreamGroup>(() => {
-    if (userProfile?.streamGroup) return userProfile.streamGroup as StreamGroup;
-    return board === "general" ? "science" : "general_madrasah";
+    if (userProfile?.streamGroup === "science" || userProfile?.streamGroup === "quran_hadith") {
+      return userProfile.streamGroup as StreamGroup;
+    }
+    return "general_madrasah";
   });
 
   // Auto-select matching batchId
   const matchingBatchId = useMemo(() => {
-    const slugKey = classLevel;
     const found = availableBatches.find((b) =>
-      b.slug.toLowerCase().includes(slugKey.toLowerCase()) ||
-      b.name.toLowerCase().includes(slugKey.toLowerCase())
+      b.slug.toLowerCase().includes("alim") ||
+      b.name.toLowerCase().includes("alim")
     );
     return found ? found.id : (userBatch?.id || availableBatches[0]?.id || 1);
-  }, [classLevel, availableBatches, userBatch]);
+  }, [availableBatches, userBatch]);
 
   const [selectedBatchId, setSelectedBatchId] = useState<number>(matchingBatchId);
 
@@ -338,15 +304,15 @@ export default function SyllabusOnboarding({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-leaf">
-              <Sparkles className="size-4" />
-              <span>NCTB Curriculum & Onboarding</span>
+              <Building2 className="size-4" />
+              <span>বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড • আলিম শ্রেণি</span>
             </div>
             <h1 className="mt-1 font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-              Student Syllabus & Stream Setup
+              Alim Syllabus & Stream Setup
             </h1>
             <p className="mt-1 text-xs sm:text-[13.5px] text-ink-faint max-w-2xl">
-              Select your Education Board, Class, and Stream. The system automatically organizes
-              compulsory subjects, group electives, and optional subjects according to the official NCTB curriculum.
+              আপনার বিভাগ (সাধারণ, বিজ্ঞান, অথবা মুজাব্বিদ গ্রুপ) নির্বাচন করুন। সিস্টেম স্বয়ংক্রিয়ভাবে আলিম ২০২৬-২৭
+              সিলেবাস অনুযায়ী আবশ্যিক ও বিভাগীয় বিষয়সমূহ লোড করবে।
             </p>
           </div>
 
@@ -365,191 +331,105 @@ export default function SyllabusOnboarding({
           </div>
         </div>
 
-        {/* ── Step 1: Board & Stream Selectors ─────────────────────────────────── */}
-        <div className="mt-6 pt-5 border-t border-line/70 grid gap-4 md:grid-cols-3">
-          {/* Board Selector */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
-              <School className="size-3.5 text-leaf" />
-              <span>1. Education Board</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleBoardChange("general")}
-                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition ${
-                  board === "general"
-                    ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                    : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                }`}
-              >
-                <School className="size-4 shrink-0" />
-                <span>General (School)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleBoardChange("madrasah")}
-                className={`flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition ${
-                  board === "madrasah"
-                    ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                    : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                }`}
-              >
-                <Building2 className="size-4 shrink-0" />
-                <span>Madrasah Board</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Class / Level Selector */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
-              <GraduationCap className="size-3.5 text-leaf" />
-              <span>2. Class / Level</span>
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {board === "general" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("ssc")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "ssc"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    SSC
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("hsc")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "hsc"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    HSC
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("dakhil")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "dakhil"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    Dakhil
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setClassLevel("alim")}
-                    className={`rounded-xl border p-2.5 text-xs font-semibold text-center transition ${
-                      classLevel === "alim"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    Alim
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Group / Stream Selector */}
-          <div className="space-y-1.5">
+        {/* ── Step 1: Alim Stream / Group Selector ─────────────────────────────── */}
+        <div className="mt-6 pt-5 border-t border-line/70 space-y-2.5">
+          <div className="flex items-center justify-between">
             <label className="text-[11px] font-bold uppercase tracking-wider text-ink-faint flex items-center gap-1.5">
               <Compass className="size-3.5 text-leaf" />
-              <span>3. Group / Stream</span>
+              <span>বিভাগ / Stream নির্বাচন করুন (Select Alim Stream)</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {board === "general" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("science")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "science"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <Atom className="size-3.5" />
-                    <span>Science</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("humanities")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "humanities"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <BookMarked className="size-3.5" />
-                    <span>Humanities</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("business_studies")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "business_studies"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <Briefcase className="size-3.5" />
-                    <span>Commerce</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("general_madrasah")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "general_madrasah"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <BookOpen className="size-3.5" />
-                    <span>General</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("science")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "science"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <Atom className="size-3.5" />
-                    <span>Science</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setStreamGroup("quran_hadith")}
-                    className={`rounded-xl border p-2 text-xs font-semibold flex flex-col items-center justify-center gap-0.5 transition ${
-                      streamGroup === "quran_hadith"
-                        ? "border-leaf bg-leaf-soft/40 text-leaf-deep font-bold shadow-2xs"
-                        : "border-line bg-paper text-ink-soft hover:border-leaf/40"
-                    }`}
-                  >
-                    <Building2 className="size-3.5" />
-                    <span>Hifz/Special</span>
-                  </button>
-                </>
-              )}
-            </div>
+            <span className="text-[11px] font-medium text-ink-faint">
+              মাদ্রাসা বোর্ড • আলিম শ্রেণি
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* General Stream */}
+            <button
+              type="button"
+              onClick={() => setStreamGroup("general_madrasah")}
+              className={`rounded-2xl border p-3.5 text-left transition relative flex flex-col justify-between ${
+                streamGroup === "general_madrasah"
+                  ? "border-leaf bg-leaf-soft/40 shadow-xs ring-1 ring-leaf/40"
+                  : "border-line bg-paper hover:border-leaf/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-xl ${streamGroup === "general_madrasah" ? "bg-leaf text-white" : "bg-paper text-ink-soft border border-line"}`}>
+                    <BookOpen className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-ink">সাধারণ বিভাগ</h3>
+                    <p className="text-[10px] text-ink-faint font-semibold uppercase tracking-wider">General Madrasah</p>
+                  </div>
+                </div>
+                {streamGroup === "general_madrasah" && (
+                  <span className="size-2 rounded-full bg-leaf animate-pulse" />
+                )}
+              </div>
+              <p className="mt-2.5 text-[11px] text-ink-faint leading-relaxed">
+                কুরআন, হাদিস, ফিকহ, আরবি, বালাগাত-মানতিক, ইসলামের ইতিহাস, বাংলা, ইংরেজি, আইসিটি
+              </p>
+            </button>
+
+            {/* Science Stream */}
+            <button
+              type="button"
+              onClick={() => setStreamGroup("science")}
+              className={`rounded-2xl border p-3.5 text-left transition relative flex flex-col justify-between ${
+                streamGroup === "science"
+                  ? "border-leaf bg-leaf-soft/40 shadow-xs ring-1 ring-leaf/40"
+                  : "border-line bg-paper hover:border-leaf/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-xl ${streamGroup === "science" ? "bg-leaf text-white" : "bg-paper text-ink-soft border border-line"}`}>
+                    <Atom className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-ink">বিজ্ঞান বিভাগ</h3>
+                    <p className="text-[10px] text-ink-faint font-semibold uppercase tracking-wider">Science Stream</p>
+                  </div>
+                </div>
+                {streamGroup === "science" && (
+                  <span className="size-2 rounded-full bg-leaf animate-pulse" />
+                )}
+              </div>
+              <p className="mt-2.5 text-[11px] text-ink-faint leading-relaxed">
+                পদার্থবিজ্ঞান, রসায়ন, উচ্চতর গণিত, জীববিজ্ঞান ও আলিম আবশ্যিক বিষয়সমূহ
+              </p>
+            </button>
+
+            {/* Muzabbid Stream */}
+            <button
+              type="button"
+              onClick={() => setStreamGroup("quran_hadith")}
+              className={`rounded-2xl border p-3.5 text-left transition relative flex flex-col justify-between ${
+                streamGroup === "quran_hadith"
+                  ? "border-leaf bg-leaf-soft/40 shadow-xs ring-1 ring-leaf/40"
+                  : "border-line bg-paper hover:border-leaf/30"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className={`p-2 rounded-xl ${streamGroup === "quran_hadith" ? "bg-leaf text-white" : "bg-paper text-ink-soft border border-line"}`}>
+                    <BookMarked className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-ink">মুজাব্বিদ গ্রুপ</h3>
+                    <p className="text-[10px] text-ink-faint font-semibold uppercase tracking-wider">Quran & Tajweed Track</p>
+                  </div>
+                </div>
+                {streamGroup === "quran_hadith" && (
+                  <span className="size-2 rounded-full bg-leaf animate-pulse" />
+                )}
+              </div>
+              <p className="mt-2.5 text-[11px] text-ink-faint leading-relaxed">
+                তাজবিদ ১ম ও ২য় পত্র, কিরাত শাস্ত্র ও আলিম আবশ্যিক বিষয়সমূহ
+              </p>
+            </button>
           </div>
         </div>
 

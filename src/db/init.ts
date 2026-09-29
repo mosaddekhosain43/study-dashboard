@@ -212,7 +212,7 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // 1. Seed default batches safely without unique constraint collision
+    // 1. Seed default Alim batch safely without unique constraint collision
     try {
       const existingBatchesRes = await rawQuery("SELECT id, name, slug FROM batches");
       const existingBatches = existingBatchesRes.rows || existingBatchesRes || [];
@@ -220,9 +220,6 @@ export async function runInitAndSeed(
         existingBatches.some((b: any) => b.slug === slug || b.name === name);
 
       const defaultBatches = [
-        ["SSC 2027", "ssc-2027", "SSC Examination Batch 2027 (General Education Board)"],
-        ["HSC 2027", "hsc-2027", "HSC Examination Batch 2027 (General Education Board)"],
-        ["Dakhil 2027", "dakhil-2027", "Dakhil Examination Batch 2027 (Madrasah Board)"],
         ["Alim 2027", "alim-2027", "Alim 2nd Year Examination Batch 2027 (Madrasah Board)"],
       ];
 
@@ -242,13 +239,11 @@ export async function runInitAndSeed(
       // ignore
     }
 
-    // Clean up deprecated batches and legacy class levels
+    // Clean up non-Alim batches, non-Alim master subjects, and normalize user profiles
     try {
-      await rawExec("DELETE FROM batches WHERE slug IN ('class-10', 'class-8');");
-      await rawExec("UPDATE subjects SET class_level = 'ssc' WHERE class_level = 'class_10';");
-      await rawExec("UPDATE subjects SET class_level = 'dakhil' WHERE class_level = 'class_8';");
-      await rawExec("UPDATE users SET class_level = 'ssc' WHERE class_level = 'class_10';");
-      await rawExec("UPDATE users SET class_level = 'dakhil' WHERE class_level = 'class_8';");
+      await rawExec("DELETE FROM batches WHERE slug IN ('ssc-2027', 'hsc-2027', 'dakhil-2027', 'class-10', 'class-8');");
+      await rawExec("DELETE FROM subjects WHERE user_id IS NULL AND (class_level != 'alim' OR class_level IS NULL);");
+      await rawExec("UPDATE users SET class_level = 'alim', board = 'madrasah' WHERE class_level != 'alim' OR board != 'madrasah';");
     } catch {
       // ignore
     }
@@ -261,9 +256,6 @@ export async function runInitAndSeed(
     const batchRows = allBatchesRes.rows || allBatchesRes || [];
     const batchMap: Record<string, number> = {};
     for (const b of batchRows) {
-      if (b.slug?.includes("ssc")) batchMap["ssc"] = b.id;
-      if (b.slug?.includes("hsc")) batchMap["hsc"] = b.id;
-      if (b.slug?.includes("dakhil")) batchMap["dakhil"] = b.id;
       if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
     }
 

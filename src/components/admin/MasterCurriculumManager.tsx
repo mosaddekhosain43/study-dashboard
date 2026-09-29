@@ -89,8 +89,6 @@ export default function MasterCurriculumManager({
   );
 
   // Filter controls
-  const [filterBoard, setFilterBoard] = useState<string>("all");
-  const [filterClass, setFilterClass] = useState<string>("all");
   const [filterGroup, setFilterGroup] = useState<string>("all");
 
   // Expanded book IDs: Record<subjectId, boolean>
@@ -103,8 +101,6 @@ export default function MasterCurriculumManager({
   const [showAddBook, setShowAddBook] = useState(false);
   const [bookName, setBookName] = useState("");
   const [bookNameBn, setBookNameBn] = useState("");
-  const [bookBoard, setBookBoard] = useState<string>("general");
-  const [bookClassLevel, setBookClassLevel] = useState<string>("ssc");
   const [bookStreamGroup, setBookStreamGroup] = useState<string>("all");
   const [bookSubjectType, setBookSubjectType] = useState<
     "compulsory" | "group_elective" | "optional"
@@ -115,8 +111,6 @@ export default function MasterCurriculumManager({
   const [editingBook, setEditingBook] = useState<SubjectItem | null>(null);
   const [editBookName, setEditBookName] = useState("");
   const [editBookNameBn, setEditBookNameBn] = useState("");
-  const [editBookBoard, setEditBookBoard] = useState<string>("general");
-  const [editBookClassLevel, setEditBookClassLevel] = useState<string>("ssc");
   const [editBookStreamGroup, setEditBookStreamGroup] = useState<string>("all");
   const [editBookSubjectType, setEditBookSubjectType] = useState<
     "compulsory" | "group_elective" | "optional"
@@ -151,24 +145,15 @@ export default function MasterCurriculumManager({
 
   const currentBatch = batches.find((b) => b.id === selectedBatchId) || batches[0];
 
-  // Filter books by board, class, group and active batch
+  // Filter books by stream group
   const currentBooks = useMemo(() => {
     return initialCurriculum.filter((s) => {
-      // Board filter
-      if (filterBoard !== "all") {
-        if (s.board && s.board !== "both" && s.board !== filterBoard) return false;
-      }
-      // Class filter
-      if (filterClass !== "all") {
-        if (s.classLevel && s.classLevel !== "all" && s.classLevel !== filterClass) return false;
-      }
-      // Group filter
       if (filterGroup !== "all") {
         if (s.streamGroup && s.streamGroup !== "all" && s.streamGroup !== filterGroup) return false;
       }
       return true;
     });
-  }, [initialCurriculum, filterBoard, filterClass, filterGroup]);
+  }, [initialCurriculum, filterGroup]);
 
   // ── Book Handlers ──
   const handleCreateBook = () => {
@@ -178,8 +163,8 @@ export default function MasterCurriculumManager({
         batchId: selectedBatchId,
         name: bookName.trim(),
         nameBn: bookNameBn.trim() || undefined,
-        board: bookBoard,
-        classLevel: bookClassLevel,
+        board: "madrasah",
+        classLevel: "alim",
         streamGroup: bookStreamGroup,
         subjectType: bookSubjectType,
         structureType: bookStructureType,
@@ -202,8 +187,8 @@ export default function MasterCurriculumManager({
         name: editBookName.trim(),
         nameBn: editBookNameBn.trim() || undefined,
         batchId: selectedBatchId,
-        board: editBookBoard,
-        classLevel: editBookClassLevel,
+        board: "madrasah",
+        classLevel: "alim",
         streamGroup: editBookStreamGroup,
         subjectType: editBookSubjectType,
         structureType: editBookStructureType,
@@ -232,7 +217,7 @@ export default function MasterCurriculumManager({
   const handleSyncNctb = () => {
     if (
       !confirm(
-        "This will verify and synchronize all 40 official NCTB curriculum books, chapters, and topics for SSC, HSC, Dakhil, and Alim. Proceed?"
+        "This will verify and synchronize all official NCTB curriculum books, chapters, and topics for Alim Class (General, Science, and Muzabbid streams). Proceed?"
       )
     )
       return;
@@ -351,11 +336,10 @@ export default function MasterCurriculumManager({
         <GraduationCap className="size-5 text-sky-700 shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-bold text-sky-950">
-            Official NCTB & Master Curriculum Management
+            Alim Master Curriculum Management (বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড)
           </p>
           <p className="text-sky-800 leading-relaxed">
-            Manage books, chapters, modules, and sub-topics across General School and Madrasah boards.
-            You can configure Chapter-based vs. Module/Skills-based structures and assign Compulsory, Group Elective, or Optional tags.
+            আলিম শ্রেণির আবশ্যকীয় ও বিভাগীয় বিষয়সমূহ, অধ্যায় ও পাঠ্যসূচি পরিচালনা করুন। সাধারণ বিভাগ, বিজ্ঞান বিভাগ এবং মুজাব্বিদ গ্রুপের জন্য সিলেবাস স্বয়ংক্রিয়ভাবে সিঙ্ক ও পরিচালনা করা যায়।
           </p>
         </div>
       </div>
@@ -434,83 +418,30 @@ export default function MasterCurriculumManager({
             <span>Filter Curriculum:</span>
           </div>
 
-          {/* Board Filter */}
+          {/* Group / Stream Filter */}
           <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
             <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
-              Board:
-            </span>
-            <select
-              value={filterBoard}
-              onChange={(e) => {
-                const newBoard = e.target.value;
-                setFilterBoard(newBoard);
-                if (newBoard === "general" && (filterClass === "dakhil" || filterClass === "alim")) {
-                  setFilterClass("all");
-                } else if (newBoard === "madrasah" && (filterClass === "ssc" || filterClass === "hsc")) {
-                  setFilterClass("all");
-                }
-              }}
-              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
-            >
-              <option value="all">All Boards</option>
-              <option value="general">General (School)</option>
-              <option value="madrasah">Madrasah Board</option>
-            </select>
-          </div>
-
-          {/* Class Filter */}
-          <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
-              Class:
-            </span>
-            <select
-              value={filterClass}
-              onChange={(e) => setFilterClass(e.target.value)}
-              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
-            >
-              <option value="all">All Classes</option>
-              {filterBoard === "madrasah" ? (
-                <>
-                  <option value="dakhil">Dakhil</option>
-                  <option value="alim">Alim</option>
-                </>
-              ) : filterBoard === "general" ? (
-                <>
-                  <option value="ssc">SSC</option>
-                  <option value="hsc">HSC</option>
-                </>
-              ) : (
-                <>
-                  <option value="ssc">SSC</option>
-                  <option value="hsc">HSC</option>
-                  <option value="dakhil">Dakhil</option>
-                  <option value="alim">Alim</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Group Filter */}
-          <div className="flex items-center gap-1 bg-paper/60 rounded-xl p-1 border border-line">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint px-1.5">
-              Stream:
+              বিভাগ / Stream:
             </span>
             <select
               value={filterGroup}
               onChange={(e) => setFilterGroup(e.target.value)}
-              className="bg-white rounded-lg px-2 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
+              className="bg-white rounded-lg px-2.5 py-1 text-xs font-semibold text-ink border border-line/60 outline-none"
             >
-              <option value="all">All Streams</option>
-              <option value="science">Science</option>
-              <option value="humanities">Humanities</option>
-              <option value="business_studies">Commerce / Business</option>
-              <option value="general_madrasah">General Madrasah</option>
-              <option value="quran_hadith">Quran/Hadith Track</option>
+              <option value="all">All Streams (সকল বিভাগ)</option>
+              <option value="general_madrasah">General Madrasah (সাধারণ বিভাগ)</option>
+              <option value="science">Science (বিজ্ঞান বিভাগ)</option>
+              <option value="quran_hadith">Quran/Hadith & Tajweed (মুজাব্বিদ গ্রুপ)</option>
             </select>
           </div>
 
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-leaf-soft/50 text-[11px] font-bold text-leaf-deep border border-leaf/20">
+            <Building2 className="size-3.5" />
+            <span>Madrasah Board • Alim Class (আলিম শ্রেণি)</span>
+          </div>
+
           <span className="text-ink-faint text-[11px] font-semibold ml-auto">
-            Showing {currentBooks.length} books
+            Showing {currentBooks.length} master books
           </span>
         </div>
       </div>
@@ -605,8 +536,6 @@ export default function MasterCurriculumManager({
                         setEditingBook(book);
                         setEditBookName(book.name);
                         setEditBookNameBn(book.nameBn || "");
-                        setEditBookBoard(book.board || "general");
-                        setEditBookClassLevel(book.classLevel || "ssc");
                         setEditBookStreamGroup(book.streamGroup || "all");
                         setEditBookSubjectType(book.subjectType || "compulsory");
                         setEditBookStructureType(book.structureType || "chapter");
@@ -920,75 +849,24 @@ export default function MasterCurriculumManager({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Education Board
-                </label>
-                <select
-                  value={bookBoard}
-                  onChange={(e) => {
-                    const b = e.target.value;
-                    setBookBoard(b);
-                    if (b === "madrasah" && (bookClassLevel === "ssc" || bookClassLevel === "hsc")) {
-                      setBookClassLevel("dakhil");
-                    } else if (b === "general" && (bookClassLevel === "dakhil" || bookClassLevel === "alim")) {
-                      setBookClassLevel("ssc");
-                    }
-                  }}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
-                >
-                  <option value="general">General Education (School)</option>
-                  <option value="madrasah">Madrasah Board</option>
-                  <option value="both">Both Boards</option>
-                </select>
+              <div className="sm:col-span-2 flex items-center gap-2 p-2.5 rounded-xl bg-paper border border-line text-xs font-semibold text-ink-soft">
+                <Building2 className="size-4 text-leaf shrink-0" />
+                <span>Curriculum: <strong className="text-ink">বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড • আলিম শ্রেণি (Alim Class)</strong></span>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Class / Level
-                </label>
-                <select
-                  value={bookClassLevel}
-                  onChange={(e) => setBookClassLevel(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
-                >
-                  {bookBoard === "madrasah" ? (
-                    <>
-                      <option value="dakhil">Dakhil</option>
-                      <option value="alim">Alim</option>
-                    </>
-                  ) : bookBoard === "general" ? (
-                    <>
-                      <option value="ssc">SSC</option>
-                      <option value="hsc">HSC</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="ssc">SSC</option>
-                      <option value="hsc">HSC</option>
-                      <option value="dakhil">Dakhil</option>
-                      <option value="alim">Alim</option>
-                      <option value="all">All Classes</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Stream / Group
+                  বিভাগ / Stream
                 </label>
                 <select
                   value={bookStreamGroup}
                   onChange={(e) => setBookStreamGroup(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf font-medium"
                 >
-                  <option value="all">All Groups / Universal</option>
-                  <option value="science">Science</option>
-                  <option value="humanities">Humanities</option>
-                  <option value="business_studies">Business Studies / Commerce</option>
-                  <option value="general_madrasah">General Madrasah</option>
-                  <option value="quran_hadith">Quran/Hadith Special</option>
+                  <option value="all">Universal / All Streams (সবার জন্য)</option>
+                  <option value="general_madrasah">General Madrasah (সাধারণ বিভাগ)</option>
+                  <option value="science">Science (বিজ্ঞান বিভাগ)</option>
+                  <option value="quran_hadith">Quran & Hadith Track (মুজাব্বিদ গ্রুপ)</option>
                 </select>
               </div>
 
@@ -1082,75 +960,24 @@ export default function MasterCurriculumManager({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Education Board
-                </label>
-                <select
-                  value={editBookBoard}
-                  onChange={(e) => {
-                    const b = e.target.value;
-                    setEditBookBoard(b);
-                    if (b === "madrasah" && (editBookClassLevel === "ssc" || editBookClassLevel === "hsc")) {
-                      setEditBookClassLevel("dakhil");
-                    } else if (b === "general" && (editBookClassLevel === "dakhil" || editBookClassLevel === "alim")) {
-                      setEditBookClassLevel("ssc");
-                    }
-                  }}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
-                >
-                  <option value="general">General Education (School)</option>
-                  <option value="madrasah">Madrasah Board</option>
-                  <option value="both">Both Boards</option>
-                </select>
+              <div className="sm:col-span-2 flex items-center gap-2 p-2.5 rounded-xl bg-paper border border-line text-xs font-semibold text-ink-soft">
+                <Building2 className="size-4 text-leaf shrink-0" />
+                <span>Curriculum: <strong className="text-ink">বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড • আলিম শ্রেণি (Alim Class)</strong></span>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Class / Level
-                </label>
-                <select
-                  value={editBookClassLevel}
-                  onChange={(e) => setEditBookClassLevel(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
-                >
-                  {editBookBoard === "madrasah" ? (
-                    <>
-                      <option value="dakhil">Dakhil</option>
-                      <option value="alim">Alim</option>
-                    </>
-                  ) : editBookBoard === "general" ? (
-                    <>
-                      <option value="ssc">SSC</option>
-                      <option value="hsc">HSC</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="ssc">SSC</option>
-                      <option value="hsc">HSC</option>
-                      <option value="dakhil">Dakhil</option>
-                      <option value="alim">Alim</option>
-                      <option value="all">All Classes</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-ink-soft mb-1">
-                  Stream / Group
+                  বিভাগ / Stream
                 </label>
                 <select
                   value={editBookStreamGroup}
                   onChange={(e) => setEditBookStreamGroup(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf"
+                  className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs outline-none focus:border-leaf font-medium"
                 >
-                  <option value="all">All Groups / Universal</option>
-                  <option value="science">Science</option>
-                  <option value="humanities">Humanities</option>
-                  <option value="business_studies">Business Studies / Commerce</option>
-                  <option value="general_madrasah">General Madrasah</option>
-                  <option value="quran_hadith">Quran/Hadith Special</option>
+                  <option value="all">Universal / All Streams (সবার জন্য)</option>
+                  <option value="general_madrasah">General Madrasah (সাধারণ বিভাগ)</option>
+                  <option value="science">Science (বিজ্ঞান বিভাগ)</option>
+                  <option value="quran_hadith">Quran & Hadith Track (মুজাব্বিদ গ্রুপ)</option>
                 </select>
               </div>
 

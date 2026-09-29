@@ -293,8 +293,8 @@ export async function createMasterSubjectAction(data: {
         slug,
         nameBn: data.nameBn?.trim() || null,
         sortOrder: data.sortOrder ?? 0,
-        board: data.board || "general",
-        classLevel: data.classLevel || "ssc",
+        board: data.board || "madrasah",
+        classLevel: data.classLevel || "alim",
         streamGroup: data.streamGroup || "all",
         subjectType: data.subjectType || "compulsory",
         structureType: data.structureType || "chapter",
@@ -502,22 +502,19 @@ export async function syncNctbCurriculumAction(options?: { forceReset?: boolean 
     const allBatches = await db.select().from(batches);
     const batchMap: Record<string, number> = {};
     for (const b of allBatches) {
-      if (b.slug?.includes("ssc")) batchMap["ssc"] = b.id;
-      if (b.slug?.includes("hsc")) batchMap["hsc"] = b.id;
-      if (b.slug?.includes("dakhil")) batchMap["dakhil"] = b.id;
       if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
     }
-    const defaultBatchId = allBatches[0]?.id || 1;
+    const defaultBatchId = batchMap["alim"] || allBatches[0]?.id || 1;
 
-    // 2. Remove legacy stub subjects
-    const legacyStubSlugs = [
-      "bangla-1", "bangla-2", "english-1", "english-2",
-      "aqaid-1", "aqaid-2", "hadith", "quran", "ict",
-      "balaghat", "arabic-1", "arabic-2", "civics"
-    ];
+    // 2. Remove non-Alim master subjects and legacy stubs
     await db
       .delete(subjects)
-      .where(and(isNull(subjects.userId), inArray(subjects.slug, legacyStubSlugs)));
+      .where(
+        and(
+          isNull(subjects.userId),
+          sql`(${subjects.classLevel} != 'alim' OR ${subjects.classLevel} IS NULL)`
+        )
+      );
 
     // 3. Sync each subject from NCTB_CURRICULUM_DATA
     for (let i = 0; i < NCTB_CURRICULUM_DATA.length; i++) {
