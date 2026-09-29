@@ -99,8 +99,6 @@ export const SUBJECT_DEFS: SubjectDef[] = [
   { name: "Biology 2nd Paper", slug: "alim-biology-2", nameBn: "জীববিজ্ঞান ২য় পত্র (২৩১)", code: "231" },
   { name: "Higher Math 1st Paper", slug: "alim-higher-math-1", nameBn: "উচ্চতর গণিত ১ম পত্র (২২৮)", code: "228" },
   { name: "Higher Math 2nd Paper", slug: "alim-higher-math-2", nameBn: "উচ্চতর গণিত ২য় পত্র (২২৯)", code: "229" },
-  { name: "Tajweed 1st Paper", slug: "alim-tajweed-1", nameBn: "তাজবিদ ১ম পত্র (মুজাব্বিদ)", code: "taj-1" },
-  { name: "Tajweed 2nd Paper", slug: "alim-tajweed-2", nameBn: "তাজবিদ ২য় পত্র (মুজাব্বিদ)", code: "taj-2" },
 ];
 
 // ── Settings keys ───────────────────────────────────────────────────────────

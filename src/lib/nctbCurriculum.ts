@@ -204,7 +204,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-fiqh-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "compulsory",
     structureType: "chapter",
     chaptersOrModules: [
@@ -239,7 +239,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-arabic-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "compulsory",
     structureType: "chapter",
     chaptersOrModules: [
@@ -286,7 +286,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-arabic-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "compulsory",
     structureType: "chapter",
     chaptersOrModules: [
@@ -333,7 +333,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-arabic-science",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "compulsory",
     structureType: "chapter",
     chaptersOrModules: [
@@ -377,7 +377,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-balaghat-mantiq",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -411,7 +411,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-islamic-history",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -680,7 +680,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-civics-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -737,7 +737,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-civics-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -810,7 +810,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-economics-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -879,7 +879,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-economics-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "general_madrasah",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -944,7 +944,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-physics-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1058,7 +1058,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-physics-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1187,7 +1187,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-chemistry-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1251,7 +1251,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-chemistry-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1320,7 +1320,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-biology-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "optional",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1437,7 +1437,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-biology-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "optional",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1558,7 +1558,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-higher-math-1",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1660,7 +1660,7 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     slug: "alim-higher-math-2",
     board: "madrasah",
     classLevel: "alim",
-    streamGroup: "science",
+    streamGroup: "all",
     subjectType: "group_elective",
     structureType: "chapter",
     chaptersOrModules: [
@@ -1746,64 +1746,4 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
       }
     ]
   },
-
-  // ── 27. তাজবিদ ১ম পত্র (Alim Tajweed 1st Paper - মুজাব্বিদ গ্রুপ) ──────────────
-  {
-    name: "Alim Tajweed 1st Paper",
-    nameBn: "তাজবিদ ১ম পত্র (মুজাব্বিদ গ্রুপ)",
-    slug: "alim-tajweed-1",
-    board: "madrasah",
-    classLevel: "alim",
-    streamGroup: "quran_hadith",
-    subjectType: "group_elective",
-    structureType: "chapter",
-    chaptersOrModules: [
-      {
-        name: "তাজভিদের মৌলিক নীতিমালা ও মাখরাজ",
-        topics: [
-          "তাজভিদের পরিচয়, হুকুম ও গুরুত্ব",
-          "১৭টি মাখরাজের সচিত্র বিবরণ ও উচ্চারণ স্থান",
-          "লাহনে জলী ও লাহনে খফীর বিধান"
-        ]
-      },
-      {
-        name: "সিফাতুল হুরূফ (অক্ষরের গুণাবলী)",
-        topics: [
-          "সিফাতে লাযিমাহ মুতাদ্বাদ্দাহ (বিপরীতধর্মী সিফাত)",
-          "সিফাতে লাযিমাহ গায়রে মুতাদ্বাদ্দাহ",
-          "ইস্তি'লা ও ইস্তিফাল-এর হুকুম"
-        ]
-      }
-    ]
-  },
-
-  // ── 28. তাজবিদ ২য় পত্র (Alim Tajweed 2nd Paper - মুজাব্বিদ গ্রুপ) ──────────────
-  {
-    name: "Alim Tajweed 2nd Paper",
-    nameBn: "তাজবিদ ২য় পত্র (মুজাব্বিদ গ্রুপ)",
-    slug: "alim-tajweed-2",
-    board: "madrasah",
-    classLevel: "alim",
-    streamGroup: "quran_hadith",
-    subjectType: "group_elective",
-    structureType: "chapter",
-    chaptersOrModules: [
-      {
-        name: "ইলমুল ক্বিরাআত ও তারতম্য",
-        topics: [
-          "ক্বিরাআতের ইতিহাস ও ৭ জন বিখ্যাত কারী",
-          "আসহাবে কিরাত ও তাদের সনদ",
-          "ক্বিরাআতে হাফসের বিস্তারিত উসুল"
-        ]
-      },
-      {
-        name: "ওয়াকফ ও ইবতিদা (থামা ও শুরু করার নিয়ম)",
-        topics: [
-          "ওয়াকফের প্রকারভেদ: তাম, কাফী, হাসান, কবীহ",
-          "ওয়াকফে গফরান ও সুজূদে তিলাওয়াত",
-          "মুসহাফে উসমানীর রসমুল খত"
-        ]
-      }
-    ]
-  }
 ];

@@ -148,16 +148,9 @@ export async function getSubjects(): Promise<SubjectDto[]> {
     .select()
     .from(subjects)
     .where(isNull(subjects.userId))
-    .orderBy(subjects.sortOrder, subjects.id)) as any[];
+    .orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
 
-  const userStream = user?.streamGroup;
-  if (userStream && userStream !== "all") {
-    return masterSubs.filter(
-      (s) => !s.streamGroup || s.streamGroup === "all" || s.streamGroup === userStream
-    ) as SubjectDto[];
-  }
-
-  return masterSubs as SubjectDto[];
+  return masterSubs;
 }
 
 function toStatus(s: string): StudyStatus {
@@ -195,18 +188,11 @@ export async function getSubjectStats(): Promise<SubjectStats[]> {
   }
 
   const usePersonal = userPersonalSubs.length > 0;
-  let fallbackSubs = await db
+  const fallbackSubs = await db
     .select()
     .from(subjects)
     .where(isNull(subjects.userId))
     .orderBy(subjects.sortOrder, subjects.id);
-
-  const userStream = user?.streamGroup;
-  if (userStream && userStream !== "all") {
-    fallbackSubs = fallbackSubs.filter(
-      (s: any) => !s.streamGroup || s.streamGroup === "all" || s.streamGroup === userStream
-    );
-  }
 
   const subRows = usePersonal ? userPersonalSubs : fallbackSubs;
 

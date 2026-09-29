@@ -245,8 +245,17 @@ export async function runInitAndSeed(
     // Clean up non-Alim batches, non-Alim master subjects, and normalize user profiles
     try {
       await rawExec("DELETE FROM batches WHERE slug IN ('ssc-2027', 'hsc-2027', 'dakhil-2027', 'class-10', 'class-8');");
-      await rawExec("DELETE FROM subjects WHERE user_id IS NULL AND (class_level != 'alim' OR class_level IS NULL);");
-      await rawExec("UPDATE users SET class_level = 'alim', board = 'madrasah' WHERE class_level != 'alim' OR board != 'madrasah';");
+      await rawExec("UPDATE users SET class_level = 'alim', board = 'madrasah', stream_group = 'all';");
+
+      // One-time master reset to ensure all students see the clean 26 BOM books
+      const hasReset = await rawQuery("SELECT value FROM settings WHERE key = 'v3_curriculum_reset_26' LIMIT 1");
+      const resetDone = hasReset.rows?.[0] || hasReset[0];
+      if (!resetDone) {
+        await rawExec("DELETE FROM topics;");
+        await rawExec("DELETE FROM lessons;");
+        await rawExec("DELETE FROM subjects;");
+        await rawExec("INSERT INTO settings (key, value) VALUES ('v3_curriculum_reset_26', 'done');");
+      }
     } catch {
       // ignore
     }
