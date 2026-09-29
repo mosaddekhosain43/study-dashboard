@@ -9,21 +9,20 @@ export async function GET() {
 
     const topRes = await db.execute(sql`SELECT count(*) as count FROM topics`);
     const subRes = await db.execute(sql`SELECT count(*) as count FROM subjects`);
-    const quranTopicsRes = (await db.execute(
-      sql`SELECT t.id, t.name, t.notes FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE s.slug = 'alim-quran-mazid' ORDER BY t.sort_order`
+    const masterTopics = (await db.execute(
+      sql`SELECT id, name, user_id, subject_id, lesson_id FROM topics WHERE user_id IS NULL`
     )) as any;
-
-    const topCount = (topRes as any)?.rows?.[0]?.count ?? 0;
-    const subCount = (subRes as any)?.rows?.[0]?.count ?? 0;
-    const quranTopics = quranTopicsRes?.rows ?? [];
+    const userTopics = (await db.execute(
+      sql`SELECT id, name, user_id, subject_id, lesson_id FROM topics WHERE user_id IS NOT NULL`
+    )) as any;
 
     return Response.json({
       ok: true,
       subjectCount: Number(subCount),
-      totalTopics: Number(topCount),
-      quranTopicsCount: quranTopics.length,
-      quranTopics: quranTopics.map((t: any) => ({ name: t.name, hasNotes: !!t.notes })),
-      message: "Curriculum initialized and verified successfully.",
+      masterTopicsCount: masterTopics?.rows?.length ?? 0,
+      userTopicsCount: userTopics?.rows?.length ?? 0,
+      masterTopics: masterTopics?.rows ?? [],
+      userTopics: userTopics?.rows ?? [],
     });
   } catch (err: any) {
     return Response.json({ ok: false, error: err?.message || String(err) }, { status: 500 });
