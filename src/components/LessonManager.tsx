@@ -59,12 +59,8 @@ export default function LessonManager({
   const [newLessonName, setNewLessonName] = useState("");
   const [showAddLesson, setShowAddLesson] = useState(false);
 
-  // Lesson accordion state (default open all)
-  const [openLessons, setOpenLessons] = useState<Record<number, boolean>>(() => {
-    const init: Record<number, boolean> = {};
-    for (const l of lessons) init[l.id] = true;
-    return init;
-  });
+  // Lesson accordion state (default collapsed: all closed initially)
+  const [openLessons, setOpenLessons] = useState<Record<number, boolean>>({});
 
   // Rename lesson
   const [editingLessonId, setEditingLessonId] = useState<number | null>(null);
@@ -307,7 +303,7 @@ export default function LessonManager({
       {/* Lesson List */}
       <div className="space-y-4">
         {filteredLessons.map((lesson, lessonIndex) => {
-          const isOpen = openLessons[lesson.id] ?? true;
+          const isOpen = Boolean(openLessons[lesson.id]);
           const isEditing = editingLessonId === lesson.id;
           const isOrphan = lesson.id === 0;
 
@@ -317,7 +313,11 @@ export default function LessonManager({
               className="card overflow-hidden border border-line shadow-xs transition duration-150"
             >
               {/* Lesson Header */}
-              <div className="flex items-center justify-between gap-2.5 bg-paper/80 p-3 sm:px-4 border-b border-line/60">
+              <div
+                className={`flex items-center justify-between gap-2.5 bg-paper/80 p-3 sm:px-4 transition ${
+                  isOpen ? "border-b border-line/60" : ""
+                }`}
+              >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <button
                     onClick={() => toggleLesson(lesson.id)}
@@ -358,14 +358,16 @@ export default function LessonManager({
                         </button>
                       </div>
                     ) : (
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                      <div
+                        onClick={() => toggleLesson(lesson.id)}
+                        className="flex flex-col sm:flex-row sm:items-center sm:gap-3 cursor-pointer select-none"
+                      >
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-leaf shrink-0">
                             CH{lessonIndex + 1}
                           </span>
                           <h3
-                            onClick={() => toggleLesson(lesson.id)}
-                            className="font-display text-[14.5px] font-bold text-ink cursor-pointer hover:text-leaf truncate"
+                            className="font-display text-[14.5px] font-bold text-ink hover:text-leaf truncate"
                           >
                             {lesson.name}
                           </h3>
