@@ -37,7 +37,10 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("alim_session")?.value;
   const user = token ? parseSessionToken(token) : null;
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
   const isRelogin = request.nextUrl.searchParams.has("relogin") || request.nextUrl.searchParams.has("logout");
 
   // 1. Unauthenticated users: must be redirected to /login unless on /login or /register
