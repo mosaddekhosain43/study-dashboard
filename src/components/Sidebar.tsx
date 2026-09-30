@@ -21,11 +21,9 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  SquarePen,
   Timer,
   Users,
   X,
-  Compass,
 } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import type { SessionUser } from "@/lib/auth";
@@ -60,9 +58,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       label: "Track",
       items: [
         { href: "/", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/planner", label: "Study Guide & Routine", icon: Compass },
         { href: "/timer", label: "Timer", icon: Timer },
-        { href: "/update", label: "Study Update", icon: SquarePen },
         { href: "/subjects", label: "Subjects", icon: LibraryBig },
         { href: "/remaining", label: "Still Remaining", icon: Hourglass },
       ],
