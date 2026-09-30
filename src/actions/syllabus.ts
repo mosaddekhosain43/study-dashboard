@@ -440,6 +440,94 @@ export async function restoreOfficialSyllabusAction() {
       }
     }
 
+    // 3. Re-clone default subjects & topics for this student based on their streamGroup
+    const [userRow] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+    const userStream = userRow?.streamGroup || "general_madrasah";
+
+    const allMasterSubs = await db
+      .select()
+      .from(subjects)
+      .where(isNull(subjects.userId))
+      .orderBy(subjects.sortOrder, subjects.id);
+
+    const relevantMasterSubs = allMasterSubs.filter((b) => {
+      const slug = b.slug.toLowerCase();
+      if (userStream === "science") {
+        return (
+          !slug.includes("balaghat") &&
+          !slug.includes("islamic-history") &&
+          !slug.includes("civics") &&
+          !slug.includes("economics") &&
+          slug !== "alim-arabic-1" &&
+          slug !== "alim-arabic-2"
+        );
+      }
+      return (
+        !slug.includes("physics") &&
+        !slug.includes("chemistry") &&
+        !slug.includes("biology") &&
+        !slug.includes("higher-math") &&
+        !slug.includes("arabic-science")
+      );
+    });
+
+    for (const mSub of relevantMasterSubs) {
+      const userSubSlug = `${mSub.slug}-${user.id}-${Date.now().toString(36)}`;
+      const [personalSub] = await db
+        .insert(subjects)
+        .values({
+          batchId: user.batchId || mSub.batchId,
+          userId: user.id,
+          name: mSub.name,
+          slug: userSubSlug,
+          nameBn: mSub.nameBn,
+          sortOrder: mSub.sortOrder,
+          board: mSub.board,
+          classLevel: mSub.classLevel,
+          streamGroup: mSub.streamGroup,
+          subjectType: mSub.subjectType,
+          structureType: mSub.structureType,
+        })
+        .returning();
+
+      const masterChapters = await db
+        .select()
+        .from(lessons)
+        .where(and(eq(lessons.subjectId, mSub.id), isNull(lessons.userId)))
+        .orderBy(lessons.sortOrder, lessons.id);
+
+      for (const mCh of masterChapters) {
+        const [personalLesson] = await db
+          .insert(lessons)
+          .values({
+            subjectId: personalSub.id,
+            userId: user.id,
+            name: mCh.name,
+            sortOrder: mCh.sortOrder,
+          })
+          .returning();
+
+        const masterTopicRows = await db
+          .select()
+          .from(topics)
+          .where(and(eq(topics.lessonId, mCh.id), isNull(topics.userId)))
+          .orderBy(topics.sortOrder, topics.id);
+
+        for (const mT of masterTopicRows) {
+          await db.insert(topics).values({
+            subjectId: personalSub.id,
+            lessonId: personalLesson.id,
+            userId: user.id,
+            name: mT.name,
+            chapter: mT.chapter,
+            notes: mT.notes,
+            sortOrder: mT.sortOrder,
+            status: "not_started",
+          });
+        }
+      }
+    }
+
     revalidatePath("/syllabus");
     revalidatePath("/subjects");
     revalidatePath("/settings");

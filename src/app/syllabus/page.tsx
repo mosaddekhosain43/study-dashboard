@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ensureSeeded, type SubjectDto, type TopicDto } from "@/lib/queries";
 import type { StudyStatus } from "@/lib/constants";
 import { getStudentCurriculumStatusAction } from "@/actions/syllabus";
+import { getOnboardingDataAction } from "@/actions/onboarding";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,10 @@ export default async function SyllabusPage() {
   await ensureSeeded();
   const user = await getCurrentUser();
 
-  const status = await getStudentCurriculumStatusAction();
+  const [status, onboardingRes] = await Promise.all([
+    getStudentCurriculumStatusAction(),
+    getOnboardingDataAction(),
+  ]);
 
   // If student has personal syllabus, fetch their personal subjects and topics
   let subs: SubjectDto[] = [];
@@ -78,15 +82,22 @@ export default async function SyllabusPage() {
 
   const totalTopics = topicRows.length;
 
+  const masterBooks = status.masterBooks ?? onboardingRes.data?.masterBooks ?? [];
+  const currentBookIds = masterBooks
+    .filter((mb) => subs.some((s) => s.name === mb.name || s.slug.startsWith(mb.slug)))
+    .map((mb) => mb.id);
+
   return (
     <SyllabusClientView
       hasPersonalSyllabus={status.hasPersonalSyllabus ?? false}
       userBatch={status.userBatch ?? null}
       userProfile={status.userProfile}
       availableBatches={status.availableBatches ?? []}
-      masterBooks={status.masterBooks ?? []}
+      masterBooks={masterBooks}
       groups={groups}
       totalTopics={totalTopics}
+      onboardingData={onboardingRes.data}
+      currentBookIds={currentBookIds}
     />
   );
 }

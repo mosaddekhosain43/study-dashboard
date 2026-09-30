@@ -33,6 +33,11 @@ import type { MasterBookView } from "@/actions/syllabus";
 
 interface WizardProps {
   initialData: OnboardingData;
+  isReconfiguring?: boolean;
+  initialBookIds?: number[];
+  onCancel?: () => void;
+  onSuccess?: () => void;
+  skipRedirectUrl?: string;
 }
 
 type Step =
@@ -68,9 +73,16 @@ const GROUPS = [
   },
 ];
 
-export default function StudentOnboardingWizard({ initialData }: WizardProps) {
+export default function StudentOnboardingWizard({
+  initialData,
+  isReconfiguring = false,
+  initialBookIds,
+  onCancel,
+  onSuccess,
+  skipRedirectUrl,
+}: WizardProps) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>(isReconfiguring ? "group" : "welcome");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +136,41 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
   }, [initialData.masterBooks, selectedGroup]);
 
   // Selected books record: Record<bookId, boolean>
-  const [selectedBookIds, setSelectedBookIds] = useState<Record<number, boolean>>({});
+  const [selectedBookIds, setSelectedBookIds] = useState<Record<number, boolean>>(() => {
+    if (initialBookIds && initialBookIds.length > 0) {
+      const map: Record<number, boolean> = {};
+      for (const id of initialBookIds) {
+        map[id] = true;
+      }
+      return map;
+    }
+    const nextGroupBooks = (initialData.masterBooks || []).filter((b) => {
+      const slug = b.slug.toLowerCase();
+      const groupId = initialData.user.streamGroup || "science";
+      if (groupId === "science") {
+        return (
+          !slug.includes("balaghat") &&
+          !slug.includes("islamic-history") &&
+          !slug.includes("civics") &&
+          !slug.includes("economics") &&
+          slug !== "alim-arabic-1" &&
+          slug !== "alim-arabic-2"
+        );
+      }
+      return (
+        !slug.includes("physics") &&
+        !slug.includes("chemistry") &&
+        !slug.includes("biology") &&
+        !slug.includes("higher-math") &&
+        !slug.includes("arabic-science")
+      );
+    });
+    const initMap: Record<number, boolean> = {};
+    for (const b of nextGroupBooks) {
+      initMap[b.id] = true;
+    }
+    return initMap;
+  });
 
   const resetBooksForGroup = (groupId: string) => {
     const nextGroupBooks = (initialData.masterBooks || []).filter((b) => {
@@ -154,11 +200,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     }
     setSelectedBookIds(initMap);
   };
-
-  // Initialize books once
-  useState(() => {
-    resetBooksForGroup(selectedGroup);
-  });
 
   const toggleBookSelection = (id: number) => {
     setSelectedBookIds((prev) => ({
@@ -261,8 +302,12 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         skip: true,
       });
       if (res.ok) {
-        router.push(res.redirectUrl || "/");
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(skipRedirectUrl || res.redirectUrl || "/");
+          router.refresh();
+        }
       } else {
         setError(res.error || "Failed to skip onboarding.");
       }
@@ -291,8 +336,12 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         skip: false,
       });
       if (res.ok) {
-        router.push(res.redirectUrl || "/");
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push(res.redirectUrl || "/");
+          router.refresh();
+        }
       } else {
         setError(res.error || "Failed to save onboarding setup.");
       }
@@ -312,7 +361,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               Study Dashboard
             </span>
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
-              Personal Setup
+              {isReconfiguring ? "Syllabus Setup" : "Personal Setup"}
             </span>
           </div>
         </div>
@@ -323,14 +372,25 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               Step {currentStepIndex} of {stepList.length - 1}
             </span>
           )}
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={pending}
-            className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-2xs transition"
-          >
-            Skip for now
-          </button>
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={pending}
+              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-2xs transition cursor-pointer"
+            >
+              Cancel
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={pending}
+              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-2xs transition cursor-pointer"
+            >
+              Skip for now
+            </button>
+          )}
         </div>
       </header>
 
@@ -449,11 +509,17 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
             <div className="pt-3 flex items-center justify-between border-t border-line/60">
               <button
                 type="button"
-                onClick={() => setStep("welcome")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-4 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
+                onClick={() => {
+                  if (isReconfiguring && onCancel) {
+                    onCancel();
+                  } else {
+                    setStep("welcome");
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-4 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition cursor-pointer"
               >
                 <ChevronLeft className="size-4" />
-                <span>Back</span>
+                <span>{isReconfiguring && onCancel ? "Cancel" : "Back"}</span>
               </button>
 
               <button
