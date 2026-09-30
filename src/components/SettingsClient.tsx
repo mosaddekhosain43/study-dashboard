@@ -10,6 +10,7 @@ import {
   Eraser,
   FileJson,
   FlaskConical,
+  RotateCcw,
   Save,
   Target,
   Upload,
@@ -21,14 +22,17 @@ import {
   loadDemoDataAction,
   saveExamSettingsAction,
 } from "@/actions";
+import { restoreOfficialSyllabusAction } from "@/actions/syllabus";
 
 export default function SettingsClient({
   examDate,
   targetDate,
+  userRole = "student",
   counts,
 }: {
   examDate: string;
   targetDate: string;
+  userRole?: string;
   counts: { topics: number; updates: number; sessions: number };
 }) {
   const router = useRouter();
@@ -36,6 +40,7 @@ export default function SettingsClient({
   const [target, setTarget] = useState(targetDate);
   const [msg, setMsg] = useState<string | null>(null);
   const [dangerMsg, setDangerMsg] = useState<string | null>(null);
+  const [confirmRestore, setConfirmRestore] = useState(false);
   const [confirmDemo, setConfirmDemo] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -50,6 +55,18 @@ export default function SettingsClient({
     startTransition(async () => {
       const res = await saveExamSettingsAction(exam, target);
       flash(res.ok ? "Dates saved." : res.error);
+      router.refresh();
+    });
+
+  const handleRestoreOfficialSyllabus = () =>
+    startTransition(async () => {
+      const res = await restoreOfficialSyllabusAction();
+      setConfirmRestore(false);
+      if (res.ok) {
+        flash(res.message || "Official syllabus restored.");
+      } else {
+        flash(res.error || "Failed to restore syllabus.");
+      }
       router.refresh();
     });
 
@@ -123,116 +140,155 @@ export default function SettingsClient({
         </div>
       </section>
 
-      {/* Backup */}
-      <section className="card p-5">
+      {/* Restore Official Syllabus */}
+      <section className="card p-5 border border-line bg-card shadow-sm">
         <h2 className="mb-1 flex items-center gap-2 font-display text-[16px] font-semibold text-ink">
-          <Database className="size-4.5 text-leaf" /> Backup & Restore
+          <RotateCcw className="size-4.5 text-leaf" /> Restore Official Syllabus (অফিসিয়াল সিলেবাস রিস্টোর)
         </h2>
         <p className="mb-4 text-[12.5px] leading-relaxed text-ink-faint">
-          Your data lives in a local database on this PC — {counts.topics} topics · {counts.updates} updates ·{" "}
-          {counts.sessions} sessions right now. Export a JSON backup regularly; restore it any time (it replaces
-          current data).
+          আপনি যদি কোনো বিষয় বা টপিক পরিবর্তন, মুছে ফেলা বা অতিরিক্ত কিছু যোগ করে থাকেন, তবে নিচের বাটনে ক্লিক করে মূল অফিসিয়াল সিলেবাসে ফিরে যেতে পারবেন। এতে সমস্ত পাঠ্যবই এবং টপিকগুলো আবার আগের মতো রিস্টোর হয়ে যাবে।
         </p>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            onClick={exportJson}
-            className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-semibold text-paper transition hover:bg-pine"
-          >
-            <Download className="size-4" /> Export JSON backup
-          </button>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf"
-          >
-            <Upload className="size-4" /> Restore from backup…
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              f.text().then(importJson);
-              e.target.value = "";
-            }}
-          />
-          <span className="flex items-center gap-1.5 text-[11.5px] text-ink-faint">
-            <FileJson className="size-3.5" /> Dashboard backup files only
-          </span>
-        </div>
-      </section>
-
-      {/* Demo + danger */}
-      <section className="card border-amber-200 bg-amber-50/30 p-5">
-        <h2 className="mb-1 flex items-center gap-2 font-display text-[16px] font-semibold text-ink">
-          <FlaskConical className="size-4.5 text-amber-brand" /> Sample Data & Reset
-        </h2>
-        <p className="mb-4 text-[12.5px] text-ink-faint">
-          Testing the app? Load a realistic demo syllabus with a month of study history. It <span className="font-semibold">replaces</span> your current data — export a backup first.
-        </p>
-        <div className="flex flex-wrap items-center gap-2.5">
-          {confirmDemo ? (
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-amber-800">
-              Replace current data with demo data?
+        <div>
+          {confirmRestore ? (
+            <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-[13px] text-amber-900">
+              <span>আপনি কি নিশ্চিত যে অফিসিয়াল সিলেবাস রিস্টোর করতে চান?</span>
               <button
-                onClick={() =>
-                  startTransition(async () => {
-                    await loadDemoDataAction();
-                    setConfirmDemo(false);
-                    flash("Demo data loaded.");
-                    router.refresh();
-                  })
-                }
-                className="rounded-lg bg-amber-600 px-3 py-1.5 text-white"
+                onClick={handleRestoreOfficialSyllabus}
+                disabled={pending}
+                className="rounded-lg bg-leaf px-3.5 py-1.5 font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
-                Yes, load it
+                হ্যাঁ, রিস্টোর করুন
               </button>
-              <button onClick={() => setConfirmDemo(false)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-line">
-                Cancel
+              <button
+                onClick={() => setConfirmRestore(false)}
+                className="rounded-lg bg-white px-3 py-1.5 font-medium ring-1 ring-line hover:bg-paper"
+              >
+                বাতিল
               </button>
-            </span>
+            </div>
           ) : (
             <button
-              onClick={() => setConfirmDemo(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-amber-700 transition hover:bg-amber-50"
+              onClick={() => setConfirmRestore(true)}
+              disabled={pending}
+              className="inline-flex items-center gap-2 rounded-xl bg-leaf px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-leaf-deep disabled:opacity-50"
             >
-              <FlaskConical className="size-4" /> Load demo data…
-            </button>
-          )}
-
-          {confirmClear ? (
-            <span className="flex items-center gap-2 text-[13px] font-semibold text-rose-700">
-              Permanently delete ALL topics, updates & sessions?
-              <button
-                onClick={() =>
-                  startTransition(async () => {
-                    await clearAllDataAction();
-                    setConfirmClear(false);
-                    setDangerMsg("All data cleared. Subjects remain.");
-                    router.refresh();
-                  })
-                }
-                className="rounded-lg bg-rose-600 px-3 py-1.5 text-white"
-              >
-                Delete everything
-              </button>
-              <button onClick={() => setConfirmClear(false)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-line">
-                Cancel
-              </button>
-            </span>
-          ) : (
-            <button
-              onClick={() => setConfirmClear(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50"
-            >
-              <Eraser className="size-4" /> Clear all study data…
+              <RotateCcw className="size-4" /> Restore Official Syllabus (আগের মতো রিস্টোর করুন)
             </button>
           )}
         </div>
-        {dangerMsg && <p className="mt-3 text-[12.5px] font-medium text-rose-600">{dangerMsg}</p>}
       </section>
+
+      {/* Admin Developer Tools (Only for admin) */}
+      {userRole === "admin" && (
+        <>
+          <section className="card p-5 border border-line bg-card">
+            <h2 className="mb-1 flex items-center gap-2 font-display text-[16px] font-semibold text-ink">
+              <Database className="size-4.5 text-leaf" /> Admin: Backup & Export
+            </h2>
+            <p className="mb-4 text-[12.5px] leading-relaxed text-ink-faint">
+              Database stats: {counts.topics} topics · {counts.updates} updates · {counts.sessions} sessions.
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={exportJson}
+                className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-[13px] font-semibold text-paper transition hover:bg-pine"
+              >
+                <Download className="size-4" /> Export JSON backup
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-[13px] font-semibold text-ink-soft transition hover:border-leaf hover:text-leaf"
+              >
+                <Upload className="size-4" /> Restore from backup…
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  f.text().then(importJson);
+                  e.target.value = "";
+                }}
+              />
+              <span className="flex items-center gap-1.5 text-[11.5px] text-ink-faint">
+                <FileJson className="size-3.5" /> Dashboard backup files only
+              </span>
+            </div>
+          </section>
+
+          <section className="card border-amber-200 bg-amber-50/30 p-5">
+            <h2 className="mb-1 flex items-center gap-2 font-display text-[16px] font-semibold text-ink">
+              <FlaskConical className="size-4.5 text-amber-brand" /> Admin: Sample Data & Reset
+            </h2>
+            <p className="mb-4 text-[12.5px] text-ink-faint">
+              Load realistic demo syllabus or reset all data.
+            </p>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {confirmDemo ? (
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-amber-800">
+                  Replace current data with demo data?
+                  <button
+                    onClick={() =>
+                      startTransition(async () => {
+                        await loadDemoDataAction();
+                        setConfirmDemo(false);
+                        flash("Demo data loaded.");
+                        router.refresh();
+                      })
+                    }
+                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-white"
+                  >
+                    Yes, load it
+                  </button>
+                  <button onClick={() => setConfirmDemo(false)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-line">
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmDemo(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-amber-700 transition hover:bg-amber-50"
+                >
+                  <FlaskConical className="size-4" /> Load demo data…
+                </button>
+              )}
+
+              {confirmClear ? (
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-rose-700">
+                  Permanently delete ALL topics, updates & sessions?
+                  <button
+                    onClick={() =>
+                      startTransition(async () => {
+                        await clearAllDataAction();
+                        setConfirmClear(false);
+                        setDangerMsg("All data cleared. Subjects remain.");
+                        router.refresh();
+                      })
+                    }
+                    className="rounded-lg bg-rose-600 px-3 py-1.5 text-white"
+                  >
+                    Delete everything
+                  </button>
+                  <button onClick={() => setConfirmClear(false)} className="rounded-lg bg-white px-3 py-1.5 ring-1 ring-line">
+                    Cancel
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmClear(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50"
+                >
+                  <Eraser className="size-4" /> Clear all study data…
+                </button>
+              )}
+            </div>
+            {dangerMsg && <p className="mt-3 text-[12.5px] font-medium text-rose-600">{dangerMsg}</p>}
+          </section>
+        </>
+      )}
 
       {/* About the parser */}
       <section className="card p-5">

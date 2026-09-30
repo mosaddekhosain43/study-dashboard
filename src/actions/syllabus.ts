@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db, initializeDb } from "@/db";
 import { batches, lessons, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
 
 export interface MasterTopicView {
   id: number;
@@ -273,3 +274,131 @@ export async function resetStudentSyllabusAction() {
     return { ok: false, error: err?.message || "Failed to reset syllabus." };
   }
 }
+
+export async function restoreOfficialSyllabusAction() {
+  await initializeDb();
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: "Please log in first." };
+  }
+
+  try {
+    // 1. If student has personalized subjects, lessons, topics (or added custom ones), delete them so they revert cleanly
+    await db.delete(topics).where(eq(topics.userId, user.id));
+    await db.delete(lessons).where(eq(lessons.userId, user.id));
+    await db.delete(subjects).where(eq(subjects.userId, user.id));
+
+    // 2. Ensure master subjects, chapters, and topics are completely restored in the database from NCTB_CURRICULUM_DATA
+    const allBatches = await db.select().from(batches);
+    const batchMap: Record<string, number> = {};
+    for (const b of allBatches) {
+      if (b.slug?.includes("alim")) batchMap["alim"] = b.id;
+    }
+    const defaultBatchId = batchMap["alim"] || allBatches[0]?.id || 1;
+
+    for (let i = 0; i < NCTB_CURRICULUM_DATA.length; i++) {
+      const def = NCTB_CURRICULUM_DATA[i];
+      const effectiveBatchId = batchMap[def.classLevel] || defaultBatchId;
+
+      let [masterSub] = await db
+        .select()
+        .from(subjects)
+        .where(and(isNull(subjects.userId), eq(subjects.slug, def.slug)))
+        .limit(1);
+
+      if (!masterSub) {
+        const [inserted] = await db
+          .insert(subjects)
+          .values({
+            batchId: effectiveBatchId,
+            userId: null,
+            name: def.name,
+            nameBn: def.nameBn,
+            slug: def.slug,
+            sortOrder: i + 1,
+            board: def.board,
+            classLevel: def.classLevel,
+            streamGroup: def.streamGroup,
+            subjectType: def.subjectType,
+            structureType: def.structureType,
+          })
+          .returning();
+        masterSub = inserted;
+      } else {
+        await db
+          .update(subjects)
+          .set({
+            batchId: effectiveBatchId,
+            name: def.name,
+            nameBn: def.nameBn,
+            sortOrder: i + 1,
+            board: def.board,
+            classLevel: def.classLevel,
+            streamGroup: def.streamGroup,
+            subjectType: def.subjectType,
+            structureType: def.structureType,
+          })
+          .where(eq(subjects.id, masterSub.id));
+      }
+
+      // Check master topics for this subject
+      const existingTopics = await db
+        .select({ id: topics.id })
+        .from(topics)
+        .where(and(isNull(topics.userId), eq(topics.subjectId, masterSub.id)));
+
+      const expectedTopicCount = def.chaptersOrModules.reduce(
+        (acc, c) => acc + c.topics.length,
+        0
+      );
+
+      // If any topics were deleted or missing, re-populate chapters & topics from definition
+      if (def.chaptersOrModules.length > 0 && existingTopics.length < expectedTopicCount) {
+        await db.delete(topics).where(and(isNull(topics.userId), eq(topics.subjectId, masterSub.id)));
+        await db.delete(lessons).where(and(isNull(lessons.userId), eq(lessons.subjectId, masterSub.id)));
+
+        for (let chIdx = 0; chIdx < def.chaptersOrModules.length; chIdx++) {
+          const ch = def.chaptersOrModules[chIdx];
+          const [lesson] = await db
+            .insert(lessons)
+            .values({
+              subjectId: masterSub.id,
+              userId: null,
+              name: ch.name,
+              sortOrder: chIdx + 1,
+            })
+            .returning();
+
+          for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+            const topicItem = ch.topics[tIdx];
+            const topicName = typeof topicItem === "string" ? topicItem : topicItem.name;
+            const topicNotes = typeof topicItem === "string" ? null : topicItem.notes || null;
+            await db.insert(topics).values({
+              subjectId: masterSub.id,
+              lessonId: lesson.id,
+              userId: null,
+              name: topicName,
+              chapter: ch.name,
+              notes: topicNotes,
+              sortOrder: tIdx + 1,
+              status: "not_started",
+            });
+          }
+        }
+      }
+    }
+
+    revalidatePath("/syllabus");
+    revalidatePath("/subjects");
+    revalidatePath("/settings");
+    revalidatePath("/");
+    return {
+      ok: true,
+      message: "অফিসিয়াল সিলেবাস সফলভাবে রিস্টোর করা হয়েছে। সকল বিষয় ও টপিক পূর্বাবস্থায় ফিরে এসেছে।",
+    };
+  } catch (err: any) {
+    console.error("restoreOfficialSyllabusAction error:", err);
+    return { ok: false, error: err?.message || "সিলেবাস রিস্টোর করতে সমস্যা হয়েছে।" };
+  }
+}
+
