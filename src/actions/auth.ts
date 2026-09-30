@@ -50,6 +50,7 @@ export async function loginAction(formData: FormData) {
     streamGroup: user.streamGroup,
     onboardingCompleted: user.onboardingCompleted ?? false,
     examDate: user.examDate,
+    targetStartDate: user.targetStartDate,
     targetDate: user.targetDate,
   });
 
@@ -113,6 +114,7 @@ export async function registerStudentAction(formData: FormData) {
     batchId: newUser.batchId,
     onboardingCompleted: false,
     examDate: null,
+    targetStartDate: null,
     targetDate: null,
   });
 

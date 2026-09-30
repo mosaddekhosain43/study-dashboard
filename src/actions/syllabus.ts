@@ -105,13 +105,14 @@ export async function getStudentCurriculumStatusAction() {
   const currentBatch = allBatches.find((b) => b.id === effectiveBatchId) || null;
 
   // Retrieve latest student profile from DB
-  const [userRows, examSettingRow, targetSettingRow] = await Promise.all([
+  const [userRows, examSettingRow, targetSettingRow, targetStartSettingRow] = await Promise.all([
     db
       .select({
         board: users.board,
         classLevel: users.classLevel,
         streamGroup: users.streamGroup,
         examDate: users.examDate,
+        targetStartDate: users.targetStartDate,
         targetDate: users.targetDate,
       })
       .from(users)
@@ -119,6 +120,7 @@ export async function getStudentCurriculumStatusAction() {
       .limit(1),
     db.select().from(settings).where(eq(settings.key, "exam_date")).limit(1),
     db.select().from(settings).where(eq(settings.key, "target_date")).limit(1),
+    db.select().from(settings).where(eq(settings.key, "target_start_date")).limit(1),
   ]);
 
   const dbUser = userRows[0];
@@ -133,6 +135,11 @@ export async function getStudentCurriculumStatusAction() {
       classLevel: dbUser?.classLevel || user.classLevel || "alim",
       streamGroup: dbUser?.streamGroup || user.streamGroup || "science",
       examDate: dbUser?.examDate || user.examDate || examSettingRow[0]?.value || "2027-04-15",
+      targetStartDate:
+        dbUser?.targetStartDate ||
+        user.targetStartDate ||
+        targetStartSettingRow[0]?.value ||
+        new Date().toISOString().split("T")[0],
       targetDate: dbUser?.targetDate || user.targetDate || targetSettingRow[0]?.value || "2027-02-28",
     },
     availableBatches: allBatches,
@@ -146,6 +153,7 @@ export interface SelectionPayload {
   classLevel?: string;
   streamGroup?: string;
   examDate?: string;
+  targetStartDate?: string;
   targetDate?: string;
   selections: {
     subjectId: number;
@@ -159,9 +167,17 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
     return { ok: false, error: "Please log in to initialize your syllabus." };
   }
 
-  const { selections, batchId, streamGroup, examDate, targetDate } = payload;
+  const { selections, batchId, streamGroup, examDate, targetStartDate, targetDate } = payload;
   if (!selections || selections.length === 0) {
     return { ok: false, error: "Please select at least one book to begin." };
+  }
+
+  // Logical date validations: Target Start Date < Target Date < Exam Date
+  if (targetStartDate && targetDate && targetStartDate >= targetDate) {
+    return { ok: false, error: "Target start date must be before target completion date." };
+  }
+  if (targetDate && examDate && targetDate >= examDate) {
+    return { ok: false, error: "Target completion date must be before exam date." };
   }
 
   // Update user profile info (batch, board, class, stream, dates, onboarding)
@@ -173,6 +189,9 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
   if (batchId && batchId !== user.batchId) userUpdates.batchId = batchId;
   if (streamGroup) userUpdates.streamGroup = streamGroup;
   if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) userUpdates.examDate = examDate;
+  if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+    userUpdates.targetStartDate = targetStartDate;
+  }
   if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) userUpdates.targetDate = targetDate;
 
   if (Object.keys(userUpdates).length > 0) {
@@ -185,6 +204,12 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
       .insert(settings)
       .values({ key: "exam_date", value: examDate })
       .onConflictDoUpdate({ target: settings.key, set: { value: examDate } });
+  }
+  if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+    await db
+      .insert(settings)
+      .values({ key: "target_start_date", value: targetStartDate })
+      .onConflictDoUpdate({ target: settings.key, set: { value: targetStartDate } });
   }
   if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
     await db

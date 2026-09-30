@@ -43,6 +43,7 @@ interface UserProfile {
   classLevel?: string;
   streamGroup?: string;
   examDate?: string;
+  targetStartDate?: string;
   targetDate?: string;
 }
 
@@ -81,14 +82,12 @@ export default function SyllabusOnboarding({
   const [examDate, setExamDate] = useState<string>(
     userProfile?.examDate || "2027-04-15"
   );
+  const [targetStartDate, setTargetStartDate] = useState<string>(
+    userProfile?.targetStartDate || new Date().toISOString().split("T")[0]
+  );
   const [targetDate, setTargetDate] = useState<string>(
     userProfile?.targetDate || "2027-02-28"
   );
-
-  const prepDays = useMemo(() => {
-    if (!examDate || !targetDate) return 0;
-    return calculateDaysBetween(targetDate, examDate);
-  }, [examDate, targetDate]);
 
   // Auto-select matching batchId
   const matchingBatchId = useMemo(() => {
@@ -309,8 +308,13 @@ export default function SyllabusOnboarding({
       return;
     }
 
-    if (examDate && targetDate && targetDate > examDate) {
-      setError("Your target date should be before your exam date.");
+    if (targetStartDate && targetDate && targetStartDate >= targetDate) {
+      setError("Target start date must be before your target completion date.");
+      return;
+    }
+
+    if (targetDate && examDate && targetDate >= examDate) {
+      setError("Target completion date must be before your exam date.");
       return;
     }
 
@@ -321,6 +325,7 @@ export default function SyllabusOnboarding({
         classLevel,
         streamGroup,
         examDate,
+        targetStartDate,
         targetDate,
         selections,
       });
@@ -405,9 +410,9 @@ export default function SyllabusOnboarding({
           </div>
         </div>
 
-        {/* ── Exam & Target Dates with Calendar Pickers ── */}
-        <div className="mt-4 pt-4 border-t border-line/60 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-          <div className="sm:col-span-5">
+        {/* ── 3 Target Setup Dates with Calendar Pickers ── */}
+        <div className="mt-4 pt-4 border-t border-line/60 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
             <DatePickerCalendar
               label="Exam Date (পরীক্ষার তারিখ)"
               value={examDate}
@@ -421,33 +426,37 @@ export default function SyllabusOnboarding({
             />
           </div>
 
-          <div className="sm:col-span-5">
+          <div>
             <DatePickerCalendar
-              label="Target Completion Date (টার্গেট তারিখ)"
-              value={targetDate}
+              label="Target Start Date (শুরুর তারিখ)"
+              value={targetStartDate}
               onChange={(d) => {
-                setTargetDate(d);
-                if (examDate && d > examDate) {
-                  setError("Your target date should be before your exam date.");
-                } else {
-                  setError(null);
-                }
+                setTargetStartDate(d);
+                setError(null);
               }}
-              minDate={new Date().toISOString().split("T")[0]}
-              placeholder="Select Target Date"
+              placeholder="Select Target Start Date"
               required
             />
           </div>
 
-          <div className="sm:col-span-2">
-            <div className="p-2.5 sm:py-3 rounded-xl bg-leaf/10 border border-leaf/20 text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-leaf">
-                Preparation Time
-              </span>
-              <span className="block text-sm font-display font-bold text-leaf">
-                {prepDays} Days
-              </span>
-            </div>
+          <div>
+            <DatePickerCalendar
+              label="Target Date (টার্গেট শেষ করার তারিখ)"
+              value={targetDate}
+              onChange={(d) => {
+                setTargetDate(d);
+                if (targetStartDate && d <= targetStartDate) {
+                  setError("Target date must be after target start date.");
+                } else if (examDate && d >= examDate) {
+                  setError("Target completion date must be before exam date.");
+                } else {
+                  setError(null);
+                }
+              }}
+              minDate={targetStartDate || new Date().toISOString().split("T")[0]}
+              placeholder="Select Target Date"
+              required
+            />
           </div>
         </div>
 

@@ -3,23 +3,23 @@
 import { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlarmClockCheck,
   Atom,
   BookOpen,
   BookOpenCheck,
   Briefcase,
-  CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
-  Library,
   Palette,
   Sparkles,
   Target,
   ArrowRight,
-  Clock,
   AlertCircle,
   CheckCircle2,
+  CalendarDays,
+  Rocket,
 } from "lucide-react";
 import DatePickerCalendar, {
   formatDisplayDate,
@@ -35,7 +35,14 @@ interface WizardProps {
   initialData: OnboardingData;
 }
 
-type Step = "welcome" | "group" | "books" | "exam_date" | "target_date" | "summary";
+type Step =
+  | "welcome"
+  | "group"
+  | "books"
+  | "exam_date"
+  | "target_start_date"
+  | "target_date"
+  | "summary";
 
 const GROUPS = [
   {
@@ -44,8 +51,6 @@ const GROUPS = [
     nameBn: "বিজ্ঞান বিভাগ",
     desc: "Physics, Chemistry, Biology, Higher Math & Core Subjects",
     icon: Atom,
-    gradient: "from-sky-500/20 to-blue-600/20 text-sky-600 border-sky-200",
-    activeBorder: "border-sky-500 ring-2 ring-sky-500/20 bg-sky-50/40",
   },
   {
     id: "general_madrasah",
@@ -53,8 +58,6 @@ const GROUPS = [
     nameBn: "মানবিক / সাধারণ বিভাগ",
     desc: "Islamic History, Balaghat & Mantiq, Civics, Economics & Core Subjects",
     icon: Palette,
-    gradient: "from-emerald-500/20 to-teal-600/20 text-emerald-600 border-emerald-200",
-    activeBorder: "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/40",
   },
   {
     id: "business_studies",
@@ -62,8 +65,6 @@ const GROUPS = [
     nameBn: "ব্যবসায় শিক্ষা বিভাগ",
     desc: "Business Studies, Accounting, Economics, ICT & Core Subjects",
     icon: Briefcase,
-    gradient: "from-amber-500/20 to-orange-600/20 text-amber-600 border-amber-200",
-    activeBorder: "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/40",
   },
 ];
 
@@ -73,7 +74,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // Form State
+  // Group State
   const [selectedGroup, setSelectedGroup] = useState<string>(
     initialData.user.streamGroup || "science"
   );
@@ -83,7 +84,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     const all = initialData.masterBooks || [];
 
     if (selectedGroup === "science") {
-      // Science includes science electives + compulsory (with Arabic Science)
       return all.filter((b) => {
         const slug = b.slug.toLowerCase();
         const isArtsSpecific =
@@ -98,7 +98,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     }
 
     if (selectedGroup === "general_madrasah") {
-      // Arts includes arts electives + compulsory (with Arabic 1 & 2, not Arabic Science)
       return all.filter((b) => {
         const slug = b.slug.toLowerCase();
         const isScienceSpecific =
@@ -127,7 +126,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
   // Selected books record: Record<bookId, boolean>
   const [selectedBookIds, setSelectedBookIds] = useState<Record<number, boolean>>({});
 
-  // When group changes, auto-select all books belonging to the group
   const resetBooksForGroup = (groupId: string) => {
     const nextGroupBooks = (initialData.masterBooks || []).filter((b) => {
       const slug = b.slug.toLowerCase();
@@ -157,7 +155,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     setSelectedBookIds(initMap);
   };
 
-  // Initialize books on mount
+  // Initialize books once
   useState(() => {
     resetBooksForGroup(selectedGroup);
   });
@@ -181,32 +179,39 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     setSelectedBookIds({});
   };
 
-  // Dates
+  // 3 Target Setup Dates
   const [examDate, setExamDate] = useState<string>(
     initialData.defaultExamDate || "2027-04-15"
+  );
+  const [targetStartDate, setTargetStartDate] = useState<string>(
+    initialData.defaultTargetStartDate ||
+      new Date().toISOString().split("T")[0]
   );
   const [targetDate, setTargetDate] = useState<string>(
     initialData.defaultTargetDate || "2027-02-28"
   );
 
-  // Preparation time calculation
-  const prepDays = useMemo(() => {
-    if (!examDate || !targetDate) return 0;
-    // Difference between target date and exam date as requested:
-    // e.g. 15 Dec 2026 - 30 Nov 2026 = 15 Days
-    const diff = calculateDaysBetween(targetDate, examDate);
-    return diff;
-  }, [examDate, targetDate]);
-
-  const daysUntilTarget = useMemo(() => {
-    if (!targetDate) return 0;
+  // Today's date string YYYY-MM-DD
+  const todayStr = useMemo(() => {
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(now.getDate()).padStart(2, "0")}`;
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, []);
+
+  // Countdowns:
+  // DAYS TO EXAM = Exam Date - Current Date
+  // DAYS TO TARGET = Target Date - Current Date
+  const daysToExam = useMemo(() => {
+    if (!examDate) return 0;
+    return calculateDaysBetween(todayStr, examDate);
+  }, [todayStr, examDate]);
+
+  const daysToTarget = useMemo(() => {
+    if (!targetDate) return 0;
     return calculateDaysBetween(todayStr, targetDate);
-  }, [targetDate]);
+  }, [todayStr, targetDate]);
 
   // Selected books array
   const chosenBooks = useMemo(() => {
@@ -221,11 +226,27 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
     { key: "group", title: "Group", num: 2 },
     { key: "books", title: "Books", num: 3 },
     { key: "exam_date", title: "Exam Date", num: 4 },
-    { key: "target_date", title: "Target Date", num: 5 },
-    { key: "summary", title: "Ready", num: 6 },
+    { key: "target_start_date", title: "Target Start", num: 5 },
+    { key: "target_date", title: "Target Date", num: 6 },
+    { key: "summary", title: "Ready", num: 7 },
   ];
 
   const currentStepIndex = stepList.findIndex((s) => s.key === step);
+
+  // Validate dates: Target Start Date < Target Date < Exam Date
+  const validateDates = (): string | null => {
+    if (!examDate) return "Please select your Exam Date.";
+    if (!targetStartDate) return "Please select your Target Start Date.";
+    if (!targetDate) return "Please select your Target Date.";
+
+    if (targetStartDate >= targetDate) {
+      return "Target start date must be before your target completion date.";
+    }
+    if (targetDate >= examDate) {
+      return "Target completion date must be before your exam date.";
+    }
+    return null;
+  };
 
   // Actions
   const handleSkip = () => {
@@ -235,6 +256,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         streamGroup: selectedGroup,
         bookIds: chosenBooks.map((b) => b.id),
         examDate,
+        targetStartDate,
         targetDate,
         skip: true,
       });
@@ -253,8 +275,9 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
       setError("Please select at least one book.");
       return;
     }
-    if (targetDate > examDate) {
-      setError("Your target date should be before your exam date.");
+    const dateErr = validateDates();
+    if (dateErr) {
+      setError(dateErr);
       return;
     }
 
@@ -263,6 +286,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         streamGroup: selectedGroup,
         bookIds: chosenBooks.map((b) => b.id),
         examDate,
+        targetStartDate,
         targetDate,
         skip: false,
       });
@@ -288,7 +312,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               Study Dashboard
             </span>
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-ink-faint">
-              Personal Onboarding
+              Personal Setup
             </span>
           </div>
         </div>
@@ -322,10 +346,10 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         </div>
       )}
 
-      {/* Main Content Card Container */}
+      {/* Main Container */}
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 sm:py-10 flex flex-col justify-center">
         {error && (
-          <div className="mb-6 p-3.5 rounded-xl border border-rose-200 bg-rose-50/70 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2.5 animate-rise">
+          <div className="mb-6 p-3.5 rounded-xl border border-rose-200 bg-rose-50/80 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2.5 animate-rise">
             <AlertCircle className="size-4 shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
@@ -334,7 +358,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
         {/* STEP 1: WELCOME SCREEN */}
         {step === "welcome" && (
           <div className="text-center py-6 sm:py-10 animate-rise">
-            {/* Animated Welcome Badge */}
             <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-leaf/10 text-leaf ring-1 ring-leaf/20 shadow-sm mb-6 animate-scale-in">
               <Sparkles className="size-8" />
             </div>
@@ -344,10 +367,10 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
             </h1>
 
             <p className="mt-3 text-sm sm:text-base text-ink-soft max-w-md mx-auto leading-relaxed">
-              Let&apos;s personalize your study experience in less than 2 minutes. We&apos;ll configure your group, books, and study timeline.
+              Let&apos;s personalize your study experience. We&apos;ll configure your study group, books, and target countdown dates.
             </p>
 
-            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="mt-8 sm:mt-10 flex items-center justify-center">
               <button
                 type="button"
                 onClick={() => setStep("group")}
@@ -463,7 +486,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                     Select Your Books
                   </h2>
                   <p className="text-xs sm:text-sm text-ink-soft">
-                    Showing official curriculum books tailored for{" "}
+                    Curriculum subjects for{" "}
                     <strong className="text-ink font-semibold">{chosenGroupObj.name}</strong>.
                   </p>
                 </div>
@@ -488,7 +511,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               </div>
             </div>
 
-            {/* Books List Grid */}
             <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
               {groupBooks.map((book) => {
                 const isChecked = !!selectedBookIds[book.id];
@@ -533,7 +555,6 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               })}
             </div>
 
-            {/* Selected Count Notice */}
             <div className="p-3 rounded-xl bg-paper border border-line text-xs font-medium text-ink-soft flex items-center justify-between">
               <span>Selected Books</span>
               <span className="font-bold text-leaf">
@@ -576,11 +597,10 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                 <span>📅</span>
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-ink-soft">
-                Select your board examination starting date using the calendar below.
+                Select your board examination start date using the calendar.
               </p>
             </div>
 
-            {/* Calendar Picker Box */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-line shadow-xs space-y-4">
               <DatePickerCalendar
                 label="Exam Date"
@@ -589,14 +609,14 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                   setExamDate(d);
                   setError(null);
                 }}
-                minDate={new Date().toISOString().split("T")[0]}
+                minDate={todayStr}
                 placeholder="Select Exam Date"
                 required
               />
 
               {examDate && (
                 <div className="p-3.5 rounded-xl bg-leaf/10 border border-leaf/20 flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-ink-soft font-medium">Selected Exam Date:</span>
+                  <span className="text-ink-soft font-medium">Exam Date:</span>
                   <span className="font-bold text-leaf flex items-center gap-1.5">
                     <CheckCircle2 className="size-4" />
                     <span>{formatDisplayDate(examDate)}</span>
@@ -618,7 +638,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
               <button
                 type="button"
                 disabled={!examDate}
-                onClick={() => setStep("target_date")}
+                onClick={() => setStep("target_start_date")}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-5 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Continue</span>
@@ -628,63 +648,41 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
           </div>
         )}
 
-        {/* STEP 5: ASK TARGET DATE SECOND + DYNAMIC PREPARATION TIME */}
-        {step === "target_date" && (
+        {/* STEP 5: ASK TARGET START DATE */}
+        {step === "target_start_date" && (
           <div className="space-y-6 animate-rise">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-leaf">
                 Step 4 of 5
               </span>
               <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight flex items-center gap-2">
-                <span>When do you want to complete preparation?</span>
-                <span>🎯</span>
+                <span>When do you want to start your preparation?</span>
+                <span>🚀</span>
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-ink-soft">
-                Choose a completion target before your exams for full revisions.
+                Choose the kickoff date for your personal study routine.
               </p>
             </div>
 
-            {/* Target Date Picker Box */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-line shadow-xs space-y-4">
               <DatePickerCalendar
-                label="Target Completion Date"
-                value={targetDate}
+                label="Target Start Date"
+                value={targetStartDate}
                 onChange={(d) => {
-                  setTargetDate(d);
-                  if (examDate && d > examDate) {
-                    setError("Your target date should be before your exam date.");
-                  } else {
-                    setError(null);
-                  }
+                  setTargetStartDate(d);
+                  setError(null);
                 }}
-                minDate={new Date().toISOString().split("T")[0]}
-                placeholder="Select Target Date"
+                placeholder="Select Target Start Date"
                 required
               />
 
-              {/* Dynamic Preparation Days Calculation Card */}
-              {targetDate && examDate && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 rounded-xl bg-paper border border-line">
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-faint">
-                      Exam Date
-                    </span>
-                    <span className="block mt-0.5 text-xs sm:text-sm font-bold text-ink">
-                      {formatDisplayDate(examDate)}
-                    </span>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-leaf/10 border border-leaf/20">
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-leaf">
-                      Your Preparation Time
-                    </span>
-                    <span className="block mt-0.5 text-base sm:text-lg font-display font-bold text-leaf">
-                      {prepDays} Days
-                    </span>
-                    <span className="block text-[10px] text-ink-faint mt-0.5">
-                      Revision window before exam starts
-                    </span>
-                  </div>
+              {targetStartDate && (
+                <div className="p-3.5 rounded-xl bg-leaf/10 border border-leaf/20 flex items-center justify-between text-xs sm:text-sm">
+                  <span className="text-ink-soft font-medium">Target Start Date:</span>
+                  <span className="font-bold text-leaf flex items-center gap-1.5">
+                    <CheckCircle2 className="size-4" />
+                    <span>{formatDisplayDate(targetStartDate)}</span>
+                  </span>
                 </div>
               )}
             </div>
@@ -701,8 +699,113 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
 
               <button
                 type="button"
-                disabled={!targetDate || targetDate > examDate}
-                onClick={() => setStep("summary")}
+                disabled={!targetStartDate}
+                onClick={() => setStep("target_date")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-5 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>Continue</span>
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 6: ASK TARGET DATE */}
+        {step === "target_date" && (
+          <div className="space-y-6 animate-rise">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-leaf">
+                Step 5 of 5
+              </span>
+              <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight flex items-center gap-2">
+                <span>By when do you want to reach your target?</span>
+                <span>🎯</span>
+              </h2>
+              <p className="mt-1 text-xs sm:text-sm text-ink-soft">
+                Choose your personal syllabus completion deadline before the exam.
+              </p>
+            </div>
+
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-line shadow-xs space-y-4">
+              <DatePickerCalendar
+                label="Target Date"
+                value={targetDate}
+                onChange={(d) => {
+                  setTargetDate(d);
+                  if (targetStartDate && d <= targetStartDate) {
+                    setError("Target date must be after your target start date.");
+                  } else if (examDate && d >= examDate) {
+                    setError("Target completion date must be before your exam date.");
+                  } else {
+                    setError(null);
+                  }
+                }}
+                minDate={targetStartDate || todayStr}
+                placeholder="Select Target Date"
+                required
+              />
+
+              {/* Dynamic Live Countdown Previews */}
+              {targetDate && examDate && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200">
+                    <div className="flex items-center gap-1.5 text-amber-800 mb-1">
+                      <Target className="size-4" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">
+                        Countdown to Target
+                      </span>
+                    </div>
+                    <span className="block text-xl font-display font-bold text-ink">
+                      {daysToTarget}{" "}
+                      <span className="text-xs font-bold uppercase text-ink-faint">
+                        {daysToTarget === 1 ? "DAY" : "DAYS"} TO TARGET
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-rose-50/70 border border-rose-200">
+                    <div className="flex items-center gap-1.5 text-rose-800 mb-1">
+                      <AlarmClockCheck className="size-4" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">
+                        Countdown to Exam
+                      </span>
+                    </div>
+                    <span className="block text-xl font-display font-bold text-ink">
+                      {daysToExam}{" "}
+                      <span className="text-xs font-bold uppercase text-ink-faint">
+                        {daysToExam === 1 ? "DAY" : "DAYS"} TO EXAM
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 flex items-center justify-between border-t border-line/60">
+              <button
+                type="button"
+                onClick={() => setStep("target_start_date")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-3.5 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
+              >
+                <ChevronLeft className="size-4" />
+                <span>Back</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  !targetDate ||
+                  (targetStartDate ? targetDate <= targetStartDate : false) ||
+                  (examDate ? targetDate >= examDate : false)
+                }
+                onClick={() => {
+                  const err = validateDates();
+                  if (err) {
+                    setError(err);
+                  } else {
+                    setStep("summary");
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-5 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Review Summary</span>
@@ -712,7 +815,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
           </div>
         )}
 
-        {/* STEP 6: FINAL SETUP SUMMARY */}
+        {/* STEP 7: FINAL SETUP SUMMARY */}
         {step === "summary" && (
           <div className="space-y-6 animate-rise">
             <div className="text-center">
@@ -723,7 +826,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                 You&apos;re All Set! 🎉
               </h2>
               <p className="mt-1 text-xs sm:text-sm text-ink-soft">
-                Here is a quick overview of your personalized study plan.
+                Here is a summary of your study setup and dashboard countdowns.
               </p>
             </div>
 
@@ -756,37 +859,65 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-3 border-b border-line/60">
-                <div>
-                  <span className="text-[11px] font-semibold text-ink-faint block">
-                    Exam Date
+              {/* 3 Dates Overview */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-line/60">
+                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
+                    Target Start Date
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-ink">
-                    {formatDisplayDate(examDate)}
+                  <span className="text-xs font-bold text-ink mt-0.5 block">
+                    {formatDisplayDate(targetStartDate)}
                   </span>
                 </div>
-                <div>
-                  <span className="text-[11px] font-semibold text-ink-faint block">
-                    Target Completion Date
+
+                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
+                    Target Date
                   </span>
-                  <span className="text-xs sm:text-sm font-bold text-ink">
+                  <span className="text-xs font-bold text-ink mt-0.5 block">
                     {formatDisplayDate(targetDate)}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
+                    Exam Date
+                  </span>
+                  <span className="text-xs font-bold text-ink mt-0.5 block">
+                    {formatDisplayDate(examDate)}
                   </span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-leaf/10 border border-leaf/20 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-leaf block">
-                    Preparation Time
+              {/* Dashboard Countdowns Preview */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-brand">
+                    <Target className="size-4.5" />
                   </span>
-                  <span className="text-[11px] text-ink-faint">
-                    Buffer for revisions & model tests
-                  </span>
+                  <div>
+                    <span className="font-display text-lg font-bold tabular-nums text-ink block leading-none">
+                      {daysToTarget}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">
+                      {daysToTarget === 1 ? "DAY TO TARGET" : "DAYS TO TARGET"}
+                    </span>
+                  </div>
                 </div>
-                <span className="font-display text-lg font-bold text-leaf">
-                  {prepDays} Days
-                </span>
+
+                <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200 flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-brand">
+                    <AlarmClockCheck className="size-4.5" />
+                  </span>
+                  <div>
+                    <span className="font-display text-lg font-bold tabular-nums text-ink block leading-none">
+                      {daysToExam}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">
+                      {daysToExam === 1 ? "DAY TO EXAM" : "DAYS TO EXAM"}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

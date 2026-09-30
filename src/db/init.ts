@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   stream_group TEXT,
   onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
   exam_date TEXT,
+  target_start_date TEXT,
   target_date TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -170,6 +171,7 @@ export async function runInitAndSeed(
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE;"
       );
       await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS exam_date TEXT;");
+      await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS target_start_date TEXT;");
       await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS target_date TEXT;");
       await rawExec("ALTER TABLE subjects ADD COLUMN IF NOT EXISTS board TEXT;");
       await rawExec("ALTER TABLE subjects ADD COLUMN IF NOT EXISTS class_level TEXT;");

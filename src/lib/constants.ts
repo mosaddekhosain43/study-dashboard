@@ -105,6 +105,7 @@ export const SUBJECT_DEFS: SubjectDef[] = [
 
 export const SETTING_EXAM_DATE = "exam_date";
 export const SETTING_TARGET_DATE = "target_date";
+export const SETTING_TARGET_START_DATE = "target_start_date";
 export const SETTING_ACTIVE_TIMER = "active_timer";
 
 export interface TimerState {

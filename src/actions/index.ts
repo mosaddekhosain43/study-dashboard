@@ -11,11 +11,13 @@ import {
   topics,
   updateItems,
   updates,
+  users,
 } from "@/db/schema";
 import {
   SETTING_ACTIVE_TIMER,
   SETTING_EXAM_DATE,
   SETTING_TARGET_DATE,
+  SETTING_TARGET_START_DATE,
   STATUSES,
   SUBJECT_DEFS,
   type StudyStatus,
@@ -563,11 +565,40 @@ async function upsertSetting(key: string, value: string) {
     .onConflictDoUpdate({ target: settings.key, set: { value } });
 }
 
-export async function saveExamSettingsAction(examDate: string, targetDate: string) {
+export async function saveExamSettingsAction(
+  examDate: string,
+  targetDate: string,
+  targetStartDate?: string
+) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(examDate)) return fail("Exam date is invalid.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return fail("Target date is invalid.");
+  if (targetStartDate && !/^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+    return fail("Target start date is invalid.");
+  }
+
+  if (targetStartDate && targetStartDate >= targetDate) {
+    return fail("Target start date must be before target date.");
+  }
+  if (targetDate >= examDate) {
+    return fail("Target date must be before exam date.");
+  }
+
   await upsertSetting(SETTING_EXAM_DATE, examDate);
   await upsertSetting(SETTING_TARGET_DATE, targetDate);
+  if (targetStartDate) {
+    await upsertSetting(SETTING_TARGET_START_DATE, targetStartDate);
+  }
+
+  const user = await getCurrentUser();
+  if (user) {
+    const userUpdates: Record<string, any> = {
+      examDate,
+      targetDate,
+    };
+    if (targetStartDate) userUpdates.targetStartDate = targetStartDate;
+    await db.update(users).set(userUpdates).where(eq(users.id, user.id));
+  }
+
   refresh();
   return ok();
 }

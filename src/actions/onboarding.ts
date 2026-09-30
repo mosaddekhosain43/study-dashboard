@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { db, initializeDb } from "@/db";
 import { batches, lessons, settings, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser, setSessionCookie } from "@/lib/auth";
-import { SETTING_EXAM_DATE, SETTING_TARGET_DATE } from "@/lib/constants";
+import {
+  SETTING_EXAM_DATE,
+  SETTING_TARGET_DATE,
+  SETTING_TARGET_START_DATE,
+} from "@/lib/constants";
 import { getStudentCurriculumStatusAction, type MasterBookView } from "./syllabus";
 
 export interface OnboardingData {
@@ -16,11 +20,13 @@ export interface OnboardingData {
     streamGroup: string | null;
     onboardingCompleted: boolean;
     examDate: string | null;
+    targetStartDate: string | null;
     targetDate: string | null;
     batchId: number | null;
   };
   masterBooks: MasterBookView[];
   defaultExamDate: string;
+  defaultTargetStartDate: string;
   defaultTargetDate: string;
 }
 
@@ -52,15 +58,18 @@ export async function getOnboardingDataAction(): Promise<{
   const masterBooks = statusRes.masterBooks || [];
 
   // Get existing settings if user hasn't set custom dates
-  const [examSettingRow, targetSettingRow] = await Promise.all([
+  const [examSettingRow, targetSettingRow, targetStartSettingRow] = await Promise.all([
     db.select().from(settings).where(eq(settings.key, SETTING_EXAM_DATE)).limit(1),
     db.select().from(settings).where(eq(settings.key, SETTING_TARGET_DATE)).limit(1),
+    db.select().from(settings).where(eq(settings.key, SETTING_TARGET_START_DATE)).limit(1),
   ]);
 
   const defaultExamDate =
     user.examDate || examSettingRow[0]?.value || "2027-04-15";
   const defaultTargetDate =
     user.targetDate || targetSettingRow[0]?.value || "2027-02-28";
+  const defaultTargetStartDate =
+    user.targetStartDate || targetStartSettingRow[0]?.value || new Date().toISOString().split("T")[0];
 
   return {
     ok: true,
@@ -72,11 +81,13 @@ export async function getOnboardingDataAction(): Promise<{
         streamGroup: user.streamGroup,
         onboardingCompleted: user.onboardingCompleted ?? false,
         examDate: user.examDate,
+        targetStartDate: user.targetStartDate,
         targetDate: user.targetDate,
         batchId: user.batchId,
       },
       masterBooks,
       defaultExamDate,
+      defaultTargetStartDate,
       defaultTargetDate,
     },
   };
@@ -86,6 +97,7 @@ export interface CompleteOnboardingPayload {
   streamGroup?: string;
   bookIds?: number[];
   examDate?: string;
+  targetStartDate?: string;
   targetDate?: string;
   skip?: boolean;
 }
@@ -97,7 +109,7 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
     return { ok: false, error: "Please log in to save your setup." };
   }
 
-  const { streamGroup, bookIds = [], examDate, targetDate, skip = false } = payload;
+  const { streamGroup, bookIds = [], examDate, targetStartDate, targetDate, skip = false } = payload;
 
   // Handle "Skip for now"
   if (skip) {
@@ -106,6 +118,9 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
     };
     if (streamGroup) updatesObj.streamGroup = streamGroup;
     if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) updatesObj.examDate = examDate;
+    if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+      updatesObj.targetStartDate = targetStartDate;
+    }
     if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) updatesObj.targetDate = targetDate;
 
     await db.update(users).set(updatesObj).where(eq(users.id, sessionUser.id));
@@ -116,6 +131,7 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
       onboardingCompleted: true,
       streamGroup: streamGroup || sessionUser.streamGroup,
       examDate: examDate || sessionUser.examDate,
+      targetStartDate: targetStartDate || sessionUser.targetStartDate,
       targetDate: targetDate || sessionUser.targetDate,
     });
 
@@ -136,15 +152,26 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
     return { ok: false, error: "Please select a valid Exam Date using the calendar." };
   }
 
-  if (!targetDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-    return { ok: false, error: "Please select a valid Target Completion Date using the calendar." };
+  if (!targetStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+    return { ok: false, error: "Please select a valid Target Start Date using the calendar." };
   }
 
-  // Validate dates: target date should be before or equal to exam date
-  if (targetDate > examDate) {
+  if (!targetDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+    return { ok: false, error: "Please select a valid Target Date using the calendar." };
+  }
+
+  // Logical date validation: Target Start Date < Target Date < Exam Date
+  if (targetStartDate >= targetDate) {
     return {
       ok: false,
-      error: "Your target date should be before your exam date.",
+      error: "Target start date must be before your target completion date.",
+    };
+  }
+
+  if (targetDate >= examDate) {
+    return {
+      ok: false,
+      error: "Target completion date must be before your exam date.",
     };
   }
 
@@ -156,6 +183,7 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
       board: "madrasah",
       classLevel: "alim",
       examDate,
+      targetStartDate,
       targetDate,
       onboardingCompleted: true,
     })
@@ -171,6 +199,10 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
       .insert(settings)
       .values({ key: SETTING_TARGET_DATE, value: targetDate })
       .onConflictDoUpdate({ target: settings.key, set: { value: targetDate } }),
+    db
+      .insert(settings)
+      .values({ key: SETTING_TARGET_START_DATE, value: targetStartDate })
+      .onConflictDoUpdate({ target: settings.key, set: { value: targetStartDate } }),
   ]);
 
   // Clone selected books & all their chapters/topics into student's personal syllabus
@@ -255,6 +287,7 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
     onboardingCompleted: true,
     streamGroup,
     examDate,
+    targetStartDate,
     targetDate,
   });
 

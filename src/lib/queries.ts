@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   SETTING_EXAM_DATE,
   SETTING_TARGET_DATE,
+  SETTING_TARGET_START_DATE,
   SUBJECT_DEFS,
   type StudyStatus,
 } from "@/lib/constants";
@@ -62,6 +63,7 @@ export async function getSetting(key: string): Promise<string | null> {
 
 export interface ExamConfig {
   examDate: string;
+  targetStartDate: string;
   targetDate: string;
   daysToExam: number;
   daysToTarget: number;
@@ -69,12 +71,16 @@ export interface ExamConfig {
 
 export async function getExamConfig(): Promise<ExamConfig> {
   await ensureSeeded();
+  const user = await getCurrentUser();
   const d = examDefaults();
-  const examDate = (await getSetting(SETTING_EXAM_DATE)) ?? d.examDate;
-  const targetDate = (await getSetting(SETTING_TARGET_DATE)) ?? d.targetDate;
+  const examDate = user?.examDate ?? (await getSetting(SETTING_EXAM_DATE)) ?? d.examDate;
+  const targetDate = user?.targetDate ?? (await getSetting(SETTING_TARGET_DATE)) ?? d.targetDate;
+  const targetStartDate =
+    user?.targetStartDate ?? (await getSetting(SETTING_TARGET_START_DATE)) ?? todayKey();
   const t = todayKey();
   return {
     examDate,
+    targetStartDate,
     targetDate,
     daysToExam: Math.max(0, diffDays(t, examDate)),
     daysToTarget: Math.max(0, diffDays(t, targetDate)),

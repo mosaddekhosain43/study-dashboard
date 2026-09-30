@@ -94,12 +94,16 @@ export default async function AnalyticsPage() {
             <div className="rounded-xl border border-line px-3 py-2 text-center">
               <AlarmClockCheck className="mx-auto mb-0.5 size-3.5 text-rose-brand" />
               <p className="font-display text-[16px] font-bold tabular-nums">{exam.daysToExam}</p>
-              <p className="text-[9px] font-bold uppercase text-ink-faint">days to exam</p>
+              <p className="text-[9px] font-bold uppercase text-ink-faint">
+                {exam.daysToExam === 1 ? "day to exam" : "days to exam"}
+              </p>
             </div>
             <div className="rounded-xl border border-line px-3 py-2 text-center">
               <Target className="mx-auto mb-0.5 size-3.5 text-amber-brand" />
               <p className="font-display text-[16px] font-bold tabular-nums">{exam.daysToTarget}</p>
-              <p className="text-[9px] font-bold uppercase text-ink-faint">to target</p>
+              <p className="text-[9px] font-bold uppercase text-ink-faint">
+                {exam.daysToTarget === 1 ? "day to target" : "days to target"}
+              </p>
             </div>
           </div>
         </div>

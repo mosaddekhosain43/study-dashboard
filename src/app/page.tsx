@@ -83,8 +83,8 @@ export default async function DashboardPage() {
               <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
                 {data.exam.daysToExam}
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
-                Days to Exam
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+                {data.exam.daysToExam === 1 ? "DAY TO EXAM" : "DAYS TO EXAM"}
               </p>
             </div>
           </div>
@@ -97,8 +97,8 @@ export default async function DashboardPage() {
               <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
                 {data.exam.daysToTarget}
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
-                Days to Target
+              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+                {data.exam.daysToTarget === 1 ? "DAY TO TARGET" : "DAYS TO TARGET"}
               </p>
             </div>
           </div>

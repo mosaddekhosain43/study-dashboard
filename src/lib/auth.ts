@@ -15,6 +15,7 @@ export interface SessionUser {
   streamGroup?: string | null;
   onboardingCompleted?: boolean;
   examDate?: string | null;
+  targetStartDate?: string | null;
   targetDate?: string | null;
 }
 
