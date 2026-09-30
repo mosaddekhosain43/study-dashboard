@@ -3,7 +3,7 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, initializeDb } from "@/db";
-import { batches, lessons, subjects, topics, users } from "@/db/schema";
+import { batches, lessons, settings, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
 
@@ -105,15 +105,21 @@ export async function getStudentCurriculumStatusAction() {
   const currentBatch = allBatches.find((b) => b.id === effectiveBatchId) || null;
 
   // Retrieve latest student profile from DB
-  const userRows = await db
-    .select({
-      board: users.board,
-      classLevel: users.classLevel,
-      streamGroup: users.streamGroup,
-    })
-    .from(users)
-    .where(eq(users.id, user.id))
-    .limit(1);
+  const [userRows, examSettingRow, targetSettingRow] = await Promise.all([
+    db
+      .select({
+        board: users.board,
+        classLevel: users.classLevel,
+        streamGroup: users.streamGroup,
+        examDate: users.examDate,
+        targetDate: users.targetDate,
+      })
+      .from(users)
+      .where(eq(users.id, user.id))
+      .limit(1),
+    db.select().from(settings).where(eq(settings.key, "exam_date")).limit(1),
+    db.select().from(settings).where(eq(settings.key, "target_date")).limit(1),
+  ]);
 
   const dbUser = userRows[0];
 
@@ -125,7 +131,9 @@ export async function getStudentCurriculumStatusAction() {
     userProfile: {
       board: dbUser?.board || user.board || "madrasah",
       classLevel: dbUser?.classLevel || user.classLevel || "alim",
-      streamGroup: dbUser?.streamGroup || user.streamGroup || "general_madrasah",
+      streamGroup: dbUser?.streamGroup || user.streamGroup || "science",
+      examDate: dbUser?.examDate || user.examDate || examSettingRow[0]?.value || "2027-04-15",
+      targetDate: dbUser?.targetDate || user.targetDate || targetSettingRow[0]?.value || "2027-02-28",
     },
     availableBatches: allBatches,
     masterBooks,
@@ -137,6 +145,8 @@ export interface SelectionPayload {
   board?: string;
   classLevel?: string;
   streamGroup?: string;
+  examDate?: string;
+  targetDate?: string;
   selections: {
     subjectId: number;
     chapterIds: number[];
@@ -149,21 +159,38 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
     return { ok: false, error: "Please log in to initialize your syllabus." };
   }
 
-  const { selections, batchId, streamGroup } = payload;
+  const { selections, batchId, streamGroup, examDate, targetDate } = payload;
   if (!selections || selections.length === 0) {
     return { ok: false, error: "Please select at least one book to begin." };
   }
 
-  // Update user profile info (batch, board, class, stream)
+  // Update user profile info (batch, board, class, stream, dates, onboarding)
   const userUpdates: Record<string, any> = {
     board: "madrasah",
     classLevel: "alim",
+    onboardingCompleted: true,
   };
   if (batchId && batchId !== user.batchId) userUpdates.batchId = batchId;
   if (streamGroup) userUpdates.streamGroup = streamGroup;
+  if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) userUpdates.examDate = examDate;
+  if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) userUpdates.targetDate = targetDate;
 
   if (Object.keys(userUpdates).length > 0) {
     await db.update(users).set(userUpdates).where(eq(users.id, user.id));
+  }
+
+  // Sync exam and target dates with settings
+  if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
+    await db
+      .insert(settings)
+      .values({ key: "exam_date", value: examDate })
+      .onConflictDoUpdate({ target: settings.key, set: { value: examDate } });
+  }
+  if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+    await db
+      .insert(settings)
+      .values({ key: "target_date", value: targetDate })
+      .onConflictDoUpdate({ target: settings.key, set: { value: targetDate } });
   }
 
   try {

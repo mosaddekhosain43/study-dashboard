@@ -39,6 +39,9 @@ export const users = pgTable(
     board: text("board"), // 'general' | 'madrasah'
     classLevel: text("class_level"), // 'class_10' | 'ssc' | 'dakhil' | 'hsc' | 'alim'
     streamGroup: text("stream_group"), // 'science' | 'humanities' | 'business_studies' | 'general_madrasah' | 'quran_hadith'
+    onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+    examDate: text("exam_date"),
+    targetDate: text("target_date"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

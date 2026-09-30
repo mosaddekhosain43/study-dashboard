@@ -13,6 +13,9 @@ export interface SessionUser {
   board?: string | null;
   classLevel?: string | null;
   streamGroup?: string | null;
+  onboardingCompleted?: boolean;
+  examDate?: string | null;
+  targetDate?: string | null;
 }
 
 export function hashPassword(password: string): string {

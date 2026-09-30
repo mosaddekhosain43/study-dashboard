@@ -17,6 +17,7 @@ import {
   Building2,
   Atom,
   Briefcase,
+  Palette,
   BookMarked,
   HelpCircle,
   Compass,
@@ -26,6 +27,10 @@ import {
   initializeStudentSyllabusAction,
   type MasterBookView,
 } from "@/actions/syllabus";
+import DatePickerCalendar, {
+  formatDisplayDate,
+  calculateDaysBetween,
+} from "@/components/ui/DatePickerCalendar";
 
 interface Batch {
   id: number;
@@ -37,6 +42,8 @@ interface UserProfile {
   board?: string;
   classLevel?: string;
   streamGroup?: string;
+  examDate?: string;
+  targetDate?: string;
 }
 
 interface Props {
@@ -53,7 +60,7 @@ export type ClassLevel = "alim";
 export type StreamGroup =
   | "general_madrasah"
   | "science"
-  | "quran_hadith";
+  | "business_studies";
 
 export default function SyllabusOnboarding({
   userBatch,
@@ -67,6 +74,21 @@ export default function SyllabusOnboarding({
 
   const board: BoardType = "madrasah";
   const classLevel: ClassLevel = "alim";
+
+  const [streamGroup, setStreamGroup] = useState<string>(
+    userProfile?.streamGroup || "science"
+  );
+  const [examDate, setExamDate] = useState<string>(
+    userProfile?.examDate || "2027-04-15"
+  );
+  const [targetDate, setTargetDate] = useState<string>(
+    userProfile?.targetDate || "2027-02-28"
+  );
+
+  const prepDays = useMemo(() => {
+    if (!examDate || !targetDate) return 0;
+    return calculateDaysBetween(targetDate, examDate);
+  }, [examDate, targetDate]);
 
   // Auto-select matching batchId
   const matchingBatchId = useMemo(() => {
@@ -83,10 +105,47 @@ export default function SyllabusOnboarding({
     setSelectedBatchId(matchingBatchId);
   }, [matchingBatchId]);
 
-  // ── All 26 Master Books for Alim ──
+  // ── Filtered Master Books for selected stream ──
   const filteredBooks = useMemo(() => {
-    return masterBooks;
-  }, [masterBooks]);
+    if (streamGroup === "science") {
+      return masterBooks.filter((b) => {
+        const slug = b.slug.toLowerCase();
+        const isArtsSpecific =
+          slug.includes("balaghat") ||
+          slug.includes("islamic-history") ||
+          slug.includes("civics") ||
+          slug.includes("economics") ||
+          slug === "alim-arabic-1" ||
+          slug === "alim-arabic-2";
+        return !isArtsSpecific;
+      });
+    }
+
+    if (streamGroup === "general_madrasah") {
+      return masterBooks.filter((b) => {
+        const slug = b.slug.toLowerCase();
+        const isScienceSpecific =
+          slug.includes("physics") ||
+          slug.includes("chemistry") ||
+          slug.includes("biology") ||
+          slug.includes("higher-math") ||
+          slug.includes("arabic-science");
+        return !isScienceSpecific;
+      });
+    }
+
+    // business_studies / commerce
+    return masterBooks.filter((b) => {
+      const slug = b.slug.toLowerCase();
+      const isScienceSpecific =
+        slug.includes("physics") ||
+        slug.includes("chemistry") ||
+        slug.includes("biology") ||
+        slug.includes("higher-math") ||
+        slug.includes("arabic-science");
+      return !isScienceSpecific;
+    });
+  }, [masterBooks, streamGroup]);
 
   // Group books by subjectType: Compulsory, Group Elective, Optional
   const categorizedBooks = useMemo(() => {
@@ -250,12 +309,19 @@ export default function SyllabusOnboarding({
       return;
     }
 
+    if (examDate && targetDate && targetDate > examDate) {
+      setError("Your target date should be before your exam date.");
+      return;
+    }
+
     startTransition(async () => {
       const res = await initializeStudentSyllabusAction({
         batchId: selectedBatchId,
         board,
         classLevel,
-        streamGroup: "all",
+        streamGroup,
+        examDate,
+        targetDate,
         selections,
       });
 
@@ -285,8 +351,7 @@ export default function SyllabusOnboarding({
               Alim Syllabus & Stream Setup
             </h1>
             <p className="mt-1 text-xs sm:text-[13.5px] text-ink-faint max-w-2xl">
-              আপনার বিভাগ (সাধারণ, বিজ্ঞান, অথবা মুজাব্বিদ গ্রুপ) নির্বাচন করুন। সিস্টেম স্বয়ংক্রিয়ভাবে আলিম ২০২৬-২৭
-              সিলেবাস অনুযায়ী আবশ্যিক ও বিভাগীয় বিষয়সমূহ লোড করবে।
+              আপনার বিভাগ, বইসমূহ ও পরীক্ষার লক্ষ্যমাত্রা নির্বাচন করুন। সিস্টেম স্বয়ংক্রিয়ভাবে আলিম সিলেবাস অনুযায়ী আবশ্যিক ও বিভাগীয় বিষয়সমূহ প্রস্তুত রাখবে।
             </p>
           </div>
 
@@ -302,6 +367,87 @@ export default function SyllabusOnboarding({
               </p>
             </div>
             <BookmarkCheck className="size-6 text-leaf shrink-0" />
+          </div>
+        </div>
+
+        {/* ── Stream Group Selection ── */}
+        <div className="mt-5 pt-4 border-t border-line/60">
+          <label className="block text-xs font-bold uppercase tracking-wider text-ink-soft mb-2.5">
+            Select Your Group (বিভাগ)
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { id: "science", label: "Science (বিজ্ঞান)", icon: Atom },
+              { id: "general_madrasah", label: "Arts (মানবিক / সাধারণ)", icon: Palette },
+              { id: "business_studies", label: "Commerce (ব্যবসায় শিক্ষা)", icon: Briefcase },
+            ].map((grp) => {
+              const Icon = grp.icon;
+              const active = streamGroup === grp.id;
+              return (
+                <button
+                  key={grp.id}
+                  type="button"
+                  onClick={() => setStreamGroup(grp.id)}
+                  className={`flex items-center justify-between gap-2.5 p-3 rounded-xl border text-xs font-semibold transition ${
+                    active
+                      ? "border-leaf bg-leaf/10 text-leaf ring-1 ring-leaf/20 shadow-xs"
+                      : "border-line bg-paper/60 hover:bg-white text-ink-soft hover:border-ink-faint/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="size-4 shrink-0" />
+                    <span>{grp.label}</span>
+                  </div>
+                  {active && <Check className="size-3.5 stroke-[3]" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Exam & Target Dates with Calendar Pickers ── */}
+        <div className="mt-4 pt-4 border-t border-line/60 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+          <div className="sm:col-span-5">
+            <DatePickerCalendar
+              label="Exam Date (পরীক্ষার তারিখ)"
+              value={examDate}
+              onChange={(d) => {
+                setExamDate(d);
+                setError(null);
+              }}
+              minDate={new Date().toISOString().split("T")[0]}
+              placeholder="Select Exam Date"
+              required
+            />
+          </div>
+
+          <div className="sm:col-span-5">
+            <DatePickerCalendar
+              label="Target Completion Date (টার্গেট তারিখ)"
+              value={targetDate}
+              onChange={(d) => {
+                setTargetDate(d);
+                if (examDate && d > examDate) {
+                  setError("Your target date should be before your exam date.");
+                } else {
+                  setError(null);
+                }
+              }}
+              minDate={new Date().toISOString().split("T")[0]}
+              placeholder="Select Target Date"
+              required
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <div className="p-2.5 sm:py-3 rounded-xl bg-leaf/10 border border-leaf/20 text-center">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-leaf">
+                Preparation Time
+              </span>
+              <span className="block text-sm font-display font-bold text-leaf">
+                {prepDays} Days
+              </span>
+            </div>
           </div>
         </div>
 

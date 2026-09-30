@@ -48,6 +48,9 @@ export async function loginAction(formData: FormData) {
     board: user.board,
     classLevel: user.classLevel,
     streamGroup: user.streamGroup,
+    onboardingCompleted: user.onboardingCompleted ?? false,
+    examDate: user.examDate,
+    targetDate: user.targetDate,
   });
 
   revalidatePath("/", "layout");
@@ -108,10 +111,13 @@ export async function registerStudentAction(formData: FormData) {
     email: newUser.email,
     role: "student",
     batchId: newUser.batchId,
+    onboardingCompleted: false,
+    examDate: null,
+    targetDate: null,
   });
 
   revalidatePath("/", "layout");
-  return { ok: true, redirectUrl: "/syllabus" };
+  return { ok: true, redirectUrl: "/onboarding" };
 }
 
 export async function logoutAction() {
