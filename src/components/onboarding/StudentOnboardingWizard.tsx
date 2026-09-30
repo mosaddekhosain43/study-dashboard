@@ -347,7 +347,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
       )}
 
       {/* Main Container */}
-      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-6 sm:py-10 flex flex-col justify-center">
+      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-4 sm:py-8 flex flex-col justify-center">
         {error && (
           <div className="mb-6 p-3.5 rounded-xl border border-rose-200 bg-rose-50/80 text-rose-800 text-xs sm:text-sm font-medium flex items-center gap-2.5 animate-rise">
             <AlertCircle className="size-4 shrink-0 text-rose-600" />
@@ -471,98 +471,85 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
 
         {/* STEP 3: SELECT YOUR BOOKS */}
         {step === "books" && (
-          <div className="space-y-6 animate-rise">
+          <div className="space-y-3 sm:space-y-3.5 animate-rise max-w-md mx-auto w-full">
+            {/* Compact Header */}
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-leaf">
-                Step 2 of 5
-              </span>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1">
-                <div>
-                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight">
-                    Select Your Books
-                  </h2>
-                  <p className="text-xs sm:text-sm text-ink-soft">
-                    Curriculum subjects for{" "}
-                    <strong className="text-ink font-semibold">{chosenGroupObj.name}</strong>.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-leaf">
+                  Step 2 of 5
+                </span>
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
                   <button
                     type="button"
                     onClick={selectAllBooks}
-                    className="text-xs font-semibold text-leaf hover:underline px-2 py-1"
+                    className="text-leaf hover:text-leaf-deep hover:underline transition px-1 py-0.5"
                   >
                     Select All
                   </button>
-                  <span className="text-line">•</span>
+                  <span className="text-line text-xs">•</span>
                   <button
                     type="button"
                     onClick={clearAllBooks}
-                    className="text-xs font-semibold text-ink-faint hover:text-ink px-2 py-1"
+                    className="text-ink-faint hover:text-ink transition px-1 py-0.5"
                   >
                     Clear All
                   </button>
                 </div>
               </div>
+
+              <div className="flex items-baseline justify-between gap-2 mt-0.5">
+                <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                  Select Your Books
+                </h2>
+                <span className="text-xs font-semibold text-leaf shrink-0 tabular-nums">
+                  {chosenBooks.length} of {groupBooks.length} selected
+                </span>
+              </div>
+
+              <p className="text-xs text-ink-soft mt-0.5">
+                Choose your books for <strong className="text-ink font-semibold">{chosenGroupObj.name}</strong>.
+              </p>
             </div>
 
-            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+            {/* Compact Checklist Rows */}
+            <div className="border-t border-b border-line/70 py-1.5 max-h-[50vh] sm:max-h-[380px] overflow-y-auto space-y-1 pr-1 overscroll-contain">
               {groupBooks.map((book) => {
                 const isChecked = !!selectedBookIds[book.id];
                 return (
-                  <div
+                  <button
                     key={book.id}
+                    type="button"
                     onClick={() => toggleBookSelection(book.id)}
-                    className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left cursor-pointer transition-all duration-150 select-none ${
                       isChecked
-                        ? "border-leaf bg-leaf/[0.04] text-ink ring-1 ring-leaf/20"
-                        : "border-line bg-white/70 hover:bg-white text-ink-soft hover:border-ink-faint/50"
+                        ? "border-leaf/60 bg-leaf/10 text-ink shadow-2xs"
+                        : "border-line/70 bg-white hover:bg-paper/50 hover:border-ink-faint/40 text-ink"
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`size-5 rounded-md border flex items-center justify-center transition-colors ${
-                          isChecked
-                            ? "bg-leaf border-leaf text-white"
-                            : "border-line bg-white"
-                        }`}
-                      >
-                        {isChecked && <Check className="size-3.5 stroke-[3]" />}
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-ink truncate">
-                          {book.name}
-                        </p>
-                        {book.nameBn && (
-                          <p className="text-[11px] text-ink-faint truncate">
-                            {book.nameBn}
-                          </p>
-                        )}
-                      </div>
+                    <div
+                      className={`size-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                        isChecked
+                          ? "bg-leaf border-leaf text-white shadow-2xs"
+                          : "border-line bg-white"
+                      }`}
+                    >
+                      {isChecked && <Check className="size-3 stroke-[3]" />}
                     </div>
 
-                    <span className="text-[10px] font-semibold text-ink-faint bg-paper px-2 py-0.5 rounded border border-line shrink-0">
-                      {book.chapters.length} Chapters
+                    <span className="text-xs sm:text-sm font-semibold truncate leading-tight">
+                      {book.name}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </div>
 
-            <div className="p-3 rounded-xl bg-paper border border-line text-xs font-medium text-ink-soft flex items-center justify-between">
-              <span>Selected Books</span>
-              <span className="font-bold text-leaf">
-                {chosenBooks.length} of {groupBooks.length} Books
-              </span>
-            </div>
-
-            <div className="pt-4 flex items-center justify-between border-t border-line/60">
+            {/* Bottom Navigation Buttons */}
+            <div className="pt-2 flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setStep("group")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-3.5 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-4 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
               >
                 <ChevronLeft className="size-4" />
                 <span>Back</span>
@@ -572,7 +559,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                 type="button"
                 disabled={chosenBooks.length === 0}
                 onClick={() => setStep("exam_date")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-5 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-6 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Continue</span>
                 <ChevronRight className="size-4" />
