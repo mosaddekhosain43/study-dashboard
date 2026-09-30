@@ -119,3 +119,83 @@ export async function logoutAction() {
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+export async function findAccountForRecoveryAction(emailInput: string) {
+  const email = emailInput?.trim().toLowerCase();
+  if (!email) {
+    return { ok: false, error: "Please enter your registered email address." };
+  }
+
+  const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const user = userRows[0];
+  if (!user) {
+    return {
+      ok: false,
+      error: "No account found with this email address. Please check and try again.",
+    };
+  }
+
+  return {
+    ok: true,
+    name: user.name,
+    email: user.email,
+    hasPhone: Boolean(user.phone),
+    maskedPhone: user.phone
+      ? user.phone.slice(0, 3) + "•••••" + user.phone.slice(-3)
+      : null,
+  };
+}
+
+export async function resetPasswordWithEmailAction(formData: FormData) {
+  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  const phoneVerification = (formData.get("phoneVerification") as string)?.trim();
+  const newPassword = formData.get("newPassword") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!email) {
+    return { ok: false, error: "Email address is required." };
+  }
+  if (!newPassword || newPassword.length < 6) {
+    return { ok: false, error: "New password must be at least 6 characters long." };
+  }
+  if (newPassword !== confirmPassword) {
+    return { ok: false, error: "Passwords do not match. Please re-type." };
+  }
+
+  const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const user = userRows[0];
+  if (!user) {
+    return { ok: false, error: "No account found with this email address." };
+  }
+
+  // If the user has a phone registered, verify phone number (digits only matching)
+  if (user.phone) {
+    const normalizeDigits = (val: string) => val.replace(/\D/g, "");
+    const cleanUserPhone = normalizeDigits(user.phone);
+    const cleanInputPhone = normalizeDigits(phoneVerification || "");
+
+    const matches =
+      cleanInputPhone &&
+      (cleanUserPhone.endsWith(cleanInputPhone) || cleanInputPhone.endsWith(cleanUserPhone));
+
+    if (!matches) {
+      return {
+        ok: false,
+        error:
+          "Verification failed. The phone number does not match your registered phone number.",
+      };
+    }
+  }
+
+  const newPasswordHash = hashPassword(newPassword);
+  await db
+    .update(users)
+    .set({ passwordHash: newPasswordHash })
+    .where(eq(users.id, user.id));
+
+  return {
+    ok: true,
+    message: "Password reset successfully! You can now log in with your new password.",
+  };
+}
+
