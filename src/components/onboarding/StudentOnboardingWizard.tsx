@@ -385,21 +385,22 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
 
         {/* STEP 2: SELECT YOUR GROUP */}
         {step === "group" && (
-          <div className="space-y-6 animate-rise">
+          <div className="space-y-4 sm:space-y-5 animate-rise max-w-md mx-auto w-full">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-leaf">
                 Step 1 of 5
               </span>
-              <h2 className="mt-1 font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight">
+              <h2 className="mt-0.5 font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight">
                 Select Your Group
               </h2>
-              <p className="mt-1 text-xs sm:text-sm text-ink-soft">
-                Choose your academic stream to unlock your relevant syllabus books.
-              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              {GROUPS.map((g) => {
+            <div className="space-y-2.5">
+              {[
+                { id: "science", name: "Science", icon: Atom },
+                { id: "general_madrasah", name: "Arts", icon: Palette },
+                { id: "business_studies", name: "Commerce", icon: Briefcase },
+              ].map((g) => {
                 const Icon = g.icon;
                 const isSelected = selectedGroup === g.id;
                 return (
@@ -410,51 +411,46 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                       setSelectedGroup(g.id);
                       resetBooksForGroup(g.id);
                     }}
-                    className={`relative p-5 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer ${
+                    className={`w-full p-3.5 sm:p-4 rounded-xl border text-left transition-all duration-150 flex items-center justify-between cursor-pointer ${
                       isSelected
-                        ? "border-leaf bg-white shadow-md shadow-leaf/10 ring-2 ring-leaf/20 scale-[1.02]"
-                        : "border-line bg-white/70 hover:bg-white hover:border-ink-faint/60 hover:shadow-2xs"
+                        ? "border-leaf bg-leaf/10 ring-1 ring-leaf text-ink shadow-xs"
+                        : "border-line bg-white hover:border-ink-faint/60 hover:bg-paper/40 text-ink-soft"
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span
-                          className={`grid size-11 place-items-center rounded-xl transition ${
-                            isSelected
-                              ? "bg-leaf text-white shadow-sm shadow-leaf/30"
-                              : "bg-paper text-ink-soft"
-                          }`}
-                        >
-                          <Icon className="size-5" />
-                        </span>
-                        {isSelected && (
-                          <span className="flex items-center justify-center size-6 rounded-full bg-leaf text-white shadow-xs">
-                            <Check className="size-3.5 stroke-[3]" />
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="font-display text-base font-bold text-ink">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`grid size-9 place-items-center rounded-lg transition ${
+                          isSelected
+                            ? "bg-leaf text-white shadow-xs"
+                            : "bg-paper text-ink-soft"
+                        }`}
+                      >
+                        <Icon className="size-4.5" />
+                      </span>
+                      <span className="font-display text-base font-bold text-ink">
                         {g.name}
-                      </h3>
-                      <p className="text-xs font-medium text-ink-faint mt-0.5">
-                        {g.nameBn}
-                      </p>
+                      </span>
                     </div>
 
-                    <p className="mt-4 text-[11px] leading-relaxed text-ink-faint border-t border-line/50 pt-2.5">
-                      {g.desc}
-                    </p>
+                    <div
+                      className={`size-6 rounded-full flex items-center justify-center transition ${
+                        isSelected
+                          ? "bg-leaf text-white shadow-2xs"
+                          : "border border-line bg-white"
+                      }`}
+                    >
+                      {isSelected && <Check className="size-3.5 stroke-[3]" />}
+                    </div>
                   </button>
                 );
               })}
             </div>
 
-            <div className="pt-4 flex items-center justify-between border-t border-line/60">
+            <div className="pt-3 flex items-center justify-between border-t border-line/60">
               <button
                 type="button"
                 onClick={() => setStep("welcome")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-3.5 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-soft hover:text-ink px-4 py-2.5 rounded-xl border border-line bg-white hover:bg-paper transition"
               >
                 <ChevronLeft className="size-4" />
                 <span>Back</span>
@@ -464,7 +460,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                 type="button"
                 disabled={!selectedGroup}
                 onClick={() => setStep("books")}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-5 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-white px-6 py-2.5 rounded-xl bg-leaf hover:bg-leaf-deep shadow-md shadow-leaf/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Continue</span>
                 <ChevronRight className="size-4" />
@@ -817,120 +813,104 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
 
         {/* STEP 7: FINAL SETUP SUMMARY */}
         {step === "summary" && (
-          <div className="space-y-6 animate-rise">
+          <div className="space-y-4 sm:space-y-5 animate-rise max-w-md mx-auto w-full">
             <div className="text-center">
-              <span className="inline-flex items-center justify-center p-2.5 rounded-2xl bg-leaf/10 text-leaf mb-2">
-                <Sparkles className="size-6" />
-              </span>
               <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink tracking-tight">
                 You&apos;re All Set! 🎉
               </h2>
-              <p className="mt-1 text-xs sm:text-sm text-ink-soft">
-                Here is a summary of your study setup and dashboard countdowns.
-              </p>
             </div>
 
-            {/* Summary Details Card */}
-            <div className="bg-white rounded-2xl border border-line p-5 sm:p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-line/60">
-                <span className="text-xs font-semibold text-ink-soft">Study Group</span>
-                <span className="text-xs sm:text-sm font-bold text-ink flex items-center gap-1.5">
-                  <Check className="size-3.5 text-leaf stroke-[3]" />
-                  <span>{chosenGroupObj.name}</span>
-                </span>
-              </div>
-
-              <div className="pb-3 border-b border-line/60">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-ink-soft">Selected Books</span>
-                  <span className="text-xs font-bold text-leaf">
+            {/* Compact Summary Card */}
+            <div className="bg-white rounded-2xl border border-line p-4 sm:p-5 shadow-xs space-y-3.5">
+              {/* Group & Books */}
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-line/60">
+                <div>
+                  <span className="text-ink-faint block text-[11px] font-medium uppercase tracking-wider">
+                    Group
+                  </span>
+                  <span className="font-bold text-ink text-sm sm:text-base mt-0.5 block">
+                    {chosenGroupObj.name}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-ink-faint block text-[11px] font-medium uppercase tracking-wider">
+                    Books
+                  </span>
+                  <span className="font-bold text-leaf text-sm sm:text-base mt-0.5 block">
                     {chosenBooks.length} Books
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                  {chosenBooks.map((b) => (
-                    <span
-                      key={b.id}
-                      className="inline-flex items-center text-[11px] font-medium bg-paper border border-line px-2 py-0.5 rounded-md text-ink"
-                    >
-                      {b.name}
-                    </span>
-                  ))}
-                </div>
               </div>
 
-              {/* 3 Dates Overview */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-line/60">
-                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
-                    Target Start Date
-                  </span>
-                  <span className="text-xs font-bold text-ink mt-0.5 block">
-                    {formatDisplayDate(targetStartDate)}
-                  </span>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
-                    Target Date
-                  </span>
-                  <span className="text-xs font-bold text-ink mt-0.5 block">
-                    {formatDisplayDate(targetDate)}
+              {/* Compact Dates List */}
+              <div className="space-y-1.5 pb-3 border-b border-line/60 text-xs sm:text-sm">
+                <div className="flex items-center justify-between py-0.5">
+                  <span className="text-ink-soft">Target Start:</span>
+                  <span className="font-semibold text-ink">
+                    {(() => {
+                      if (!targetStartDate) return "";
+                      const [y, m, d] = targetStartDate.split("-");
+                      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                      return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1] || ""} ${y}`;
+                    })()}
                   </span>
                 </div>
-
-                <div className="p-2.5 rounded-xl bg-paper/60 border border-line">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint block">
-                    Exam Date
+                <div className="flex items-center justify-between py-0.5">
+                  <span className="text-ink-soft">Target Date:</span>
+                  <span className="font-semibold text-ink">
+                    {(() => {
+                      if (!targetDate) return "";
+                      const [y, m, d] = targetDate.split("-");
+                      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                      return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1] || ""} ${y}`;
+                    })()}
                   </span>
-                  <span className="text-xs font-bold text-ink mt-0.5 block">
-                    {formatDisplayDate(examDate)}
+                </div>
+                <div className="flex items-center justify-between py-0.5">
+                  <span className="text-ink-soft">Exam Date:</span>
+                  <span className="font-semibold text-ink">
+                    {(() => {
+                      if (!examDate) return "";
+                      const [y, m, d] = examDate.split("-");
+                      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                      return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1] || ""} ${y}`;
+                    })()}
                   </span>
                 </div>
               </div>
 
               {/* Dashboard Countdowns Preview */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-brand">
-                    <Target className="size-4.5" />
+              <div className="grid grid-cols-2 gap-2.5 pt-0.5">
+                <div className="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-center">
+                  <span className="font-display text-lg sm:text-xl font-bold tabular-nums text-amber-900 block leading-tight">
+                    {daysToTarget}
                   </span>
-                  <div>
-                    <span className="font-display text-lg font-bold tabular-nums text-ink block leading-none">
-                      {daysToTarget}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                      {daysToTarget === 1 ? "DAY TO TARGET" : "DAYS TO TARGET"}
-                    </span>
-                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block mt-0.5">
+                    {daysToTarget === 1 ? "DAY TO TARGET" : "DAYS TO TARGET"}
+                  </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-200 flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-rose-100 text-rose-brand">
-                    <AlarmClockCheck className="size-4.5" />
+                <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200 text-center">
+                  <span className="font-display text-lg sm:text-xl font-bold tabular-nums text-rose-900 block leading-tight">
+                    {daysToExam}
                   </span>
-                  <div>
-                    <span className="font-display text-lg font-bold tabular-nums text-ink block leading-none">
-                      {daysToExam}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                      {daysToExam === 1 ? "DAY TO EXAM" : "DAYS TO EXAM"}
-                    </span>
-                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block mt-0.5">
+                    {daysToExam === 1 ? "DAY TO EXAM" : "DAYS TO EXAM"}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Final Action Button */}
-            <div className="space-y-3 pt-2">
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-1">
               <button
                 type="button"
                 disabled={pending}
                 onClick={handleFinish}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-leaf py-3.5 px-6 text-sm sm:text-base font-bold text-white shadow-lg shadow-leaf/30 hover:bg-leaf-deep transition active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-leaf py-3.5 px-6 text-sm sm:text-base font-bold text-white shadow-md shadow-leaf/25 hover:bg-leaf-deep transition active:scale-[0.99] disabled:opacity-60 cursor-pointer"
               >
                 {pending ? (
-                  <span>Saving Your Personalized Syllabus...</span>
+                  <span>Saving Your Setup...</span>
                 ) : (
                   <>
                     <span>Let&apos;s Start Learning</span>
@@ -944,7 +924,7 @@ export default function StudentOnboardingWizard({ initialData }: WizardProps) {
                   type="button"
                   disabled={pending}
                   onClick={() => setStep("target_date")}
-                  className="text-xs font-semibold text-ink-faint hover:text-ink transition"
+                  className="text-xs font-semibold text-ink-faint hover:text-ink transition py-1"
                 >
                   Edit Dates & Books
                 </button>
