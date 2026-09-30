@@ -207,78 +207,142 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
 
   // Clone selected books & all their chapters/topics into student's personal syllabus
   try {
-    // Clear any previous personal syllabus entries
+    // 1. Clear any previous personal syllabus entries
     await db.delete(topics).where(eq(topics.userId, sessionUser.id));
     await db.delete(lessons).where(eq(lessons.userId, sessionUser.id));
     await db.delete(subjects).where(eq(subjects.userId, sessionUser.id));
 
-    // Get master subjects matching bookIds
+    // 2. Get master subjects matching bookIds
     const masterSubs = await db
       .select()
       .from(subjects)
       .where(and(inArray(subjects.id, bookIds), isNull(subjects.userId)))
       .orderBy(subjects.sortOrder, subjects.id);
 
-    for (const mSub of masterSubs) {
-      const userSubSlug = `${mSub.slug}-${sessionUser.id}-${Date.now().toString(36)}`;
-      const [personalSub] = await db
+    if (masterSubs.length > 0) {
+      // Batch insert personal subjects
+      const newSubjectValues = masterSubs.map((mSub) => ({
+        batchId: sessionUser.batchId || mSub.batchId,
+        userId: sessionUser.id,
+        name: mSub.name,
+        slug: `${mSub.slug || "subject"}-${sessionUser.id}-${Date.now().toString(36)}`,
+        nameBn: mSub.nameBn,
+        sortOrder: mSub.sortOrder,
+        board: mSub.board,
+        classLevel: mSub.classLevel,
+        streamGroup: mSub.streamGroup,
+        subjectType: mSub.subjectType,
+        structureType: mSub.structureType,
+      }));
+
+      const insertedPersonalSubs = await db
         .insert(subjects)
-        .values({
-          batchId: sessionUser.batchId || mSub.batchId,
-          userId: sessionUser.id,
-          name: mSub.name,
-          slug: userSubSlug,
-          nameBn: mSub.nameBn,
-          sortOrder: mSub.sortOrder,
-          board: mSub.board,
-          classLevel: mSub.classLevel,
-          streamGroup: mSub.streamGroup,
-          subjectType: mSub.subjectType,
-          structureType: mSub.structureType,
-        })
+        .values(newSubjectValues)
         .returning();
 
-      // Get all master chapters/lessons for this subject
-      const masterChapters = await db
+      // Map master subject ID -> newly inserted personal subject ID
+      const masterToPersonalSubMap = new Map<number, number>();
+      for (let i = 0; i < masterSubs.length; i++) {
+        masterToPersonalSubMap.set(masterSubs[i].id, insertedPersonalSubs[i].id);
+      }
+
+      // 3. Fetch all master chapters for all selected books in ONE query
+      const masterSubIds = masterSubs.map((s) => s.id);
+      const allMasterChapters = await db
         .select()
         .from(lessons)
-        .where(and(eq(lessons.subjectId, mSub.id), isNull(lessons.userId)))
+        .where(and(inArray(lessons.subjectId, masterSubIds), isNull(lessons.userId)))
         .orderBy(lessons.sortOrder, lessons.id);
 
-      for (const mCh of masterChapters) {
-        const [personalLesson] = await db
-          .insert(lessons)
-          .values({
-            subjectId: personalSub.id,
-            userId: sessionUser.id,
-            name: mCh.name,
-            sortOrder: mCh.sortOrder,
+      if (allMasterChapters.length > 0) {
+        // Prepare batch of personal lessons
+        const newLessonValues = allMasterChapters
+          .map((mCh) => {
+            const personalSubId = masterToPersonalSubMap.get(mCh.subjectId);
+            if (!personalSubId) return null;
+            return {
+              masterChapterId: mCh.id,
+              subjectId: personalSubId,
+              userId: sessionUser.id,
+              name: mCh.name,
+              sortOrder: mCh.sortOrder,
+            };
           })
-          .returning();
+          .filter(Boolean) as Array<{
+            masterChapterId: number;
+            subjectId: number;
+            userId: number;
+            name: string;
+            sortOrder: number;
+          }>;
 
-        // Get topics for this chapter
-        const masterTops = await db
+        const lessonRowsToInsert = newLessonValues.map(
+          ({ masterChapterId, ...rest }) => rest
+        );
+
+        const insertedPersonalLessons =
+          lessonRowsToInsert.length > 0
+            ? await db.insert(lessons).values(lessonRowsToInsert).returning()
+            : [];
+
+        // Map master chapter ID -> newly inserted personal lesson ID
+        const masterToPersonalLessonMap = new Map<number, number>();
+        for (let i = 0; i < newLessonValues.length; i++) {
+          masterToPersonalLessonMap.set(
+            newLessonValues[i].masterChapterId,
+            insertedPersonalLessons[i].id
+          );
+        }
+
+        // 4. Fetch all master topics for all chapters in ONE query
+        const masterChapterIds = allMasterChapters.map((c) => c.id);
+        const allMasterTopics = await db
           .select()
           .from(topics)
-          .where(and(eq(topics.lessonId, mCh.id), isNull(topics.userId)))
+          .where(and(inArray(topics.lessonId, masterChapterIds), isNull(topics.userId)))
           .orderBy(topics.sortOrder, topics.id);
 
-        for (const mT of masterTops) {
-          await db.insert(topics).values({
-            subjectId: personalSub.id,
-            lessonId: personalLesson.id,
-            userId: sessionUser.id,
-            name: mT.name,
-            chapter: mCh.name,
-            notes: mT.notes,
-            sortOrder: mT.sortOrder,
-            status: "not_started",
-          });
+        if (allMasterTopics.length > 0) {
+          const newTopicValues = allMasterTopics
+            .map((mT) => {
+              if (!mT.lessonId) return null;
+              const personalLessonId = masterToPersonalLessonMap.get(mT.lessonId);
+              const personalSubId = masterToPersonalSubMap.get(mT.subjectId);
+              if (!personalLessonId || !personalSubId) return null;
+              return {
+                subjectId: personalSubId,
+                lessonId: personalLessonId,
+                userId: sessionUser.id,
+                name: mT.name,
+                chapter: mT.chapter,
+                notes: mT.notes,
+                sortOrder: mT.sortOrder,
+                status: "not_started" as const,
+              };
+            })
+            .filter(Boolean) as Array<{
+              subjectId: number;
+              lessonId: number;
+              userId: number;
+              name: string;
+              chapter: string | null;
+              notes: string | null;
+              sortOrder: number;
+              status: "not_started";
+            }>;
+
+          // Insert in chunks of 200 to stay well within SQL limits
+          const CHUNK_SIZE = 200;
+          for (let i = 0; i < newTopicValues.length; i += CHUNK_SIZE) {
+            const chunk = newTopicValues.slice(i, i + CHUNK_SIZE);
+            await db.insert(topics).values(chunk);
+          }
         }
       }
     }
   } catch (err) {
     console.error("Error setting up student syllabus:", err);
+    return { ok: false, error: "Failed to configure personal syllabus. Please try again." };
   }
 
   // Update session cookie

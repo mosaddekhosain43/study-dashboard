@@ -471,59 +471,117 @@ export async function restoreOfficialSyllabusAction() {
       );
     });
 
-    for (const mSub of relevantMasterSubs) {
-      const userSubSlug = `${mSub.slug}-${user.id}-${Date.now().toString(36)}`;
-      const [personalSub] = await db
+    if (relevantMasterSubs.length > 0) {
+      const newSubjectValues = relevantMasterSubs.map((mSub) => ({
+        batchId: user.batchId || mSub.batchId,
+        userId: user.id,
+        name: mSub.name,
+        slug: `${mSub.slug || "subject"}-${user.id}-${Date.now().toString(36)}`,
+        nameBn: mSub.nameBn,
+        sortOrder: mSub.sortOrder,
+        board: mSub.board,
+        classLevel: mSub.classLevel,
+        streamGroup: mSub.streamGroup,
+        subjectType: mSub.subjectType,
+        structureType: mSub.structureType,
+      }));
+
+      const insertedPersonalSubs = await db
         .insert(subjects)
-        .values({
-          batchId: user.batchId || mSub.batchId,
-          userId: user.id,
-          name: mSub.name,
-          slug: userSubSlug,
-          nameBn: mSub.nameBn,
-          sortOrder: mSub.sortOrder,
-          board: mSub.board,
-          classLevel: mSub.classLevel,
-          streamGroup: mSub.streamGroup,
-          subjectType: mSub.subjectType,
-          structureType: mSub.structureType,
-        })
+        .values(newSubjectValues)
         .returning();
 
-      const masterChapters = await db
+      const masterToPersonalSubMap = new Map<number, number>();
+      for (let i = 0; i < relevantMasterSubs.length; i++) {
+        masterToPersonalSubMap.set(relevantMasterSubs[i].id, insertedPersonalSubs[i].id);
+      }
+
+      const relevantSubIds = relevantMasterSubs.map((s) => s.id);
+      const allMasterChapters = await db
         .select()
         .from(lessons)
-        .where(and(eq(lessons.subjectId, mSub.id), isNull(lessons.userId)))
+        .where(and(inArray(lessons.subjectId, relevantSubIds), isNull(lessons.userId)))
         .orderBy(lessons.sortOrder, lessons.id);
 
-      for (const mCh of masterChapters) {
-        const [personalLesson] = await db
-          .insert(lessons)
-          .values({
-            subjectId: personalSub.id,
-            userId: user.id,
-            name: mCh.name,
-            sortOrder: mCh.sortOrder,
+      if (allMasterChapters.length > 0) {
+        const newLessonValues = allMasterChapters
+          .map((mCh) => {
+            const personalSubId = masterToPersonalSubMap.get(mCh.subjectId);
+            if (!personalSubId) return null;
+            return {
+              masterChapterId: mCh.id,
+              subjectId: personalSubId,
+              userId: user.id,
+              name: mCh.name,
+              sortOrder: mCh.sortOrder,
+            };
           })
-          .returning();
+          .filter(Boolean) as Array<{
+            masterChapterId: number;
+            subjectId: number;
+            userId: number;
+            name: string;
+            sortOrder: number;
+          }>;
 
-        const masterTopicRows = await db
+        const lessonRowsToInsert = newLessonValues.map(
+          ({ masterChapterId, ...rest }) => rest
+        );
+
+        const insertedPersonalLessons =
+          lessonRowsToInsert.length > 0
+            ? await db.insert(lessons).values(lessonRowsToInsert).returning()
+            : [];
+
+        const masterToPersonalLessonMap = new Map<number, number>();
+        for (let i = 0; i < newLessonValues.length; i++) {
+          masterToPersonalLessonMap.set(
+            newLessonValues[i].masterChapterId,
+            insertedPersonalLessons[i].id
+          );
+        }
+
+        const masterChapterIds = allMasterChapters.map((c) => c.id);
+        const allMasterTopics = await db
           .select()
           .from(topics)
-          .where(and(eq(topics.lessonId, mCh.id), isNull(topics.userId)))
+          .where(and(inArray(topics.lessonId, masterChapterIds), isNull(topics.userId)))
           .orderBy(topics.sortOrder, topics.id);
 
-        for (const mT of masterTopicRows) {
-          await db.insert(topics).values({
-            subjectId: personalSub.id,
-            lessonId: personalLesson.id,
-            userId: user.id,
-            name: mT.name,
-            chapter: mT.chapter,
-            notes: mT.notes,
-            sortOrder: mT.sortOrder,
-            status: "not_started",
-          });
+        if (allMasterTopics.length > 0) {
+          const newTopicValues = allMasterTopics
+            .map((mT) => {
+              if (!mT.lessonId) return null;
+              const personalLessonId = masterToPersonalLessonMap.get(mT.lessonId);
+              const personalSubId = masterToPersonalSubMap.get(mT.subjectId);
+              if (!personalLessonId || !personalSubId) return null;
+              return {
+                subjectId: personalSubId,
+                lessonId: personalLessonId,
+                userId: user.id,
+                name: mT.name,
+                chapter: mT.chapter,
+                notes: mT.notes,
+                sortOrder: mT.sortOrder,
+                status: "not_started" as const,
+              };
+            })
+            .filter(Boolean) as Array<{
+              subjectId: number;
+              lessonId: number;
+              userId: number;
+              name: string;
+              chapter: string | null;
+              notes: string | null;
+              sortOrder: number;
+              status: "not_started";
+            }>;
+
+          const CHUNK_SIZE = 200;
+          for (let i = 0; i < newTopicValues.length; i += CHUNK_SIZE) {
+            const chunk = newTopicValues.slice(i, i + CHUNK_SIZE);
+            await db.insert(topics).values(chunk);
+          }
         }
       }
     }

@@ -293,23 +293,26 @@ export default function StudentOnboardingWizard({
   const handleSkip = () => {
     setError(null);
     startTransition(async () => {
-      const res = await completeOnboardingAction({
-        streamGroup: selectedGroup,
-        bookIds: chosenBooks.map((b) => b.id),
-        examDate,
-        targetStartDate,
-        targetDate,
-        skip: true,
-      });
-      if (res.ok) {
-        if (onSuccess) {
-          onSuccess();
+      try {
+        const res = await completeOnboardingAction({
+          streamGroup: selectedGroup,
+          bookIds: chosenBooks.map((b) => b.id),
+          examDate,
+          targetStartDate,
+          targetDate,
+          skip: true,
+        });
+        if (res.ok) {
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            window.location.href = skipRedirectUrl || res.redirectUrl || "/";
+          }
         } else {
-          router.push(skipRedirectUrl || res.redirectUrl || "/");
-          router.refresh();
+          setError(res.error || "Failed to skip onboarding.");
         }
-      } else {
-        setError(res.error || "Failed to skip onboarding.");
+      } catch (err: any) {
+        setError(err?.message || "Failed to skip onboarding. Please try again.");
       }
     });
   };
@@ -327,23 +330,26 @@ export default function StudentOnboardingWizard({
     }
 
     startTransition(async () => {
-      const res = await completeOnboardingAction({
-        streamGroup: selectedGroup,
-        bookIds: chosenBooks.map((b) => b.id),
-        examDate,
-        targetStartDate,
-        targetDate,
-        skip: false,
-      });
-      if (res.ok) {
-        if (onSuccess) {
-          onSuccess();
+      try {
+        const res = await completeOnboardingAction({
+          streamGroup: selectedGroup,
+          bookIds: chosenBooks.map((b) => b.id),
+          examDate,
+          targetStartDate,
+          targetDate,
+          skip: false,
+        });
+        if (res.ok) {
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            window.location.href = res.redirectUrl || "/";
+          }
         } else {
-          router.push(res.redirectUrl || "/");
-          router.refresh();
+          setError(res.error || "Failed to save onboarding setup.");
         }
-      } else {
-        setError(res.error || "Failed to save onboarding setup.");
+      } catch (err: any) {
+        setError(err?.message || "Failed to save onboarding setup. Please try again.");
       }
     });
   };
