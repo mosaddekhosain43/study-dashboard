@@ -70,6 +70,7 @@ export async function getAdminDataAction() {
         id: s.id,
         name: s.name,
         email: s.email,
+        phone: s.phone || null,
         batchName: batch?.name || "No Batch",
         totalTopics,
         completedTopics,

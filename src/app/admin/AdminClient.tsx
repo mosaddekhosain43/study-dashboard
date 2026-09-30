@@ -42,6 +42,7 @@ interface Student {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
   batchName: string;
   totalTopics: number;
   completedTopics: number;
@@ -467,7 +468,10 @@ export default function AdminClient({ initialData }: Props) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-sm text-ink truncate">{s.name}</h3>
-                      <p className="text-xs text-ink-faint font-mono truncate">{s.email}</p>
+                      <p className="text-xs text-ink-faint font-mono truncate">
+                        {s.email}
+                        {s.phone ? ` • ${s.phone}` : ""}
+                      </p>
                     </div>
                     <button
                       onClick={() => handleDeleteUser(s.id, "student")}
@@ -528,7 +532,10 @@ export default function AdminClient({ initialData }: Props) {
                     <tr key={s.id} className="hover:bg-paper/30 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-semibold text-ink">{s.name}</div>
-                        <div className="text-[11px] text-ink-faint font-mono">{s.email}</div>
+                        <div className="text-[11px] text-ink-faint font-mono">
+                          {s.email}
+                          {s.phone ? ` • ${s.phone}` : ""}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="rounded-md bg-paper px-2.5 py-1 text-xs font-semibold text-ink-soft border border-line">

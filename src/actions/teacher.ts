@@ -93,6 +93,7 @@ export async function getTeacherDashboardData() {
           id: student.id,
           name: student.name,
           email: student.email,
+          phone: student.phone || null,
           totalTopics,
           completedTopics,
           inProgressTopics,

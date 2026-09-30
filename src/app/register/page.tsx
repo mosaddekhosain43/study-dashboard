@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Lock,
   Mail,
+  Phone,
   User,
   UserPlus,
 } from "lucide-react";
@@ -77,7 +78,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                Full Name
+                Full Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
@@ -93,7 +94,23 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                Email Address
+                Phone Number <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  placeholder="e.g. 017XXXXXXXX"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                Email Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
@@ -109,7 +126,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                Select Your Batch
+                Select Your Batch <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <GraduationCap className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />
@@ -130,7 +147,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                Password
+                Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" />

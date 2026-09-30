@@ -30,6 +30,7 @@ export const users = pgTable(
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
+    phone: text("phone"),
     passwordHash: text("password_hash").notNull(),
     role: text("role").notNull().default("student"), // 'admin' | 'teacher' | 'student'
     batchId: integer("batch_id").references(() => batches.id, {

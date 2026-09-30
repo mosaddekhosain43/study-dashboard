@@ -61,13 +61,20 @@ export async function loginAction(formData: FormData) {
 
 export async function registerStudentAction(formData: FormData) {
   const name = (formData.get("name") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
   const batchIdRaw = formData.get("batchId") as string;
   const batchId = batchIdRaw ? parseInt(batchIdRaw, 10) : null;
 
-  if (!name || !email || !password) {
-    return { ok: false, error: "Please fill in all required fields." };
+  if (!name || !phone || !email || !password || !batchId) {
+    return {
+      ok: false,
+      error: "Please fill in all required fields (Name, Phone Number, Email, Batch, and Password).",
+    };
+  }
+  if (phone.length < 10) {
+    return { ok: false, error: "Please provide a valid phone number (e.g. 01XXXXXXXXX)." };
   }
   if (password.length < 6) {
     return { ok: false, error: "Password must be at least 6 characters long." };
@@ -87,6 +94,7 @@ export async function registerStudentAction(formData: FormData) {
     .insert(users)
     .values({
       name,
+      phone,
       email,
       passwordHash,
       role,

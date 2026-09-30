@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
+  phone TEXT,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'student',
   batch_id INTEGER REFERENCES batches(id) ON DELETE SET NULL,
@@ -159,6 +160,7 @@ export async function runInitAndSeed(
         "ALTER TABLE subjects ADD COLUMN IF NOT EXISTS batch_id INTEGER REFERENCES batches(id) ON DELETE CASCADE;"
       );
       await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS board TEXT;");
+      await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;");
       await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS class_level TEXT;");
       await rawExec("ALTER TABLE users ADD COLUMN IF NOT EXISTS stream_group TEXT;");
       await rawExec("ALTER TABLE subjects ADD COLUMN IF NOT EXISTS board TEXT;");

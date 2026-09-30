@@ -28,6 +28,7 @@ interface Student {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
   totalTopics: number;
   completedTopics: number;
   inProgressTopics: number;
@@ -297,7 +298,10 @@ export default function TeacherDashboardClient({ initialData, user }: Props) {
                       <tr key={student.id} className="hover:bg-paper/30 transition">
                         <td className="px-5 py-3.5">
                           <div className="font-semibold text-ink">{student.name}</div>
-                          <div className="text-[11px] text-ink-faint">{student.email}</div>
+                          <div className="text-[11px] text-ink-faint">
+                            {student.email}
+                            {student.phone ? ` • ${student.phone}` : ""}
+                          </div>
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
