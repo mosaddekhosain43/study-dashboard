@@ -2524,7 +2524,421 @@ export const NCTB_CURRICULUM_DATA: NCTBSubjectDef[] = [
     streamGroup: "all",
     subjectType: "compulsory",
     structureType: "chapter",
-    chaptersOrModules: [],
+    chaptersOrModules: [
+      {
+        name: "Seen Comprehension",
+        topics: [
+          {
+            name: "Passage 1: Once upon a time...",
+            notes: "Once upon a time ...... In cushioned comfort.",
+          },
+          {
+            name: "Passage 2: Artificial intelligence...",
+            notes: "Artificial intelligence ..... assist them in their work.",
+          },
+          {
+            name: "Passage 3: When she saw the gate...",
+            notes: "When she saw the gate ...... hold of Mother's hand.",
+          },
+          {
+            name: "Passage 4: When Mother and Totto-chan...",
+            notes: "When Mother and Totto-chan ...... to think of something.",
+          },
+          {
+            name: "Passage 5: Education aims to bring...",
+            notes: "Education aims to bring ....... considered volunteerism.",
+          },
+          {
+            name: "Passage 6: Folk music consists...",
+            notes: "Folk music consists ...... firming rooftops.",
+          },
+          {
+            name: "Passage 7: Art is generally understood...",
+            notes: "Art is generally understood ...... In human thought.",
+          },
+          {
+            name: "Passage 8: According to some...",
+            notes: "According to some ...... British Museum.",
+          },
+          {
+            name: "Passage 9: Jodi borshe magher...",
+            notes: "Jodi borshe magher ....... benefit the people of the land.",
+          },
+          {
+            name: "Passage 10: I have a dream today...",
+            notes:
+              "I have a dream today. I ....... are free at last!\" (abridged)",
+          },
+          {
+            name: "Passage 11: In 1921, Leela Nag...",
+            notes: "In 1921, Leela Nag (also ...... activism in them as well.",
+          },
+          {
+            name: "Passage 12: Marie Curie nee Maria...",
+            notes: "Marie Curie nee Maria ...... directed by Pierre Curie.",
+          },
+          {
+            name: "Passage 13: Dreams have fascinated...",
+            notes: "Dreams have fascinated ...... safe environment.",
+          },
+          {
+            name: "Passage 14: Nishat Mazumder...",
+            notes: "Nishat Mazumder, a ...... of conquering mountains.",
+          },
+          {
+            name: "Passage 15: The success of...",
+            notes: "The success of ....... professional footballers.",
+          },
+          {
+            name: "Passage 16: The famous Greek philosopher...",
+            notes: "The famous Greek philosopher ...... misery and loss to all.",
+          },
+          {
+            name: "Passage 17: Jerry began to...",
+            notes: "Jerry began to ...... without subterfuge.",
+          },
+          {
+            name: "Passage 18: His name was Jerry...",
+            notes: "His name was Jerry ...... afternoon, anxious.",
+          },
+          {
+            name: "Passage 19: He came every day and...",
+            notes: "He came every day and ...... mother. He has no skates.",
+          },
+          {
+            name: "Passage 20: Children must pass...",
+            notes: "Children must pass ...... powerful influences.",
+          },
+          {
+            name: "Passage 21: Adolescents constitute a...",
+            notes:
+              "Adolescents constitute a ...... adolescence and young adulthood.",
+          },
+          {
+            name: "Passage 22: When a girl gets married...",
+            notes: "When a girl gets married, she ...... drugs and alcohol.",
+          },
+          {
+            name: "Passage 23: Shilpi was only 15 years...",
+            notes: "Shilpi was only 15 years ...... marriage and pregnancy.",
+          },
+          {
+            name: "Passage 24: Many children start bullying...",
+            notes: "Many children start bullying ...... behaviors in a group.",
+          },
+          {
+            name: "Passage 25: We spend money for...",
+            notes: "We spend money for ...... but 'Can I do without it?'",
+          },
+          {
+            name: "Passage 26: Water, water, everywhere...",
+            notes: "Water, water, everywhere ...... and find it nowhere.",
+          },
+          {
+            name: "Passage 27: Greta Thunberg is...",
+            notes: "Greta Thunberg is ...... millions of African Americans.",
+          },
+          {
+            name: "Passage 28: When an explosion...",
+            notes: "When an explosion ...... disadvantage vulnerable groups.",
+          },
+        ],
+      },
+      {
+        name: "Writing Paragraph",
+        topics: [
+          {
+            name: "1. Anti-discrimination Students Movement",
+            notes: "Paragraph: Anti-discrimination Students Movement",
+          },
+          {
+            name: "2. The July Revolution",
+            notes: "Paragraph: The July Revolution",
+          },
+          {
+            name: "3. Facebook",
+            notes: "Paragraph: Facebook",
+          },
+          {
+            name: "4. Our Madrasah Library",
+            notes: "Paragraph: Our Madrasah Library",
+          },
+          {
+            name: "5. A Book Fair",
+            notes:
+              "Paragraph: A Book Fair / Experience of visiting a Book Fair",
+          },
+          {
+            name: "6. Traffic Jam",
+            notes: "Paragraph: Traffic Jam",
+          },
+          {
+            name: "7. Importance of Reading Newspaper",
+            notes: "Paragraph: Importance of Reading Newspaper / Newspaper",
+          },
+          {
+            name: "8. Self-employment",
+            notes: "Paragraph: Self-employment",
+          },
+          {
+            name: "9. Environment Pollution",
+            notes: "Paragraph: Environment Pollution",
+          },
+          {
+            name: "10. The Curse of Dowry",
+            notes: "Paragraph: The Curse of Dowry",
+          },
+          {
+            name: "11. Eve-Teasing",
+            notes: "Paragraph: Eve-Teasing",
+          },
+          {
+            name: "12. Load Shedding",
+            notes: "Paragraph: Load Shedding",
+          },
+          {
+            name: "13. 21 February / International Mother Language Day",
+            notes:
+              "Paragraph: 21 February / International Mother Language Day",
+          },
+          {
+            name: "14. Drug Addiction",
+            notes: "Paragraph: Drug Addiction",
+          },
+          {
+            name: "15. Global Warming",
+            notes: "Paragraph: Global Warming",
+          },
+          {
+            name: "16. A Winter Morning",
+            notes: "Paragraph: A Winter Morning",
+          },
+        ],
+      },
+      {
+        name: "Completing Story",
+        topics: [
+          {
+            name: "1. A Greedy Farmer",
+            notes:
+              "Story: A Greedy Farmer and the Goose that laid golden eggs",
+          },
+          {
+            name: "2. A Thirsty Crow",
+            notes: "Story: A Thirsty Crow and the Pitcher of Water",
+          },
+          {
+            name: "3. An Honest Woodcutter and The Beautiful Fairy",
+            notes:
+              "Story: An Honest Woodcutter and The Beautiful Fairy (Honesty is the best policy)",
+          },
+          {
+            name: "4. Outward Appearance is not all",
+            notes:
+              "Story: Outward Appearance is not all / Dress does not make a man great (Sheikh Saadi)",
+          },
+          {
+            name: "5. Unity Is Strength",
+            notes: "Story: Unity Is Strength (The Old Man and His Sons)",
+          },
+          {
+            name: "6. A Liar Shepherd",
+            notes:
+              "Story: A Liar Shepherd / Nobody believes a liar (Wolf! Wolf!)",
+          },
+          {
+            name: "7. Happiness Lies in Contentment",
+            notes:
+              "Story: Happiness Lies in Contentment (A Cobbler and a Banker)",
+          },
+          {
+            name: "8. The Foolish Crow & A Sly Jackal",
+            notes: "Story: The Foolish Crow & A Sly Jackal / Fox",
+          },
+          {
+            name: "9. An Ant and A Dove",
+            notes: "Story: An Ant and A Dove",
+          },
+          {
+            name: "10. The Frog and The Naughty Boys",
+            notes: "Story: The frog and the naughty boys",
+          },
+          {
+            name: "11. The Reward of an Honest Girl/Boy",
+            notes: "Story: The reward of an honest girl/boy",
+          },
+          {
+            name: "12. To Rescue a Drowning Boy",
+            notes: "Story: To Rescue a Drowning Boy",
+          },
+        ],
+      },
+      {
+        name: "Informal Letters",
+        topics: [
+          {
+            name: "1. Feelings after travelling by Metro Rail",
+            notes:
+              "Write a letter to your friend expressing your feelings and experiences after travelling by Metro Rail.",
+          },
+          {
+            name: "2. Advising not to share fake news on social media",
+            notes:
+              "Write a letter to your younger brother/sister advising him/her not to share fake or baseless news on his/her social media account.",
+          },
+          {
+            name: "3. Narrating the scenic beauty of the Sundarbans",
+            notes:
+              "Write a letter to your friend narrating the scenic beauty of the Sundarbans.",
+          },
+          {
+            name: "4. Future plan after Alim Examination",
+            notes:
+              "Write a letter to your friend about your plan after the Alim Examination.",
+          },
+          {
+            name: "5. Inviting friend to join a picnic",
+            notes:
+              "Write a letter to your intimate friend inviting him to join a picnic.",
+          },
+          {
+            name: "6. Inviting friend to enjoy a picnic",
+            notes:
+              "Write a letter to your best friend inviting him to join and enjoy a picnic.",
+          },
+          {
+            name: "7. Benefits of reading newspaper",
+            notes:
+              "Write a letter to your friend telling him/her about the benefits of reading newspaper daily.",
+          },
+          {
+            name: "8. Advising to give up smoking",
+            notes:
+              "Write a letter to your friend advising him to give up smoking habit.",
+          },
+          {
+            name: "9. Importance of communicative English",
+            notes:
+              "Write a letter to your friend telling him about the importance of learning communicative English.",
+          },
+        ],
+      },
+      {
+        name: "E-Mails",
+        topics: [
+          {
+            name: "1. Advising to take part in games and sports",
+            notes:
+              "Write an e-mail to your younger brother advising him to take part in games and sports regularly.",
+          },
+          {
+            name: "2. Congratulating on winning first prize in debate",
+            notes:
+              "Write an e-mail to your friend congratulating him on winning the first prize in a debate competition.",
+          },
+          {
+            name: "3. Inviting friend to go for a picnic",
+            notes:
+              "Write an e-mail to your friend inviting her to go for a picnic with you.",
+          },
+          {
+            name: "4. Benefits of reading newspapers daily",
+            notes:
+              "Write an e-mail to your younger brother narrating the benefits of reading newspapers daily.",
+          },
+          {
+            name: "5. Advising to study seriously for examination",
+            notes:
+              "Write an e-mail to your younger brother advising him to study seriously to be well prepared for the ensuing examination.",
+          },
+          {
+            name: "6. Introducing Bangladesh to a pen friend",
+            notes:
+              "Write an e-mail to your pen friend in Japan introducing our beautiful country Bangladesh.",
+          },
+          {
+            name: "7. Relieving mother's tension about exam preparation",
+            notes:
+              "Reply to an e-mail from your mother who is worried about your preparation for the upcoming examination to relieve her of her tension.",
+          },
+        ],
+      },
+      {
+        name: "Appreciating Short Stories",
+        topics: [
+          {
+            name: "1. There were two brothers in a village",
+            notes:
+              "Theme / Appreciation: There were two brothers in a village",
+          },
+          {
+            name: "2. Once upon a time, there was a hungry fox",
+            notes:
+              "Theme / Appreciation: Once upon a time, there was a hungry fox",
+          },
+          {
+            name: "3. One day, a monkey threw a stone at an elephant",
+            notes:
+              "Theme / Appreciation: One day, a monkey threw a stone at an elephant",
+          },
+          {
+            name: "4. Once upon a time a fox fell into a well",
+            notes:
+              "Theme / Appreciation: Once upon a time a fox fell into a well",
+          },
+          {
+            name: "5. A frog, while out walking one day",
+            notes:
+              "Theme / Appreciation: A frog, while out walking one day",
+          },
+          {
+            name: "6. Rosamond, a little girl about seven years old",
+            notes:
+              "Theme / Appreciation: Rosamond, a little girl about seven years old (The Purple Jar)",
+          },
+        ],
+      },
+      {
+        name: "Appreciating Poems",
+        topics: [
+          {
+            name: "1. The Lake Isle of Innisfree",
+            notes:
+              "Theme / Appreciation: I will arise and go now, and go to Innisfree (W.B. Yeats)",
+          },
+          {
+            name: "2. I died for beauty",
+            notes:
+              "Theme / Appreciation: I died for beauty, but was scarce (Emily Dickinson)",
+          },
+          {
+            name: "3. Dreams",
+            notes:
+              "Theme / Appreciation: Hold fast to dreams (Langston Hughes)",
+          },
+          {
+            name: "4. Time, you old gipsyman",
+            notes:
+              "Theme / Appreciation: TIME, you old gipsyman (Ralph Hodgson)",
+          },
+          {
+            name: "5. Blow, blow, thou winter wind",
+            notes:
+              "Theme / Appreciation: Blow, blow, thou winter wind (William Shakespeare)",
+          },
+          {
+            name: "6. Under the greenwood tree",
+            notes:
+              "Theme / Appreciation: UNDER the greenwood tree (William Shakespeare)",
+          },
+          {
+            name: "7. Water, water, everywhere",
+            notes:
+              "Theme / Appreciation: Water, water, everywhere, nor any drop to drink (S.T. Coleridge)",
+          },
+        ],
+      },
+    ],
   },
   {
     name: "English 2nd Paper",
