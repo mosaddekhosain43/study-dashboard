@@ -12,7 +12,10 @@ interface AppShellProps {
 
 export default function AppShell({ subjects, user, children }: AppShellProps) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage =
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
 
   if (isAuthPage) {
     return (
