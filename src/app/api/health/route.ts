@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await initializeDb();
+    await initializeDb(true);
 
     const topRes = await db.execute(sql`SELECT count(*) as count FROM topics`);
     const subRes = await db.execute(sql`SELECT count(*) as count FROM subjects`);
