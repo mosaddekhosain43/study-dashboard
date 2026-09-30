@@ -341,14 +341,24 @@ export async function runInitAndSeed(
           const lessonId = lessonRes.rows?.[0]?.id || lessonRes[0]?.id;
           if (!lessonId) continue;
 
-          for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
-            const topicItem = ch.topics[tIdx];
-            const topicName = typeof topicItem === "string" ? topicItem : topicItem.name;
-            const topicNotes = typeof topicItem === "string" ? null : topicItem.notes || null;
+          if (ch.topics.length > 0) {
+            const placeholders: string[] = [];
+            const values: any[] = [];
+            let pIdx = 1;
+            for (let tIdx = 0; tIdx < ch.topics.length; tIdx++) {
+              const topicItem = ch.topics[tIdx];
+              const topicName = typeof topicItem === "string" ? topicItem : topicItem.name;
+              const topicNotes = typeof topicItem === "string" ? null : topicItem.notes || null;
+              placeholders.push(
+                `($${pIdx}, $${pIdx + 1}, NULL, $${pIdx + 2}, $${pIdx + 3}, $${pIdx + 4}, $${pIdx + 5}, 'not_started')`
+              );
+              values.push(subId, lessonId, topicName, ch.name, topicNotes, tIdx + 1);
+              pIdx += 6;
+            }
             await rawQuery(
               `INSERT INTO topics (subject_id, lesson_id, user_id, name, chapter, notes, sort_order, status)
-               VALUES ($1, $2, NULL, $3, $4, $5, $6, 'not_started')`,
-              [subId, lessonId, topicName, ch.name, topicNotes, tIdx + 1]
+               VALUES ${placeholders.join(", ")}`,
+              values
             );
           }
         }
