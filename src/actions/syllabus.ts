@@ -2,7 +2,7 @@
 
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db, initializeDb } from "@/db";
+import { db, initializeDb, rawExecFn } from "@/db";
 import { batches, lessons, settings, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
@@ -211,6 +211,23 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
   }
 
   try {
+    // Drop any legacy UNIQUE constraints on subjects before inserting personal records
+    try {
+      await rawExecFn(`
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_name_key;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_slug_key;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_name_unique;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_slug_unique;
+      `);
+    } catch {
+      // ignore
+    }
+
+    // Verify valid batch IDs to avoid foreign key errors
+    const batchRows = await db.select({ id: batches.id }).from(batches);
+    const validBatchIds = new Set(batchRows.map((b) => b.id));
+    const fallbackBatchId = batchRows[0]?.id || null;
+
     // Clear old personal syllabus so the student's fresh selection takes effect
     await db.delete(topics).where(eq(topics.userId, user.id));
     await db.delete(lessons).where(eq(lessons.userId, user.id));
@@ -227,12 +244,19 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
       const mSub = masterSubRows[0];
       if (!mSub) continue;
 
+      const targetBatchId =
+        batchId && validBatchIds.has(batchId)
+          ? batchId
+          : mSub.batchId && validBatchIds.has(mSub.batchId)
+          ? mSub.batchId
+          : fallbackBatchId;
+
       // Clone subject for student
-      const userSubSlug = `${mSub.slug}-${user.id}-${Date.now().toString(36)}`;
+      const userSubSlug = `${mSub.slug}-${user.id}-m${mSub.id}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
       const [personalSub] = await db
         .insert(subjects)
         .values({
-          batchId: batchId || mSub.batchId,
+          batchId: targetBatchId,
           userId: user.id,
           name: mSub.name,
           slug: userSubSlug,

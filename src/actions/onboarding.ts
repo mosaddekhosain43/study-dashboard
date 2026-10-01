@@ -2,7 +2,7 @@
 
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db, initializeDb } from "@/db";
+import { db, initializeDb, rawExecFn } from "@/db";
 import { batches, lessons, settings, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser, setSessionCookie } from "@/lib/auth";
 import {
@@ -203,6 +203,18 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
       safeUpsertSetting(SETTING_TARGET_START_DATE, targetStartDate),
     ]);
 
+    // Drop any legacy UNIQUE constraints on subjects before inserting personal records
+    try {
+      await rawExecFn(`
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_name_key;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_slug_key;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_name_unique;
+        ALTER TABLE subjects DROP CONSTRAINT IF EXISTS subjects_slug_unique;
+      `);
+    } catch {
+      // ignore
+    }
+
     // 1. Clear any previous personal syllabus entries
     await db.delete(topics).where(eq(topics.userId, sessionUser.id));
     await db.delete(lessons).where(eq(lessons.userId, sessionUser.id));
@@ -216,20 +228,36 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
       .orderBy(subjects.sortOrder, subjects.id);
 
     if (masterSubs.length > 0) {
-      // Batch insert personal subjects
-      const newSubjectValues = masterSubs.map((mSub) => ({
-        batchId: sessionUser.batchId || mSub.batchId,
-        userId: sessionUser.id,
-        name: mSub.name,
-        slug: `${mSub.slug || "subject"}-${sessionUser.id}-${Date.now().toString(36)}`,
-        nameBn: mSub.nameBn,
-        sortOrder: mSub.sortOrder,
-        board: mSub.board,
-        classLevel: mSub.classLevel,
-        streamGroup: mSub.streamGroup,
-        subjectType: mSub.subjectType,
-        structureType: mSub.structureType,
-      }));
+      // Verify valid batch IDs to avoid foreign key errors
+      const batchRows = await db.select({ id: batches.id }).from(batches);
+      const validBatchIds = new Set(batchRows.map((b) => b.id));
+      const fallbackBatchId = batchRows[0]?.id || null;
+
+      // Batch insert personal subjects with guaranteed unique slug
+      const newSubjectValues = masterSubs.map((mSub) => {
+        const targetBatchId =
+          sessionUser.batchId && validBatchIds.has(sessionUser.batchId)
+            ? sessionUser.batchId
+            : mSub.batchId && validBatchIds.has(mSub.batchId)
+            ? mSub.batchId
+            : fallbackBatchId;
+
+        const uniqueSlug = `${mSub.slug || "subject"}-u${sessionUser.id}-m${mSub.id}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+
+        return {
+          batchId: targetBatchId,
+          userId: sessionUser.id,
+          name: mSub.name,
+          slug: uniqueSlug,
+          nameBn: mSub.nameBn,
+          sortOrder: mSub.sortOrder,
+          board: mSub.board,
+          classLevel: mSub.classLevel,
+          streamGroup: mSub.streamGroup,
+          subjectType: mSub.subjectType,
+          structureType: mSub.structureType,
+        };
+      });
 
       const insertedPersonalSubs = await db
         .insert(subjects)
@@ -238,8 +266,18 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
 
       // Map master subject ID -> newly inserted personal subject ID
       const masterToPersonalSubMap = new Map<number, number>();
-      for (let i = 0; i < masterSubs.length; i++) {
-        masterToPersonalSubMap.set(masterSubs[i].id, insertedPersonalSubs[i].id);
+      for (const pSub of insertedPersonalSubs) {
+        const match = pSub.slug.match(/-m(\d+)-/);
+        if (match) {
+          masterToPersonalSubMap.set(parseInt(match[1], 10), pSub.id);
+        }
+      }
+      if (masterToPersonalSubMap.size !== masterSubs.length) {
+        for (let i = 0; i < masterSubs.length; i++) {
+          if (insertedPersonalSubs[i]) {
+            masterToPersonalSubMap.set(masterSubs[i].id, insertedPersonalSubs[i].id);
+          }
+        }
       }
 
       // 3. Fetch all master chapters for all selected books in ONE query
@@ -358,9 +396,13 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
     return { ok: true, redirectUrl: "/" };
   } catch (err: any) {
     console.error("Error in completeOnboardingAction:", err);
+    const rawMsg = err?.message || String(err);
+    const cleanError = rawMsg.includes("Failed query")
+      ? "Database setup error: Please retry. If the problem persists, contact admin."
+      : rawMsg;
     return {
       ok: false,
-      error: err?.message || "Failed to configure personal syllabus. Please try again.",
+      error: cleanError,
     };
   }
 }

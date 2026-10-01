@@ -195,6 +195,54 @@ export async function runInitAndSeed(
       } catch {
         // ignore if duplicates exist
       }
+
+      // Drop all legacy UNIQUE constraints and indexes on subjects table
+      // In early versions, subjects.name and subjects.slug were UNIQUE.
+      // Since subjects can now belong to individual students (user_id), they must not be globally unique.
+      try {
+        const conRes = await rawQuery(`
+          SELECT conname 
+          FROM pg_constraint 
+          WHERE conrelid = 'subjects'::regclass 
+            AND contype = 'u'
+        `);
+        const conRows = conRes.rows || conRes || [];
+        for (const r of conRows) {
+          if (r.conname) {
+            try {
+              await rawExec(`ALTER TABLE subjects DROP CONSTRAINT IF EXISTS "${r.conname}";`);
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      const legacyConstraints = [
+        "subjects_name_key",
+        "subjects_slug_key",
+        "subjects_name_unique",
+        "subjects_slug_unique",
+      ];
+      for (const c of legacyConstraints) {
+        try {
+          await rawExec(`ALTER TABLE subjects DROP CONSTRAINT IF EXISTS "${c}";`);
+        } catch {}
+      }
+
+      const legacyIndexes = [
+        "subjects_name_key",
+        "subjects_slug_key",
+        "subjects_name_idx",
+        "subjects_slug_idx",
+      ];
+      for (const idx of legacyIndexes) {
+        try {
+          await rawExec(`DROP INDEX IF EXISTS "${idx}";`);
+        } catch {}
+      }
     } catch {
       // ignore
     }
