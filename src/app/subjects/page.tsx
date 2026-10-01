@@ -62,7 +62,7 @@ export default async function SubjectsPage() {
               <p className="font-bengali text-[11px] text-ink-faint">{s.subject.nameBn}</p>
             </div>
             <div className="min-w-[160px] flex-1">
-              <div className="mb-1 flex justify-between text-[10.5px] font-semibold tabular-nums text-ink-faint">
+              <div className="mb-1 flex justify-between text-[11px] font-semibold tabular-nums text-ink-faint">
                 <span>{s.total === 0 ? "no topics yet" : `${s.completed}/${s.total} topics`}</span>
                 <span>{Math.round(s.progress * 100)}%</span>
               </div>

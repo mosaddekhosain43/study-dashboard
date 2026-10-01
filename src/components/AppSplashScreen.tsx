@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { BookOpenCheck } from "lucide-react";
 
 export default function AppSplashScreen() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !sessionStorage.getItem("alim_study_splash_seen");
+    }
+    return false;
+  });
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export default function AppSplashScreen() {
         {/* Logo Icon with subtle breathing scale */}
         <div className="relative mb-4">
           <div className="absolute inset-0 rounded-2xl bg-emerald-400/25 blur-xl animate-pulse" />
-          <div className="relative grid size-16 sm:size-20 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800 text-white shadow-2xl shadow-emerald-950/60 ring-1 ring-emerald-300/30 transition-transform duration-700 hover:scale-105">
+          <div className="relative grid size-16 sm:size-20 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800 text-white shadow-2xl shadow-emerald-950/60 ring-1 ring-emerald-300/30 transition-transform duration-700">
             <BookOpenCheck className="size-8 sm:size-10 stroke-[2.2] animate-bounce-subtle" />
           </div>
         </div>

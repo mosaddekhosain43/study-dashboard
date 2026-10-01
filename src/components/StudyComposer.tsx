@@ -184,7 +184,7 @@ export default function StudyComposer({
           }}
           rows={3}
           placeholder="Write what you studied today, e.g. Finished Arabic 2nd Paper and still reading English Grammar..."
-          className="w-full resize-y rounded-xl border border-line bg-paper/60 px-4 py-3 text-[15px] leading-relaxed text-ink placeholder:text-ink-faint/70 focus:border-leaf focus:bg-white focus:outline-none"
+          className="w-full resize-y rounded-xl border border-line bg-paper/60 px-4 py-3 text-[15px] leading-relaxed text-ink placeholder:text-ink-faint/70 focus:border-leaf focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
         />
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -196,7 +196,7 @@ export default function StudyComposer({
                 setText(ex);
                 areaRef.current?.focus();
               }}
-              className="font-bengali rounded-full border border-line bg-white px-2.5 py-1 text-[11.5px] text-ink-soft transition hover:border-leaf hover:text-leaf"
+              className="font-bengali rounded-full border border-line bg-white px-2.5 py-1 text-xs text-ink-soft transition hover:border-leaf hover:text-leaf"
             >
               {ex.length > 34 ? ex.slice(0, 34) + "…" : ex}
             </button>
@@ -212,7 +212,7 @@ export default function StudyComposer({
             <Wand2 className="size-4" />
             {pending ? "Analyzing…" : "Understand my update"}
           </button>
-          <p className="text-[11.5px] text-ink-faint">
+          <p className="text-xs text-ink-faint">
             Local parser — works offline. Ctrl/Cmd + Enter to analyze.
           </p>
           {message && message !== "saved" && (
@@ -339,7 +339,7 @@ export default function StudyComposer({
                   </div>
 
                   {/* status segmented */}
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pl-7">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pl-0 sm:pl-7">
                     {STATUSES.map((st) => {
                       const meta = STATUS_META[st];
                       const active = d.status === st;

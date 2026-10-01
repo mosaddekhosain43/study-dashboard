@@ -292,7 +292,7 @@ export default function LessonManager({
             </button>
             <button
               onClick={() => setBulkLessonId(null)}
-              className="rounded-lg bg-slate-200 px-3.5 py-2 text-[12px] font-semibold text-slate-700 hover:bg-slate-300"
+              className="rounded-lg bg-paper-deep border border-line px-3.5 py-2 text-[12px] font-semibold text-ink-soft hover:bg-line"
             >
               Cancel
             </button>
@@ -352,7 +352,7 @@ export default function LessonManager({
                         </button>
                         <button
                           onClick={() => setEditingLessonId(null)}
-                          className="grid size-7 place-items-center rounded-lg bg-slate-200 text-slate-600 shrink-0"
+                          className="grid size-7 place-items-center rounded-lg bg-paper-deep border border-line text-ink-soft shrink-0"
                         >
                           <X className="size-3.5" />
                         </button>
@@ -423,7 +423,7 @@ export default function LessonManager({
                         </button>
                         <button
                           onClick={() => setConfirmDeleteLessonId(null)}
-                          className="rounded-md bg-slate-200 px-2 py-0.5 text-slate-600 text-[11px]"
+                          className="rounded-md bg-paper-deep border border-line px-2 py-0.5 text-ink-soft text-[11px]"
                         >
                           No
                         </button>
@@ -521,7 +521,7 @@ export default function LessonManager({
                                       </button>
                                       <button
                                         onClick={() => setEditingTopicId(null)}
-                                        className="grid size-7 place-items-center rounded-lg bg-slate-200 text-slate-600 shrink-0"
+                                        className="grid size-7 place-items-center rounded-lg bg-paper-deep border border-line text-ink-soft shrink-0"
                                       >
                                         <X className="size-3.5" />
                                       </button>
@@ -644,7 +644,7 @@ export default function LessonManager({
                                     </button>
                                     <button
                                       onClick={() => setConfirmDeleteTopicId(null)}
-                                      className="rounded bg-slate-200 px-1.5 py-0.5 text-slate-600 text-[10.5px]"
+                                      className="rounded bg-paper-deep border border-line px-1.5 py-0.5 text-ink-soft text-[10.5px]"
                                     >
                                       No
                                     </button>
@@ -685,7 +685,7 @@ export default function LessonManager({
                                 </button>
                                 <button
                                   onClick={() => setNoteTopicId(null)}
-                                  className="rounded-lg bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                                  className="rounded-lg bg-paper-deep border border-line px-2.5 py-1 text-xs font-semibold text-ink-soft"
                                 >
                                   Cancel
                                 </button>

@@ -25,7 +25,7 @@ import {
 } from "@/lib/constants";
 import { addDays, dateKey, todayKey } from "@/lib/dates";
 import { canonicalTopic, parseStudyUpdate, type ParseResult } from "@/lib/parser";
-import { ensureSeeded } from "@/lib/queries";
+import { ensureSeeded, safeUpsertSetting } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
 
 function refresh() {
@@ -459,10 +459,7 @@ async function writeTimer(state: TimerState | null) {
   if (state === null) {
     await db.delete(settings).where(eq(settings.key, SETTING_ACTIVE_TIMER));
   } else {
-    await db
-      .insert(settings)
-      .values({ key: SETTING_ACTIVE_TIMER, value: JSON.stringify(state) })
-      .onConflictDoUpdate({ target: settings.key, set: { value: JSON.stringify(state) } });
+    await safeUpsertSetting(SETTING_ACTIVE_TIMER, JSON.stringify(state));
   }
 }
 
@@ -559,10 +556,7 @@ export async function saveStudySessionAction(payload: {
 // ── Settings ────────────────────────────────────────────────────────────────
 
 async function upsertSetting(key: string, value: string) {
-  await db
-    .insert(settings)
-    .values({ key, value })
-    .onConflictDoUpdate({ target: settings.key, set: { value } });
+  await safeUpsertSetting(key, value);
 }
 
 export async function saveExamSettingsAction(

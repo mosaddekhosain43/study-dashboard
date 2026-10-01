@@ -52,7 +52,7 @@ export default function SearchClient({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search topic, chapter, note or date…"
-            className="w-full bg-transparent text-[14px] sm:text-[15px] outline-none placeholder:text-ink-faint/60"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-ink-faint/60"
           />
           {q && (
             <button
@@ -108,7 +108,7 @@ export default function SearchClient({
                     <StatusIcon status={t.status} className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-medium text-ink break-words leading-snug">{t.name}</p>
+                    <p className="text-sm font-medium text-ink break-words leading-snug">{t.name}</p>
                     <p className="text-[11px] text-ink-faint mt-0.5">{t.subjectName}</p>
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export default function SearchClient({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-ink-soft">{it.subjectName}</p>
-                    <p className="text-[13.5px] font-medium text-ink break-words leading-snug mt-0.5">
+                    <p className="text-sm font-medium text-ink break-words leading-snug mt-0.5">
                       {it.label}
                       {it.notes && <span className="ml-1.5 text-[11px] italic text-ink-faint">· {it.notes}</span>}
                     </p>

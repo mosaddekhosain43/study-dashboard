@@ -154,7 +154,7 @@ export default function TopicManager({
             <button onClick={addBulk} disabled={pending} className="rounded-lg bg-leaf px-3.5 py-2 text-[12px] font-semibold text-white disabled:opacity-50">
               Import lines
             </button>
-            <button onClick={() => setBulkOpen(false)} className="rounded-lg bg-slate-200 px-3.5 py-2 text-[12px] font-semibold text-slate-700">
+            <button onClick={() => setBulkOpen(false)} className="rounded-lg bg-paper-deep border border-line px-3.5 py-2 text-[12px] font-semibold text-ink-soft">
               Cancel
             </button>
           </div>
@@ -207,7 +207,7 @@ export default function TopicManager({
                         >
                           <Check className="size-3.5" />
                         </button>
-                        <button onClick={() => setEditingId(null)} className="grid size-7 place-items-center rounded-lg bg-slate-200 text-slate-600 shrink-0">
+                        <button onClick={() => setEditingId(null)} className="grid size-7 place-items-center rounded-lg bg-paper-deep border border-line text-ink-soft shrink-0">
                           <X className="size-3.5" />
                         </button>
                       </div>
@@ -292,7 +292,7 @@ export default function TopicManager({
                       >
                         Yes
                       </button>
-                      <button onClick={() => setConfirmDeleteId(null)} className="rounded-md bg-slate-200 px-2 py-0.5 text-slate-600 text-[11px]">
+                      <button onClick={() => setConfirmDeleteId(null)} className="rounded-md bg-paper-deep border border-line px-2 py-0.5 text-ink-soft text-[11px]">
                         No
                       </button>
                     </span>
@@ -331,7 +331,7 @@ export default function TopicManager({
                   </button>
                   <button
                     onClick={() => setNoteId(null)}
-                    className="rounded-lg bg-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600"
+                    className="rounded-lg bg-paper-deep border border-line px-2.5 py-1.5 text-xs font-semibold text-ink-soft"
                   >
                     Cancel
                   </button>

@@ -25,7 +25,7 @@ export function StatusChip({ status, small = false }: { status: StudyStatus; sma
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full font-semibold ring-1 ${meta.bg} ${meta.text} ${meta.ring} ${
-        small ? "px-2 py-0.5 text-[10.5px]" : "px-2.5 py-1 text-[11.5px]"
+        small ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs"
       }`}
     >
       <span className={`size-1.5 rounded-full ${meta.dot}`} />
@@ -60,7 +60,7 @@ export function ProgressBar({
   };
   return (
     <div
-      className="w-full overflow-hidden rounded-full bg-ink/8"
+      className="w-full overflow-hidden rounded-full bg-line/80"
       style={{ height }}
       role="progressbar"
       aria-valuemin={0}
@@ -155,18 +155,18 @@ export function VBars({
         const isHi = highlightLast && i === data.length - 1;
         return (
           <div key={i} className="group flex flex-1 flex-col items-center justify-end gap-1.5" title={d.title ?? `${d.label}: ${d.value}`}>
-            <span className="text-[9.5px] font-semibold tabular-nums text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="text-[10px] font-semibold tabular-nums text-ink-faint opacity-0 transition-opacity group-hover:opacity-100">
               {d.title ?? d.value}
             </span>
             <div
-              className={`w-full max-w-[38px] rounded-t-md transition-all duration-500 ${isHi ? "" : ""}`}
+              className={`w-full max-w-[38px] rounded-t-md transition-all duration-500`}
               style={{
                 height: h,
                 background: isHi ? `linear-gradient(180deg, #18b981, #0c7a5b)` : d.value > 0 ? color : mutedColor,
                 opacity: isHi ? 1 : d.value > 0 ? 0.85 : 0.5,
               }}
             />
-            <span className={`text-[9.5px] font-semibold uppercase tracking-wide ${isHi ? "text-leaf" : "text-ink-faint"}`}>
+            <span className={`text-[10px] font-semibold uppercase tracking-wide ${isHi ? "text-leaf" : "text-ink-faint"}`}>
               {d.label}
             </span>
           </div>
@@ -214,7 +214,7 @@ export function StatTile({
   return (
     <div className="card group relative overflow-hidden p-4">
       <div
-        className="absolute -right-5 -top-5 size-20 rounded-full opacity-[0.07] transition-transform duration-500 group-hover:scale-125"
+        className="absolute -right-5 -top-5 size-20 rounded-full opacity-[0.12] transition-transform duration-500 group-hover:scale-125"
         style={{ background: accent ?? "#0c7a5b" }}
       />
       <div className="mb-2.5 flex items-center gap-2 text-ink-faint">{icon}<span className="text-[11px] font-semibold uppercase tracking-[0.12em]">{label}</span></div>
@@ -236,7 +236,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="card flex flex-col items-center gap-3 border-dashed px-6 py-12 text-center">
+    <div className="card flex flex-col items-center gap-3 border-dashed shadow-none px-6 py-12 text-center">
       <div className="grid size-12 place-items-center rounded-2xl bg-leaf-soft text-leaf">{icon}</div>
       <div>
         <p className="font-display text-[15px] font-semibold text-ink">{title}</p>

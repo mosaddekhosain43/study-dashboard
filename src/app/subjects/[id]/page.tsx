@@ -78,12 +78,12 @@ export default async function SubjectDetailPage({
             { icon: XCircle, label: "Missed", value: byStatus.not_completed, cls: "text-rose-500", bg: "bg-rose-50 border-rose-200/60" },
             { icon: Timer, label: "Time", value: formatMinutes(totalMinutes), cls: "text-leaf", bg: "bg-leaf-soft border-leaf/20" },
           ].map((s) => (
-            <div key={s.label} className="rounded-2xl border border-line bg-paper/60 p-3 sm:p-4 transition hover:bg-paper hover:shadow-2xs">
+            <div key={s.label} className="rounded-2xl border border-line bg-paper/60 p-3 sm:p-4 transition hover:bg-paper hover:shadow-xs">
               <span className={`mx-auto mb-1.5 grid size-8 place-items-center rounded-xl border ${s.bg} ${s.cls}`}>
                 <s.icon className="size-4" />
               </span>
               <p className="font-display text-base sm:text-lg font-bold tabular-nums text-ink">{s.value}</p>
-              <p className="text-[10.5px] font-bold uppercase tracking-wider text-ink-faint mt-0.5">{s.label}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>

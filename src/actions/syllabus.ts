@@ -6,6 +6,7 @@ import { db, initializeDb } from "@/db";
 import { batches, lessons, settings, subjects, topics, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
+import { safeUpsertSetting } from "@/lib/queries";
 
 export interface MasterTopicView {
   id: number;
@@ -198,24 +199,15 @@ export async function initializeStudentSyllabusAction(payload: SelectionPayload)
     await db.update(users).set(userUpdates).where(eq(users.id, user.id));
   }
 
-  // Sync exam and target dates with settings
+  // Sync exam and target dates with settings safely
   if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
-    await db
-      .insert(settings)
-      .values({ key: "exam_date", value: examDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: examDate } });
+    await safeUpsertSetting("exam_date", examDate);
   }
   if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
-    await db
-      .insert(settings)
-      .values({ key: "target_start_date", value: targetStartDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: targetStartDate } });
+    await safeUpsertSetting("target_start_date", targetStartDate);
   }
   if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-    await db
-      .insert(settings)
-      .values({ key: "target_date", value: targetDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: targetDate } });
+    await safeUpsertSetting("target_date", targetDate);
   }
 
   try {

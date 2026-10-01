@@ -383,7 +383,7 @@ export default function StudentOnboardingWizard({
               type="button"
               onClick={onCancel}
               disabled={pending}
-              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-2xs transition cursor-pointer"
+              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-xs transition cursor-pointer"
             >
               Cancel
             </button>
@@ -392,7 +392,7 @@ export default function StudentOnboardingWizard({
               type="button"
               onClick={handleSkip}
               disabled={pending}
-              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-2xs transition cursor-pointer"
+              className="text-xs font-semibold text-ink-soft hover:text-ink px-3 py-1.5 rounded-lg border border-line bg-white/70 hover:bg-white shadow-xs transition cursor-pointer"
             >
               Skip for now
             </button>
@@ -501,7 +501,7 @@ export default function StudentOnboardingWizard({
                     <div
                       className={`size-6 rounded-full flex items-center justify-center transition ${
                         isSelected
-                          ? "bg-leaf text-white shadow-2xs"
+                          ? "bg-leaf text-white shadow-xs"
                           : "border border-line bg-white"
                       }`}
                     >
@@ -594,14 +594,14 @@ export default function StudentOnboardingWizard({
                     onClick={() => toggleBookSelection(book.id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left cursor-pointer transition-all duration-150 select-none ${
                       isChecked
-                        ? "border-leaf/60 bg-leaf/10 text-ink shadow-2xs"
+                        ? "border-leaf/60 bg-leaf/10 text-ink shadow-xs"
                         : "border-line/70 bg-white hover:bg-paper/50 hover:border-ink-faint/40 text-ink"
                     }`}
                   >
                     <div
                       className={`size-4.5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                         isChecked
-                          ? "bg-leaf border-leaf text-white shadow-2xs"
+                          ? "bg-leaf border-leaf text-white shadow-xs"
                           : "border-line bg-white"
                       }`}
                     >

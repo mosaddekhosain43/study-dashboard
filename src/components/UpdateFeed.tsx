@@ -76,14 +76,14 @@ function UpdateCard({
         <p className="font-bengali line-clamp-2 flex-1 text-[12px] italic leading-relaxed text-ink-faint">
           «{update.rawText}»
         </p>
-        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 transition-opacity sm:group-hover:opacity-100">
           {confirming ? (
             <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-600">
               Sure?
               <button onClick={doDelete} className="rounded-md bg-rose-600 px-1.5 py-0.5 text-white" disabled={pending}>
                 Yes
               </button>
-              <button onClick={() => setConfirming(false)} className="rounded-md bg-slate-200 px-1.5 py-0.5 text-slate-700">
+              <button onClick={() => setConfirming(false)} className="rounded-md bg-paper-deep px-1.5 py-0.5 text-ink-soft">
                 No
               </button>
             </span>
@@ -200,7 +200,7 @@ function ItemRow({ item, subjects }: { item: ItemDto; subjects: { id: number; na
           <button onClick={save} disabled={pending} className="inline-flex items-center gap-1 rounded-lg bg-leaf px-2.5 py-1 text-[11.5px] font-semibold text-white">
             <Check className="size-3.5" /> Save
           </button>
-          <button onClick={() => setEditing(false)} className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-2.5 py-1 text-[11.5px] font-semibold text-slate-700">
+          <button onClick={() => setEditing(false)} className="inline-flex items-center gap-1 rounded-lg bg-paper-deep px-2.5 py-1 text-[11.5px] font-semibold text-ink-soft">
             <X className="size-3.5" /> Cancel
           </button>
         </div>
@@ -226,7 +226,7 @@ function ItemRow({ item, subjects }: { item: ItemDto; subjects: { id: number; na
       <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_META[item.status].bg} ${STATUS_META[item.status].text}`}>
         {STATUS_META[item.status].short}
       </span>
-      <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/item:opacity-100">
+      <span className="flex shrink-0 items-center gap-0.5 opacity-100 sm:opacity-0 transition-opacity sm:group-hover/item:opacity-100">
         <button onClick={() => setEditing(true)} className="grid size-6 place-items-center rounded-md text-ink-faint hover:bg-white hover:text-leaf" title="Edit">
           <Pencil className="size-3" />
         </button>

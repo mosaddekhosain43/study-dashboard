@@ -86,8 +86,9 @@ export default function RegisterPage() {
                   type="text"
                   name="name"
                   required
+                  autoComplete="name"
                   placeholder="e.g. Abdur Rahman"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -102,8 +103,9 @@ export default function RegisterPage() {
                   type="tel"
                   name="phone"
                   required
+                  autoComplete="tel"
                   placeholder="e.g. 017XXXXXXXX"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -118,8 +120,9 @@ export default function RegisterPage() {
                   type="email"
                   name="email"
                   required
+                  autoComplete="email"
                   placeholder="student@example.com"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -133,7 +136,7 @@ export default function RegisterPage() {
                 <select
                   name="batchId"
                   required
-                  className="w-full appearance-none rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-8 text-xs text-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full appearance-none rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-8 text-sm text-ink focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 >
                   <option value="">Choose Batch</option>
                   {batches.map((b) => (
@@ -155,9 +158,10 @@ export default function RegisterPage() {
                   type="password"
                   name="password"
                   required
+                  autoComplete="new-password"
                   minLength={6}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -165,7 +169,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-sm font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
             >
               <UserPlus className="size-4" />
               {loading ? "Creating Account..." : "Create Student Account"}

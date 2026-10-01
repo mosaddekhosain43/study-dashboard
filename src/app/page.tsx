@@ -242,7 +242,7 @@ export default async function DashboardPage() {
           accent="#e5a100"
         />
         <StatTile
-          icon={<Hourglass className="size-4 text-slate-500" />}
+          icon={<Hourglass className="size-4 text-ink-faint" />}
           label="Remaining"
           value={String(data.remaining)}
           sub={`${data.notStarted} never started`}

@@ -101,7 +101,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
 
           {/* Quick Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-            <div className="card p-3.5 border-line/80 bg-white/70 shadow-2xs">
+            <div className="card p-3.5 border-line/80 bg-white/70 shadow-xs">
               <div className="flex items-center gap-2 text-leaf mb-1">
                 <Target className="size-4" />
                 <span className="text-[10.5px] font-bold uppercase tracking-wider">
@@ -119,7 +119,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               </span>
             </div>
 
-            <div className="card p-3.5 border-line/80 bg-white/70 shadow-2xs">
+            <div className="card p-3.5 border-line/80 bg-white/70 shadow-xs">
               <div className="flex items-center gap-2 text-sky-600 mb-1">
                 <Clock className="size-4" />
                 <span className="text-[10.5px] font-bold uppercase tracking-wider">
@@ -134,7 +134,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               </p>
             </div>
 
-            <div className="card p-3.5 border-line/80 bg-white/70 shadow-2xs col-span-2 sm:col-span-1">
+            <div className="card p-3.5 border-line/80 bg-white/70 shadow-xs col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 text-amber-600 mb-1">
                 <Hourglass className="size-4" />
                 <span className="text-[10.5px] font-bold uppercase tracking-wider">
@@ -212,7 +212,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setRevisionTab("due")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 revisionTab === "due"
-                  ? "bg-white text-ink shadow-2xs font-bold"
+                  ? "bg-white text-ink shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -222,7 +222,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setRevisionTab("upcoming")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 revisionTab === "upcoming"
-                  ? "bg-white text-ink shadow-2xs font-bold"
+                  ? "bg-white text-ink shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -250,7 +250,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               {dueRevisions.map((t) => (
                 <div
                   key={t.id}
-                  className="card p-4 border-line/80 bg-white hover:border-amber-400/80 transition flex flex-col justify-between shadow-2xs space-y-3"
+                  className="card p-4 border-line/80 bg-white hover:border-amber-400/80 transition flex flex-col justify-between shadow-xs space-y-3"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
@@ -289,7 +289,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
                     <button
                       onClick={() => handleMarkRevised(t.id)}
                       disabled={isPending}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs font-bold shadow-2xs transition disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 text-xs font-bold shadow-xs transition disabled:opacity-50"
                     >
                       <RotateCcw className="size-3.5" />
                       <span>রিভিশন সম্পন্ন</span>
@@ -354,7 +354,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setActiveSlot("all")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 activeSlot === "all"
-                  ? "bg-white text-ink shadow-2xs font-bold"
+                  ? "bg-white text-ink shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -364,7 +364,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setActiveSlot("morning")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 activeSlot === "morning"
-                  ? "bg-white text-amber-700 shadow-2xs font-bold"
+                  ? "bg-white text-amber-700 shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -374,7 +374,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setActiveSlot("afternoon")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 activeSlot === "afternoon"
-                  ? "bg-white text-sky-700 shadow-2xs font-bold"
+                  ? "bg-white text-sky-700 shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -384,7 +384,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               onClick={() => setActiveSlot("night")}
               className={`rounded-lg px-3 py-1.5 transition ${
                 activeSlot === "night"
-                  ? "bg-white text-indigo-700 shadow-2xs font-bold"
+                  ? "bg-white text-indigo-700 shadow-xs font-bold"
                   : "text-ink-faint hover:text-ink"
               }`}
             >
@@ -701,7 +701,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
               {plan.examGuidelines.map((tip, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-line/80 bg-white p-3.5 space-y-1 shadow-2xs"
+                  className="rounded-xl border border-line/80 bg-white p-3.5 space-y-1 shadow-xs"
                 >
                   <p className="font-bold text-xs text-ink flex items-center gap-1.5">
                     <Sparkles className="size-3.5 text-leaf shrink-0" />

@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="student@example.com"
-                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                   />
                 </div>
                 <p className="mt-1.5 text-[11px] text-ink-faint">
@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-sm font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
               >
                 <BookOpenCheck className="size-4" />
                 {loading ? "Searching..." : "Find My Account"}
@@ -173,7 +173,7 @@ export default function ForgotPasswordPage() {
                       name="phoneVerification"
                       required
                       placeholder={accountInfo.maskedPhone || "01XXXXXXXXX"}
-                      className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                      className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                     />
                   </div>
                   <p className="mt-1 text-[11px] text-ink-faint">
@@ -194,7 +194,7 @@ export default function ForgotPasswordPage() {
                     required
                     minLength={6}
                     placeholder="At least 6 characters"
-                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                   />
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default function ForgotPasswordPage() {
                     required
                     minLength={6}
                     placeholder="Re-type new password"
-                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                    className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                   />
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function ForgotPasswordPage() {
                     setError(null);
                     setStep(1);
                   }}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/60 px-4 py-3 text-xs font-semibold text-ink-soft transition hover:bg-paper"
+                  className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/60 px-4 py-3 text-sm font-semibold text-ink-soft transition hover:bg-paper"
                 >
                   <ArrowLeft className="size-3.5" />
                   Back
@@ -231,7 +231,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-sm font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
                 >
                   <KeyRound className="size-4" />
                   {loading ? "Resetting..." : "Reset Password"}
@@ -242,7 +242,7 @@ export default function ForgotPasswordPage() {
 
           {step === 3 && (
             <div className="space-y-5 text-center py-2">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-leaf-soft text-leaf">
                 <CheckCircle2 className="size-8" />
               </div>
               <div className="space-y-1">

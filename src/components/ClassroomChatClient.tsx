@@ -154,7 +154,7 @@ export default function ClassroomChatClient({
         >
           <Bell className="size-3.5 text-leaf shrink-0" />
           <span className="whitespace-nowrap">Notices & Files</span>
-          <span className="rounded-full bg-leaf-soft px-1.5 py-0.2 text-[10px] font-bold text-leaf shrink-0">
+          <span className="rounded-full bg-leaf-soft px-1.5 py-0.5 text-[10px] font-bold text-leaf shrink-0">
             {teacherNotices.length + materials.length}
           </span>
         </button>
@@ -170,7 +170,7 @@ export default function ClassroomChatClient({
         >
           <MessageSquare className="size-3.5 text-leaf shrink-0" />
           <span className="whitespace-nowrap">Class Chat</span>
-          <span className="rounded-full bg-paper px-1.5 py-0.2 text-[10px] font-bold text-ink-faint shrink-0">
+          <span className="rounded-full bg-paper px-1.5 py-0.5 text-[10px] font-bold text-ink-faint shrink-0">
             {messages.length}
           </span>
         </button>
@@ -199,7 +199,7 @@ export default function ClassroomChatClient({
                 {teacherNotices.map((notice) => (
                   <div
                     key={notice.id}
-                    className={`rounded-xl border p-3.5 shadow-2xs transition ${
+                    className={`rounded-xl border p-3.5 shadow-xs transition ${
                       notice.isPinned
                         ? "border-amber-300/80 bg-amber-50/70"
                         : "border-line bg-white"
@@ -269,7 +269,7 @@ export default function ClassroomChatClient({
                 {materials.map((mat) => (
                   <div
                     key={mat.id}
-                    className="flex flex-col justify-between rounded-xl border border-line/80 bg-white p-4 shadow-2xs transition hover:border-leaf/50"
+                    className="flex flex-col justify-between rounded-xl border border-line/80 bg-white p-4 shadow-xs transition hover:border-leaf/50"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2">
@@ -311,7 +311,7 @@ export default function ClassroomChatClient({
                           href={mat.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-pine px-3 py-1.5 text-xs font-semibold text-white shadow-2xs transition hover:bg-pine/90"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-pine px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-pine/90"
                         >
                           <Download className="size-3" />
                           <span>Download File</span>
@@ -343,7 +343,7 @@ export default function ClassroomChatClient({
               {pinnedMessages.map((pm) => (
                 <div
                   key={pm.id}
-                  className="rounded-xl border border-amber-200/60 bg-white/90 p-3 shadow-2xs"
+                  className="rounded-xl border border-amber-200/60 bg-white/90 p-3 shadow-xs"
                 >
                   <div className="flex items-center justify-between text-[11px] text-ink-faint pb-1 border-b border-amber-100 mb-1.5">
                     <span className="font-semibold text-amber-950">{pm.senderName}</span>
@@ -379,7 +379,7 @@ export default function ClassroomChatClient({
                         {m.senderName}
                       </span>
                       <span
-                        className={`rounded px-1.5 py-0.2 text-[10px] font-medium uppercase tracking-wider ${
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                           isTeacher
                             ? "bg-amber-100 text-amber-900 border border-amber-300/60 font-semibold"
                             : "bg-paper text-ink-faint border border-line/60"
@@ -405,7 +405,7 @@ export default function ClassroomChatClient({
                     </div>
 
                     <div
-                      className={`max-w-[88%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 text-xs sm:text-[13px] leading-relaxed break-words shadow-2xs ${
+                      className={`max-w-[88%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 text-xs sm:text-[13px] leading-relaxed break-words shadow-xs ${
                         m.isSelf
                           ? "bg-leaf text-white rounded-br-none"
                           : isTeacher

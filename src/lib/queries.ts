@@ -61,6 +61,23 @@ export async function getSetting(key: string): Promise<string | null> {
   return rows[0]?.value ?? null;
 }
 
+export async function safeUpsertSetting(key: string, value: string): Promise<void> {
+  try {
+    const existing = await db
+      .select({ key: settings.key })
+      .from(settings)
+      .where(eq(settings.key, key))
+      .limit(1);
+    if (existing.length > 0) {
+      await db.update(settings).set({ value }).where(eq(settings.key, key));
+    } else {
+      await db.insert(settings).values({ key, value });
+    }
+  } catch (err) {
+    console.warn(`[safeUpsertSetting] Could not update ${key}:`, err);
+  }
+}
+
 export interface ExamConfig {
   examDate: string;
   targetStartDate: string;

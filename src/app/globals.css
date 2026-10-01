@@ -41,7 +41,6 @@ body {
   background-image:
     radial-gradient(1200px 500px at 85% -10%, rgba(12, 122, 91, 0.06), transparent 60%),
     radial-gradient(900px 420px at -10% 110%, rgba(199, 127, 0, 0.05), transparent 55%);
-  background-attachment: fixed;
 }
 
 ::selection {
@@ -65,11 +64,19 @@ body {
   background: transparent;
 }
 
+.bg-pine *::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+}
+.bg-pine * {
+  scrollbar-color: rgba(255,255,255,0.12) transparent;
+}
+
 .card {
   background: var(--color-card);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
 .font-display {
@@ -135,7 +142,6 @@ body {
 :where(button, a, input, textarea, select, summary):focus-visible {
   outline: 2px solid var(--color-leaf);
   outline-offset: 2px;
-  border-radius: 6px;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
@@ -149,10 +155,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .animate-scale-in {
   animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-rise {
-  animation: rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes bounce-subtle {

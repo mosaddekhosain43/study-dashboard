@@ -502,7 +502,7 @@ export default function MasterCurriculumManager({
                           {book.board === "madrasah" ? "Madrasah" : "General"}
                         </span>
 
-                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700 uppercase">
+                        <span className="rounded-md bg-paper px-2 py-0.5 text-[10px] font-semibold text-ink-soft uppercase">
                           {book.classLevel || "all"}
                         </span>
 
@@ -599,7 +599,7 @@ export default function MasterCurriculumManager({
                           return (
                             <div
                               key={chapter.id}
-                              className="rounded-xl border border-line/80 bg-white shadow-2xs overflow-hidden"
+                              className="rounded-xl border border-line/80 bg-white shadow-xs overflow-hidden"
                             >
                               {/* Chapter Bar */}
                               <div className="flex items-center justify-between gap-3 p-3 bg-paper/30 border-b border-line/40">
@@ -636,7 +636,7 @@ export default function MasterCurriculumManager({
                                         </button>
                                         <button
                                           onClick={() => setEditingChapterId(null)}
-                                          className="grid size-6 place-items-center rounded bg-slate-200 text-slate-600"
+                                          className="grid size-6 place-items-center rounded bg-paper-deep text-ink-soft"
                                         >
                                           <X className="size-3" />
                                         </button>
@@ -749,7 +749,7 @@ export default function MasterCurriculumManager({
                                                 </button>
                                                 <button
                                                   onClick={() => setEditingTopicId(null)}
-                                                  className="grid size-6 place-items-center rounded bg-slate-200 text-slate-600"
+                                                  className="grid size-6 place-items-center rounded bg-paper-deep text-ink-soft"
                                                 >
                                                   <X className="size-3" />
                                                 </button>
@@ -808,7 +808,7 @@ export default function MasterCurriculumManager({
 
       {/* Add Master Book Modal */}
       {showAddBook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-pine/50 p-4 backdrop-blur-sm">
           <div className="card w-full max-w-lg p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
@@ -910,7 +910,7 @@ export default function MasterCurriculumManager({
               <button
                 onClick={handleCreateBook}
                 disabled={pending || !bookName.trim()}
-                className="rounded-xl bg-leaf px-4.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+                className="rounded-xl bg-leaf px-4 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
                 {pending ? "Adding…" : "Add Book"}
               </button>
@@ -921,7 +921,7 @@ export default function MasterCurriculumManager({
 
       {/* Edit Master Book Modal */}
       {editingBook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-pine/50 p-4 backdrop-blur-sm">
           <div className="card w-full max-w-lg p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
@@ -1021,7 +1021,7 @@ export default function MasterCurriculumManager({
               <button
                 onClick={handleUpdateBook}
                 disabled={pending || !editBookName.trim()}
-                className="rounded-xl bg-leaf px-4.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+                className="rounded-xl bg-leaf px-4 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
                 {pending ? "Saving…" : "Save Changes"}
               </button>
@@ -1032,7 +1032,7 @@ export default function MasterCurriculumManager({
 
       {/* Edit Class / Batch Modal */}
       {showEditBatchModal && currentBatch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-pine/50 p-4 backdrop-blur-sm">
           <div className="card w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
@@ -1083,7 +1083,7 @@ export default function MasterCurriculumManager({
               <button
                 onClick={handleUpdateBatch}
                 disabled={pending || !editBatchName.trim()}
-                className="rounded-xl bg-leaf px-4.5 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+                className="rounded-xl bg-leaf px-4 py-2 text-xs font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
                 {pending ? "Saving…" : "Save Changes"}
               </button>

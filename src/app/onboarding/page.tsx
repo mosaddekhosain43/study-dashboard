@@ -39,5 +39,11 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
     redirect("/");
   }
 
-  return <StudentOnboardingWizard initialData={res.data} />;
+  return (
+    <StudentOnboardingWizard
+      initialData={res.data}
+      isReconfiguring={isEditing}
+      skipRedirectUrl="/"
+    />
+  );
 }

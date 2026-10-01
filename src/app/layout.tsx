@@ -24,7 +24,7 @@ const bengali = Noto_Sans_Bengali({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#0d1b14",
+  themeColor: "#f4f2ec",
   width: "device-width",
   initialScale: 1,
 };

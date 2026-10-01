@@ -87,7 +87,7 @@ export default function ClassroomCard({
       {/* ── Content: Latest Teacher Notice / Announcement ──────── */}
       <div className="py-3">
         {latestNotice ? (
-          <div className="relative rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-white p-3.5 shadow-2xs">
+          <div className="relative rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50/80 via-amber-50/40 to-white p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-amber-200/60">
               <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
                 {latestNotice.isPinned ? (
@@ -130,7 +130,7 @@ export default function ClassroomCard({
       <div className="pt-3 border-t border-line/70 grid grid-cols-2 gap-2.5 sm:gap-3">
         <Link
           href="/classroom?tab=chat"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/80 px-3 py-2 text-xs font-semibold text-ink-soft transition hover:bg-emerald-50 hover:text-leaf hover:border-emerald-200 active:scale-[0.99] whitespace-nowrap"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-paper/80 px-3 py-2 text-xs font-semibold text-ink-soft transition hover:bg-emerald-50 hover:text-leaf hover:border-emerald-200 active:scale-[0.98] whitespace-nowrap"
         >
           <MessageSquare className="size-3.5 text-leaf shrink-0" />
           <span>Open Chat</span>
@@ -138,7 +138,7 @@ export default function ClassroomCard({
 
         <Link
           href="/classroom?tab=notices"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pine px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-pine/20 transition hover:bg-pine/90 active:scale-[0.99] whitespace-nowrap"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-pine px-3 py-2 text-xs font-semibold text-white shadow-sm shadow-pine/20 transition hover:bg-pine/90 active:scale-[0.98] whitespace-nowrap"
         >
           <Bell className="size-3.5 text-glow shrink-0" />
           <span>Open Notices</span>

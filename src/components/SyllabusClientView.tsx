@@ -93,8 +93,7 @@ export default function SyllabusClientView({
         initialBookIds={currentBookIds}
         onCancel={hasPersonalSyllabus ? () => setShowOnboarding(false) : undefined}
         onSuccess={() => {
-          setShowOnboarding(false);
-          router.refresh();
+          window.location.href = "/syllabus";
         }}
         skipRedirectUrl="/syllabus"
       />
@@ -177,7 +176,7 @@ export default function SyllabusClientView({
           <button
             type="button"
             onClick={() => setShowOnboarding(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink-soft hover:border-leaf hover:text-leaf transition shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink-soft hover:border-leaf hover:text-leaf transition shadow-xs cursor-pointer"
           >
             <Pencil className="size-3.5 text-leaf" />
             <span>Edit Setup / Books</span>
@@ -187,7 +186,7 @@ export default function SyllabusClientView({
             type="button"
             disabled={restoring}
             onClick={handleRestore}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink-soft hover:border-amber-500 hover:text-amber-700 transition shadow-2xs disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink-soft hover:border-amber-500 hover:text-amber-700 transition shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <RotateCcw className={`size-3.5 ${restoring ? "animate-spin" : ""}`} />
             <span>{restoring ? "Restoring..." : "Restore Default Syllabus"}</span>

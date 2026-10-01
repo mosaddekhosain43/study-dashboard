@@ -200,7 +200,7 @@ export default function SyllabusManager({
                       <button onClick={() => importBulk(g.subject.id)} className="rounded-lg bg-leaf px-3.5 py-2 text-[12px] font-semibold text-white">
                         Import lines
                       </button>
-                      <button onClick={() => setBulkFor(null)} className="rounded-lg bg-slate-200 px-3.5 py-2 text-[12px] font-semibold text-slate-700">
+                      <button onClick={() => setBulkFor(null)} className="rounded-lg bg-paper-deep border border-line px-3.5 py-2 text-[12px] font-semibold text-ink-soft">
                         Cancel
                       </button>
                     </div>

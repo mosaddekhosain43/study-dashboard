@@ -10,6 +10,7 @@ import {
   SETTING_TARGET_DATE,
   SETTING_TARGET_START_DATE,
 } from "@/lib/constants";
+import { safeUpsertSetting } from "@/lib/queries";
 import { getStudentCurriculumStatusAction, type MasterBookView } from "./syllabus";
 
 export interface OnboardingData {
@@ -103,110 +104,105 @@ export interface CompleteOnboardingPayload {
 }
 
 export async function completeOnboardingAction(payload: CompleteOnboardingPayload) {
-  await initializeDb();
-  const sessionUser = await getCurrentUser();
-  if (!sessionUser) {
-    return { ok: false, error: "Please log in to save your setup." };
-  }
-
-  const { streamGroup, bookIds = [], examDate, targetStartDate, targetDate, skip = false } = payload;
-
-  // Handle "Skip for now"
-  if (skip) {
-    const updatesObj: Record<string, any> = {
-      onboardingCompleted: true,
-    };
-    if (streamGroup) updatesObj.streamGroup = streamGroup;
-    if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) updatesObj.examDate = examDate;
-    if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
-      updatesObj.targetStartDate = targetStartDate;
-    }
-    if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) updatesObj.targetDate = targetDate;
-
-    await db.update(users).set(updatesObj).where(eq(users.id, sessionUser.id));
-
-    // Update session cookie
-    await setSessionCookie({
-      ...sessionUser,
-      onboardingCompleted: true,
-      streamGroup: streamGroup || sessionUser.streamGroup,
-      examDate: examDate || sessionUser.examDate,
-      targetStartDate: targetStartDate || sessionUser.targetStartDate,
-      targetDate: targetDate || sessionUser.targetDate,
-    });
-
-    revalidatePath("/", "layout");
-    return { ok: true, redirectUrl: "/" };
-  }
-
-  // Normal flow validations
-  if (!streamGroup) {
-    return { ok: false, error: "Please select your study group (Science, Arts, or Commerce)." };
-  }
-
-  if (!bookIds || bookIds.length === 0) {
-    return { ok: false, error: "Please select at least one book for your curriculum." };
-  }
-
-  if (!examDate || !/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
-    return { ok: false, error: "Please select a valid Exam Date using the calendar." };
-  }
-
-  if (!targetStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
-    return { ok: false, error: "Please select a valid Target Start Date using the calendar." };
-  }
-
-  if (!targetDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
-    return { ok: false, error: "Please select a valid Target Date using the calendar." };
-  }
-
-  // Logical date validation: Target Start Date < Target Date < Exam Date
-  if (targetStartDate >= targetDate) {
-    return {
-      ok: false,
-      error: "Target start date must be before your target completion date.",
-    };
-  }
-
-  if (targetDate >= examDate) {
-    return {
-      ok: false,
-      error: "Target completion date must be before your exam date.",
-    };
-  }
-
-  // Update user profile
-  await db
-    .update(users)
-    .set({
-      streamGroup,
-      board: "madrasah",
-      classLevel: "alim",
-      examDate,
-      targetStartDate,
-      targetDate,
-      onboardingCompleted: true,
-    })
-    .where(eq(users.id, sessionUser.id));
-
-  // Sync with global settings for current dashboard view
-  await Promise.all([
-    db
-      .insert(settings)
-      .values({ key: SETTING_EXAM_DATE, value: examDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: examDate } }),
-    db
-      .insert(settings)
-      .values({ key: SETTING_TARGET_DATE, value: targetDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: targetDate } }),
-    db
-      .insert(settings)
-      .values({ key: SETTING_TARGET_START_DATE, value: targetStartDate })
-      .onConflictDoUpdate({ target: settings.key, set: { value: targetStartDate } }),
-  ]);
-
-  // Clone selected books & all their chapters/topics into student's personal syllabus
   try {
+    await initializeDb();
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) {
+      return { ok: false, error: "Please log in to save your setup." };
+    }
+
+    const { streamGroup, bookIds = [], examDate, targetStartDate, targetDate, skip = false } = payload;
+
+    // Handle "Skip for now"
+    if (skip) {
+      const updatesObj: Record<string, any> = {
+        onboardingCompleted: true,
+      };
+      if (streamGroup) updatesObj.streamGroup = streamGroup;
+      if (examDate && /^\d{4}-\d{2}-\d{2}$/.test(examDate)) updatesObj.examDate = examDate;
+      if (targetStartDate && /^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+        updatesObj.targetStartDate = targetStartDate;
+      }
+      if (targetDate && /^\d{4}-\d{2}-\d{2}$/.test(targetDate)) updatesObj.targetDate = targetDate;
+
+      await db.update(users).set(updatesObj).where(eq(users.id, sessionUser.id));
+
+      // Update session cookie
+      try {
+        await setSessionCookie({
+          ...sessionUser,
+          onboardingCompleted: true,
+          streamGroup: streamGroup || sessionUser.streamGroup,
+          examDate: examDate || sessionUser.examDate,
+          targetStartDate: targetStartDate || sessionUser.targetStartDate,
+          targetDate: targetDate || sessionUser.targetDate,
+        });
+      } catch (cookieErr) {
+        console.warn("Could not set session cookie on skip:", cookieErr);
+      }
+
+      revalidatePath("/", "layout");
+      revalidatePath("/syllabus");
+      return { ok: true, redirectUrl: "/" };
+    }
+
+    // Normal flow validations
+    if (!streamGroup) {
+      return { ok: false, error: "Please select your study group (Science, Arts, or Commerce)." };
+    }
+
+    if (!bookIds || bookIds.length === 0) {
+      return { ok: false, error: "Please select at least one book for your curriculum." };
+    }
+
+    if (!examDate || !/^\d{4}-\d{2}-\d{2}$/.test(examDate)) {
+      return { ok: false, error: "Please select a valid Exam Date using the calendar." };
+    }
+
+    if (!targetStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetStartDate)) {
+      return { ok: false, error: "Please select a valid Target Start Date using the calendar." };
+    }
+
+    if (!targetDate || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      return { ok: false, error: "Please select a valid Target Date using the calendar." };
+    }
+
+    // Logical date validation: Target Start Date < Target Date < Exam Date
+    if (targetStartDate >= targetDate) {
+      return {
+        ok: false,
+        error: "Target start date must be before your target completion date.",
+      };
+    }
+
+    if (targetDate >= examDate) {
+      return {
+        ok: false,
+        error: "Target completion date must be before your exam date.",
+      };
+    }
+
+    // Update user profile
+    await db
+      .update(users)
+      .set({
+        streamGroup,
+        board: "madrasah",
+        classLevel: "alim",
+        examDate,
+        targetStartDate,
+        targetDate,
+        onboardingCompleted: true,
+      })
+      .where(eq(users.id, sessionUser.id));
+
+    // Safely sync with global settings for current dashboard view
+    await Promise.all([
+      safeUpsertSetting(SETTING_EXAM_DATE, examDate),
+      safeUpsertSetting(SETTING_TARGET_DATE, targetDate),
+      safeUpsertSetting(SETTING_TARGET_START_DATE, targetStartDate),
+    ]);
+
     // 1. Clear any previous personal syllabus entries
     await db.delete(topics).where(eq(topics.userId, sessionUser.id));
     await db.delete(lessons).where(eq(lessons.userId, sessionUser.id));
@@ -340,24 +336,31 @@ export async function completeOnboardingAction(payload: CompleteOnboardingPayloa
         }
       }
     }
-  } catch (err) {
-    console.error("Error setting up student syllabus:", err);
-    return { ok: false, error: "Failed to configure personal syllabus. Please try again." };
+
+    // Update session cookie
+    try {
+      await setSessionCookie({
+        ...sessionUser,
+        onboardingCompleted: true,
+        streamGroup,
+        examDate,
+        targetStartDate,
+        targetDate,
+      });
+    } catch (cookieErr) {
+      console.warn("Could not set session cookie on completion:", cookieErr);
+    }
+
+    revalidatePath("/", "layout");
+    revalidatePath("/syllabus");
+    revalidatePath("/subjects");
+
+    return { ok: true, redirectUrl: "/" };
+  } catch (err: any) {
+    console.error("Error in completeOnboardingAction:", err);
+    return {
+      ok: false,
+      error: err?.message || "Failed to configure personal syllabus. Please try again.",
+    };
   }
-
-  // Update session cookie
-  await setSessionCookie({
-    ...sessionUser,
-    onboardingCompleted: true,
-    streamGroup,
-    examDate,
-    targetStartDate,
-    targetDate,
-  });
-
-  revalidatePath("/", "layout");
-  revalidatePath("/syllabus");
-  revalidatePath("/subjects");
-
-  return { ok: true, redirectUrl: "/" };
 }

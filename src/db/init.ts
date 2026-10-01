@@ -190,6 +190,11 @@ export async function runInitAndSeed(
         "ALTER TABLE topics ADD COLUMN IF NOT EXISTS revision_count INTEGER NOT NULL DEFAULT 0;"
       );
       await rawExec("ALTER TABLE topics ADD COLUMN IF NOT EXISTS next_revision_due TEXT;");
+      try {
+        await rawExec("CREATE UNIQUE INDEX IF NOT EXISTS settings_key_uniq_idx ON settings(key);");
+      } catch {
+        // ignore if duplicates exist
+      }
     } catch {
       // ignore
     }

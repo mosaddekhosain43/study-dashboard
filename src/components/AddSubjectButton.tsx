@@ -42,11 +42,11 @@ export default function AddSubjectButton() {
         className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-2 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep"
       >
         <Plus className="size-4" />
-        <span>+ Add Subject</span>
+        <span>Add Subject</span>
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-pine/50 p-4 backdrop-blur-sm">
           <div className="card w-full max-w-md p-5 sm:p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -110,7 +110,7 @@ export default function AddSubjectButton() {
               <button
                 onClick={handleCreate}
                 disabled={pending || !name.trim()}
-                className="rounded-xl bg-leaf px-4.5 py-2 text-[12.5px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+                className="rounded-xl bg-leaf px-4 py-2 text-[12.5px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
               >
                 {pending ? "Creating…" : "Create Subject"}
               </button>

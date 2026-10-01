@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-leaf to-leaf-deep text-white shadow-lg shadow-leaf/25">
@@ -65,8 +65,9 @@ export default function LoginPage() {
                   type="email"
                   name="email"
                   required
+                  autoComplete="email"
                   placeholder="student@example.com"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -89,8 +90,9 @@ export default function LoginPage() {
                   type="password"
                   name="password"
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-xs text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
+                  className="w-full rounded-xl border border-line bg-paper/30 py-2.5 pl-10 pr-4 text-sm text-ink placeholder:text-ink-faint/60 focus:bg-white focus:outline-none focus:ring-2 focus:ring-leaf/20"
                 />
               </div>
             </div>
@@ -98,7 +100,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-xs font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-leaf py-3 text-sm font-semibold text-white shadow-md shadow-leaf/20 transition hover:bg-leaf-deep disabled:opacity-60"
             >
               <LogIn className="size-4" />
               {loading ? "Signing in..." : "Sign In"}

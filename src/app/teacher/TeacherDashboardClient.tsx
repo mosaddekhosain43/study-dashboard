@@ -457,10 +457,10 @@ export default function TeacherDashboardClient({ initialData, user }: Props) {
                         {m.senderName}
                       </span>
                       <span
-                        className={`rounded px-1.5 py-0.2 text-[10px] font-medium uppercase tracking-wider ${
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
                           m.senderRole === "teacher"
                             ? "bg-amber-100 text-amber-900 border border-amber-300/60"
-                            : "bg-slate-100 text-slate-700"
+                            : "bg-paper text-ink-soft"
                         }`}
                       >
                         {m.senderRole}

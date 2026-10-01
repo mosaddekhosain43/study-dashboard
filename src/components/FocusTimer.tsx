@@ -450,7 +450,7 @@ export default function FocusTimer({
           className={`w-full transition-all duration-300 ${
             isFullscreen
               ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
-              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
+              : "max-w-[420px] p-3 sm:p-4 text-ink"
           }`}
         >
 
@@ -470,7 +470,7 @@ export default function FocusTimer({
             {/* Selected Subject Pill */}
             <div className="flex justify-center mb-4">
               <div
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-2xs ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-semibold shadow-xs ${
                   isFullscreen
                     ? "bg-[#18382c] border border-[#265342] text-emerald-200"
                     : "bg-emerald-50 border border-emerald-200/80 text-emerald-800"
@@ -486,7 +486,7 @@ export default function FocusTimer({
               className={`mb-3.5 w-full rounded-2xl p-1 grid grid-cols-2 gap-1 border ${
                 isFullscreen
                   ? "bg-[#143226] border-[#224b3b]"
-                  : "bg-slate-200/70 border-slate-300/60"
+                  : "bg-paper-deep border-line-strong/60"
               }`}
             >
               <button
@@ -499,7 +499,7 @@ export default function FocusTimer({
                       : "bg-[#0c4a34] text-white shadow-xs"
                     : isFullscreen
                     ? "text-emerald-300 hover:text-white"
-                    : "text-slate-600 hover:text-slate-900"
+                    : "text-ink-soft hover:text-ink"
                 }`}
               >
                 <Play className="size-3.5 fill-current" />
@@ -519,7 +519,7 @@ export default function FocusTimer({
                       : "bg-[#0c4a34] text-white shadow-xs"
                     : isFullscreen
                     ? "text-emerald-300 hover:text-white"
-                    : "text-slate-600 hover:text-slate-900"
+                    : "text-ink-soft hover:text-ink"
                 }`}
               >
                 <TimerIcon className="size-3.5" />
@@ -532,10 +532,10 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={openSetTimeModal}
-                className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-2xs border transition-all animate-in fade-in slide-in-from-top-1 duration-200 text-left ${
+                className={`mb-3.5 w-full flex items-center justify-between rounded-2xl px-4 py-2.5 shadow-xs border transition-all animate-in fade-in slide-in-from-top-1 duration-200 text-left ${
                   isFullscreen
                     ? "border-[#265342] bg-[#143226] text-emerald-100 hover:bg-[#193d2f]"
-                    : "border-emerald-200/90 bg-emerald-50/70 text-slate-800 hover:bg-emerald-100/60"
+                    : "border-emerald-200/90 bg-emerald-50/70 text-ink hover:bg-emerald-100/60"
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -549,7 +549,7 @@ export default function FocusTimer({
                   </span>
                 </div>
                 <span
-                  className={`text-xs font-bold px-2.5 py-1 rounded-xl shadow-2xs border transition ${
+                  className={`text-xs font-bold px-2.5 py-1 rounded-xl shadow-xs border transition ${
                     isFullscreen
                       ? "bg-[#0e261d] border-[#2d5f4c] text-emerald-300 hover:text-white"
                       : "bg-white border-emerald-200 text-emerald-800 hover:bg-emerald-50"
@@ -562,16 +562,16 @@ export default function FocusTimer({
 
             {/* Subject Dropdown */}
             <div className="relative mb-3.5 w-full">
-              <div className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-600"}`}>
+              <div className={`pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-ink-soft"}`}>
                 <BookOpen className="size-4" />
               </div>
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value ? Number(e.target.value) : "")}
-                className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-2xs transition focus:outline-none cursor-pointer ${
+                className={`w-full appearance-none rounded-2xl py-3 pl-10 pr-10 text-xs sm:text-[13px] font-semibold shadow-xs transition focus:outline-none cursor-pointer ${
                   isFullscreen
                     ? "bg-[#143226] border border-[#265342] text-white hover:border-[#38745c] focus:border-[#10b981]"
-                    : "bg-white border border-slate-300/90 text-slate-800 hover:border-slate-400 focus:border-[#0c4a34]"
+                    : "bg-white border border-line-strong/90 text-ink hover:border-line-strong focus:border-[#0c4a34]"
                 }`}
               >
                 <option value="" className={isFullscreen ? "bg-[#0e261d] text-white" : ""}>
@@ -583,7 +583,7 @@ export default function FocusTimer({
                   </option>
                 ))}
               </select>
-              <div className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-slate-500"}`}>
+              <div className={`pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 ${isFullscreen ? "text-emerald-300" : "text-ink-faint"}`}>
                 <ChevronDown className="size-4" />
               </div>
             </div>
@@ -593,7 +593,7 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={handleStart}
-                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+                className={`flex-1 inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-95 ${
                   isFullscreen
                     ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
                     : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
@@ -606,10 +606,10 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={handleReset}
-                className={`size-12 rounded-2xl grid place-items-center transition shadow-2xs ${
+                className={`size-12 rounded-2xl grid place-items-center transition shadow-xs ${
                   isFullscreen
                     ? "border border-[#265342] bg-[#143226] text-emerald-200 hover:bg-[#1c4233] hover:text-white"
-                    : "border border-slate-300/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    : "border border-line-strong/90 bg-white text-ink-soft hover:text-ink hover:bg-paper"
                 }`}
                 title="Reset"
               >
@@ -633,7 +633,7 @@ export default function FocusTimer({
               className={`rounded-2xl p-3.5 flex items-center justify-between text-xs border ${
                 isFullscreen
                   ? "border-[#265342] bg-[#143226]"
-                  : "border-slate-200/90 bg-white/90 shadow-2xs"
+                  : "border-line/90 bg-white/90 shadow-xs"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -644,12 +644,12 @@ export default function FocusTimer({
                 </span>
                 <div>
                   <p className={`text-[10px] uppercase font-bold tracking-wider ${
-                    isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+                    isFullscreen ? "text-emerald-300/70" : "text-ink-faint"
                   }`}>
                     TODAY&apos;S FOCUS
                   </p>
                   <p className={`font-bold text-[13px] flex items-center gap-1 ${
-                    isFullscreen ? "text-white" : "text-slate-900"
+                    isFullscreen ? "text-white" : "text-ink"
                   }`}>
                     <span className="size-1.5 rounded-full bg-emerald-400" />
                     {formatTotalFocus(todayMinutes)}
@@ -659,7 +659,7 @@ export default function FocusTimer({
 
               <div className="text-right">
                 <p className={`text-[10px] uppercase font-bold tracking-wider ${
-                  isFullscreen ? "text-emerald-300/70" : "text-slate-400"
+                  isFullscreen ? "text-emerald-300/70" : "text-ink-faint"
                 }`}>
                   SESSION STREAK
                 </p>
@@ -683,7 +683,7 @@ export default function FocusTimer({
           className={`w-full transition-all duration-300 ${
             isFullscreen
               ? "h-full max-w-md flex flex-col justify-between items-stretch text-white"
-              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
+              : "max-w-[420px] p-3 sm:p-4 text-ink"
           }`}
         >
           {/* Top Header Row: PUSHED TO TOP IN FULLSCREEN */}
@@ -692,7 +692,7 @@ export default function FocusTimer({
               type="button"
               onClick={handlePause}
               className={`inline-flex items-center gap-1 text-xs font-semibold transition ${
-                isFullscreen ? "text-emerald-200 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                isFullscreen ? "text-emerald-200 hover:text-white" : "text-ink-soft hover:text-ink"
               }`}
             >
               <ArrowLeft className="size-3.5" />
@@ -706,13 +706,13 @@ export default function FocusTimer({
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                   isFullscreen
                     ? "border border-[#265342] bg-[#18382c] text-emerald-200"
-                    : "border border-slate-200/80 bg-slate-50 text-slate-700"
+                    : "border border-line/80 bg-paper text-ink"
                 }`}
               >
                 {soundEnabled ? (
                   <Volume2 className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
                 ) : (
-                  <VolumeX className="size-3 text-slate-400" />
+                  <VolumeX className="size-3 text-ink-faint" />
                 )}
               </button>
 
@@ -731,7 +731,7 @@ export default function FocusTimer({
                 className={`inline-flex items-center rounded-full p-1 ${
                   isFullscreen
                     ? "border border-[#265342] bg-[#18382c] text-emerald-200 hover:text-white"
-                    : "border border-slate-200/80 bg-slate-50 text-slate-600 hover:text-slate-900"
+                    : "border border-line/80 bg-paper text-ink-soft hover:text-ink"
                 }`}
               >
                 {isFullscreen ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}
@@ -778,7 +778,7 @@ export default function FocusTimer({
                     : formatSeconds(freeSeconds)}
                 </span>
                 <span className={`text-xs font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-400"
+                  isFullscreen ? "text-emerald-300/80" : "text-ink-faint"
                 }`}>
                   {timerType === "set" ? `target ${targetMinutes}m` : "session in progress"}
                 </span>
@@ -787,10 +787,10 @@ export default function FocusTimer({
 
             {/* Active Subject Pill */}
             <div className="flex justify-center mb-5">
-              <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-semibold shadow-2xs ${
+              <div className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-xs font-semibold shadow-xs ${
                 isFullscreen
                   ? "bg-[#18382c] border border-[#265342] text-emerald-200"
-                  : "bg-slate-100 border border-slate-200/60 text-slate-800"
+                  : "bg-paper border border-line/60 text-ink"
               }`}>
                 <BookOpen className={`size-3 ${isFullscreen ? "text-emerald-400" : "text-emerald-700"}`} />
                 <span className="truncate max-w-[240px]">{subjectDisplayName}</span>
@@ -829,7 +829,7 @@ export default function FocusTimer({
                 type="button"
                 disabled={isSaving}
                 onClick={handleStopAndSave}
-                className={`rounded-2xl px-5 py-3.5 text-xs font-bold transition shadow-2xs flex items-center gap-1.5 ${
+                className={`rounded-2xl px-5 py-3.5 text-xs font-bold transition shadow-xs flex items-center gap-1.5 ${
                   isFullscreen
                     ? "border border-rose-900/60 bg-[#2b171c] text-rose-300 hover:bg-[#3b1f26]"
                     : "border border-rose-200 bg-rose-50/80 text-rose-700 hover:bg-rose-100"
@@ -845,26 +845,26 @@ export default function FocusTimer({
           {/* Bottom Section: PUSHED TO BOTTOM IN FULLSCREEN */}
           <div className="w-full pt-2 pb-1">
             {/* Subtle info notice */}
-            <p className={`text-center text-[11px] mb-2.5 ${isFullscreen ? "text-emerald-400/70" : "text-slate-400"}`}>
+            <p className={`text-center text-[11px] mb-2.5 ${isFullscreen ? "text-emerald-400/70" : "text-ink-faint"}`}>
               Finishing saves this session directly to your study log.
             </p>
 
             {/* Today's Target / Progress Card */}
             <div className={`rounded-2xl p-3 sm:p-3.5 border ${
-              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
+              isFullscreen ? "border-[#265342] bg-[#143226]" : "border-line/80 bg-white/80 shadow-xs"
             }`}>
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className={`flex items-center gap-1.5 font-bold ${
-                  isFullscreen ? "text-emerald-200" : "text-slate-700"
+                  isFullscreen ? "text-emerald-200" : "text-ink"
                 }`}>
                   <CheckCircle2 className={`size-3.5 ${isFullscreen ? "text-emerald-400" : "text-emerald-600"}`} />
                   Today&apos;s Focus
                 </span>
-                <span className={`font-bold ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+                <span className={`font-bold ${isFullscreen ? "text-white" : "text-ink"}`}>
                   {formatTotalFocus(todayMinutes)}
                 </span>
               </div>
-              <div className={`h-2 w-full overflow-hidden rounded-full ${isFullscreen ? "bg-[#1c4233]" : "bg-slate-200"}`}>
+              <div className={`h-2 w-full overflow-hidden rounded-full ${isFullscreen ? "bg-[#1c4233]" : "bg-paper-deep"}`}>
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${
                     isFullscreen ? "bg-[#10b981]" : "bg-[#0c4a34]"
@@ -885,7 +885,7 @@ export default function FocusTimer({
           className={`w-full text-center transition-all duration-300 ${
             isFullscreen
               ? "my-auto max-w-md flex flex-col items-center justify-center text-white p-4"
-              : "max-w-[420px] p-3 sm:p-4 text-slate-800"
+              : "max-w-[420px] p-3 sm:p-4 text-ink"
           }`}
         >
           {/* Top Big Emerald Celebration Badge */}
@@ -914,21 +914,21 @@ export default function FocusTimer({
           {/* Big Heading */}
           <h2
             className={`font-display text-2xl font-black tracking-tight ${
-              isFullscreen ? "text-white" : "text-slate-900"
+              isFullscreen ? "text-white" : "text-ink"
             }`}
           >
             Session Complete!
           </h2>
           <p
             className={`mt-1 text-xs leading-relaxed max-w-xs mx-auto ${
-              isFullscreen ? "text-emerald-200/80" : "text-slate-500"
+              isFullscreen ? "text-emerald-200/80" : "text-ink-faint"
             }`}
           >
-            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-ink"}`}>
               {lastLoggedMinutes} minutes
             </strong>{" "}
             logged for{" "}
-            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-slate-800"}`}>
+            <strong className={`font-semibold ${isFullscreen ? "text-white" : "text-ink"}`}>
               {subjectDisplayName}
             </strong>
             .
@@ -938,36 +938,36 @@ export default function FocusTimer({
           <div className="my-5 w-full grid grid-cols-2 gap-2.5">
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-line/80 bg-white/80 shadow-xs"
               }`}
             >
               <span
                 className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                  isFullscreen ? "text-emerald-300/80" : "text-ink-faint"
                 }`}
               >
                 <Clock className="size-3.5 text-emerald-400" /> Focus Time
               </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-ink"}`}>
                 {lastLoggedMinutes}m
               </p>
             </div>
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-line/80 bg-white/80 shadow-xs"
               }`}
             >
               <span
                 className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                  isFullscreen ? "text-emerald-300/80" : "text-ink-faint"
                 }`}
               >
                 <BookOpen className="size-3.5 text-emerald-400" /> Subject
               </span>
               <p
                 className={`mt-1 font-display text-sm font-bold truncate ${
-                  isFullscreen ? "text-white" : "text-slate-900"
+                  isFullscreen ? "text-white" : "text-ink"
                 }`}
               >
                 {subjectDisplayName}
@@ -976,34 +976,34 @@ export default function FocusTimer({
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-line/80 bg-white/80 shadow-xs"
               }`}
             >
               <span
                 className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                  isFullscreen ? "text-emerald-300/80" : "text-ink-faint"
                 }`}
               >
                 <Calendar className="size-3.5 text-emerald-400" /> Today&apos;s Total
               </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-ink"}`}>
                 {formatTotalFocus(todayMinutes)}
               </p>
             </div>
 
             <div
               className={`rounded-2xl p-3 text-left border ${
-                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-slate-200/80 bg-white/80 shadow-2xs"
+                isFullscreen ? "border-[#265342] bg-[#143226]" : "border-line/80 bg-white/80 shadow-xs"
               }`}
             >
               <span
                 className={`flex items-center gap-1.5 text-[11px] font-semibold ${
-                  isFullscreen ? "text-emerald-300/80" : "text-slate-500"
+                  isFullscreen ? "text-emerald-300/80" : "text-ink-faint"
                 }`}
               >
                 <Flame className="size-3.5 text-amber-500 fill-amber-500" /> Daily Streak
               </span>
-              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-slate-900"}`}>
+              <p className={`mt-1 font-display text-lg font-black ${isFullscreen ? "text-white" : "text-ink"}`}>
                 {streak} Days
               </p>
             </div>
@@ -1014,7 +1014,7 @@ export default function FocusTimer({
             <button
               type="button"
               onClick={handleReturnToTimer}
-              className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-98 ${
+              className={`w-full inline-flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold shadow-sm transition active:scale-95 ${
                 isFullscreen
                   ? "bg-[#10b981] hover:bg-[#059669] text-[#062419] font-black shadow-lg shadow-emerald-950/40"
                   : "bg-[#0c4a34] hover:bg-[#093a29] text-white"
@@ -1032,21 +1032,21 @@ export default function FocusTimer({
          ════════════════════════════════════════════════════════════ */}
       {isSetTimeModalOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={() => setIsSetTimeModalOpen(false)}
         >
           <div
-            className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-slate-100 text-slate-800 animate-in zoom-in-95 duration-200 select-auto"
+            className="w-full max-w-sm rounded-3xl bg-white p-5 sm:p-6 shadow-2xl border border-line text-ink animate-in zoom-in-95 duration-200 select-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                   <Clock className="size-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+                  <h3 className="text-sm sm:text-base font-bold text-ink leading-tight">
                     Set Timer Duration
                   </h3>
                 </div>
@@ -1054,7 +1054,7 @@ export default function FocusTimer({
               <button
                 type="button"
                 onClick={() => setIsSetTimeModalOpen(false)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                className="rounded-full p-1.5 text-ink-faint hover:bg-paper hover:text-ink-soft transition"
               >
                 <X className="size-5" />
               </button>
@@ -1065,10 +1065,10 @@ export default function FocusTimer({
               <div className="flex items-center justify-center gap-3 sm:gap-4">
                 {/* Hours Column */}
                 <div className="flex flex-col items-center">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-faint mb-2">
                     Hours
                   </span>
-                  <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
+                  <div className="flex items-center border border-line rounded-2xl bg-paper/80 p-1 shadow-xs">
                     <button
                       type="button"
                       onClick={() => {
@@ -1076,7 +1076,7 @@ export default function FocusTimer({
                         setModalHours(newH);
                         setModalHoursInput(String(newH));
                       }}
-                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-ink shadow-xs hover:bg-paper active:scale-95 transition"
                       aria-label="Decrease hour"
                     >
                       <Minus className="size-4" />
@@ -1095,7 +1095,7 @@ export default function FocusTimer({
                         }
                       }}
                       onChange={(e) => handleHoursInputChange(e.target.value)}
-                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-300"
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-ink focus:outline-none placeholder:text-ink-faint"
                     />
                     <button
                       type="button"
@@ -1104,7 +1104,7 @@ export default function FocusTimer({
                         setModalHours(newH);
                         setModalHoursInput(String(newH));
                       }}
-                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-ink shadow-xs hover:bg-paper active:scale-95 transition"
                       aria-label="Increase hour"
                     >
                       <Plus className="size-4" />
@@ -1112,14 +1112,14 @@ export default function FocusTimer({
                   </div>
                 </div>
 
-                <div className="font-display text-2xl font-black text-slate-300 pt-5">:</div>
+                <div className="font-display text-2xl font-black text-ink-faint pt-5">:</div>
 
                 {/* Minutes Column */}
                 <div className="flex flex-col items-center">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-ink-faint mb-2">
                     Minutes
                   </span>
-                  <div className="flex items-center border border-slate-200 rounded-2xl bg-slate-50/80 p-1 shadow-2xs">
+                  <div className="flex items-center border border-line rounded-2xl bg-paper/80 p-1 shadow-xs">
                     <button
                       type="button"
                       onClick={() => {
@@ -1127,7 +1127,7 @@ export default function FocusTimer({
                         setModalMinutes(newM);
                         setModalMinutesInput(String(newM));
                       }}
-                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-ink shadow-xs hover:bg-paper active:scale-95 transition"
                       aria-label="Decrease minute"
                     >
                       <Minus className="size-4" />
@@ -1146,7 +1146,7 @@ export default function FocusTimer({
                         }
                       }}
                       onChange={(e) => handleMinutesInputChange(e.target.value)}
-                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-slate-900 focus:outline-none placeholder:text-slate-300"
+                      className="w-14 bg-transparent text-center font-display text-2xl font-black text-ink focus:outline-none placeholder:text-ink-faint"
                     />
                     <button
                       type="button"
@@ -1155,7 +1155,7 @@ export default function FocusTimer({
                         setModalMinutes(newM);
                         setModalMinutesInput(String(newM));
                       }}
-                      className="flex size-9 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 active:scale-95 transition"
+                      className="flex size-9 items-center justify-center rounded-xl bg-white text-ink shadow-xs hover:bg-paper active:scale-95 transition"
                       aria-label="Increase minute"
                     >
                       <Plus className="size-4" />
@@ -1166,7 +1166,7 @@ export default function FocusTimer({
 
               {/* Quick Presets */}
               <div className="mt-4">
-                <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2 text-center">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-faint mb-2 text-center">
                   Quick Presets
                 </span>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -1194,7 +1194,7 @@ export default function FocusTimer({
                         className={`rounded-xl py-1.5 text-xs font-bold transition active:scale-95 ${
                           isSelected
                             ? "bg-[#0c4a34] text-white shadow-xs"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            : "bg-paper text-ink hover:bg-paper-deep"
                         }`}
                       >
                         {preset.label}
@@ -1220,11 +1220,11 @@ export default function FocusTimer({
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 pt-2 border-t border-line">
               <button
                 type="button"
                 onClick={() => setIsSetTimeModalOpen(false)}
-                className="flex-1 rounded-xl py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+                className="flex-1 rounded-xl py-2.5 text-xs font-bold text-ink-soft hover:bg-paper transition"
               >
                 Cancel
               </button>
@@ -1232,7 +1232,7 @@ export default function FocusTimer({
                 type="button"
                 disabled={modalHours === 0 && modalMinutes === 0}
                 onClick={handleConfirmDuration}
-                className="flex-[2] rounded-xl py-2.5 text-xs font-bold bg-[#0c4a34] text-white hover:bg-[#093a29] transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+                className="flex-[2] rounded-xl py-2.5 text-xs font-bold bg-[#0c4a34] text-white hover:bg-[#093a29] transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
               >
                 Set Duration
               </button>

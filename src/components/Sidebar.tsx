@@ -129,7 +129,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {groups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100/35">
+            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-200/55">
               {group.label}
             </p>
             <ul className="space-y-0.5">
@@ -161,7 +161,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
                         active
                           ? "bg-emerald-400/10 text-emerald-50"
-                          : "text-emerald-100/55 hover:bg-white/5 hover:text-emerald-50"
+                          : "text-emerald-100/70 hover:bg-white/5 hover:text-white"
                       }`}
                     >
                       {active && (
@@ -169,7 +169,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                       )}
                       <Icon
                         className={`size-[17px] shrink-0 transition-colors ${
-                          active ? "text-glow" : "text-emerald-100/40 group-hover:text-emerald-100/80"
+                          active ? "text-glow" : "text-emerald-100/50 group-hover:text-emerald-100/80"
                         }`}
                         strokeWidth={2}
                       />
@@ -190,7 +190,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
               <p className="truncate text-xs font-semibold text-white">
                 {user.name}
               </p>
-              <span className="inline-block rounded bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
+              <span className="inline-block rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
                 {user.role}
               </span>
             </div>
@@ -213,7 +213,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         )}
 
         <div className="pt-2 text-center">
-          <p className="text-[11px] text-emerald-100/40">
+          <p className="text-[11px] text-emerald-100/50">
             Developed by{" "}
             <a
               href="https://www.facebook.com/mosaddek.hosain.rahi"
@@ -241,10 +241,10 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         </Link>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="grid size-9 place-items-center rounded-lg border border-line bg-white text-ink active:scale-95 transition"
+          className="grid size-10 place-items-center rounded-lg border border-line bg-white text-ink active:scale-95 transition"
           aria-label="Toggle menu"
         >
-          {open ? <X className="size-4.5" /> : <Menu className="size-4.5" />}
+          {open ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </div>
 
@@ -257,7 +257,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-pine/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-[280px] bg-pine shadow-2xl">{nav}</aside>
+          <aside className="absolute inset-y-0 left-0 w-[272px] bg-pine shadow-2xl">{nav}</aside>
         </div>
       )}
     </>
