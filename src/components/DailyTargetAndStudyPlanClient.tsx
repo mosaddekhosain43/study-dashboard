@@ -52,9 +52,9 @@ const STATUS_OPTIONS = [
 export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   const [data, setData] = useState<StudentDailyTargetPlanData>(initialData);
   const [isPending, startTransition] = useTransition();
-  const [showPreviewFriday, setShowPreviewFriday] = useState(false);
   const [openStatusMenuTopicId, setOpenStatusMenuTopicId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [modeOverride, setModeOverride] = useState<"auto" | "friday" | "daily">("auto");
 
   // Close status menu when clicking outside
   useEffect(() => {
@@ -207,6 +207,8 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   };
 
   const isFriday = data.fridayRevision.isFriday;
+  const isFridayActive =
+    modeOverride === "friday" ? true : modeOverride === "daily" ? false : isFriday;
   const fridaySubjects = data.fridayRevision.subjects;
   const totalWeeklyCompleted = data.fridayRevision.totalCompletedThisWeek;
   const totalWeeklyRevised = data.fridayRevision.totalRevisedThisWeek;
@@ -222,229 +224,210 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────── */}
-      {/* 1. WEEKLY FRIDAY REVISION SECTION                          */}
-      {/* ─────────────────────────────────────────────────────────── */}
-      {isFriday ? (
-        <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50 via-card to-emerald-50/20 p-5 sm:p-6 shadow-sm dark:from-emerald-950/30 dark:to-card">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
-                <RotateCcw className="size-3.5" />
-                <span>Friday Weekly Revision 🔄</span>
+      {isFridayActive ? (
+        /* ─────────────────────────────────────────────────────────── */
+        /* FRIDAY WEEKLY REVISION (NO NEW LESSONS ON FRIDAY)           */
+        /* ─────────────────────────────────────────────────────────── */
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white shadow-2xs">
+                  <RotateCcw className="size-4" />
+                </span>
+                <div>
+                  <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                    Friday Weekly Revision
+                  </h2>
+                  <p className="text-xs text-ink-faint mt-0.5">
+                    Weekly revision day — no new lessons today. Review all topics completed throughout this week.
+                  </p>
+                </div>
               </div>
-              <h2 className="font-display text-lg sm:text-xl font-bold text-ink">
-                Review Topics Completed This Week
-              </h2>
-              <p className="text-xs sm:text-[13px] text-ink-faint leading-relaxed max-w-2xl">
-                Weekly revision cements retention before starting new topics. You completed{" "}
-                <strong className="text-ink font-bold">
-                  {totalWeeklyCompleted}
-                </strong>{" "}
-                {totalWeeklyCompleted === 1 ? "topic" : "topics"} across{" "}
-                <strong className="text-ink font-bold">
-                  {fridaySubjects.length}
-                </strong>{" "}
-                subjects this week.
-              </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="rounded-2xl border border-emerald-200 bg-white dark:bg-card px-4 py-2.5 text-center shadow-xs">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                  Revision Progress
-                </p>
-                <p className="font-display text-lg font-bold text-ink">
-                  {totalWeeklyRevised} / {totalWeeklyCompleted}
-                </p>
+            {/* Friday Revision Progress Box */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 text-center shrink-0 min-w-[200px]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                Revision Progress
+              </p>
+              <div className="mt-1 flex items-baseline justify-center gap-1">
+                <span className="font-display text-2xl sm:text-3xl font-bold text-ink">
+                  {totalWeeklyRevised}
+                </span>
+                <span className="text-sm font-bold text-ink-faint">
+                  / {totalWeeklyCompleted}
+                </span>
+                <span className="text-xs text-ink-faint font-medium ml-1">Topics</span>
               </div>
+              {totalWeeklyCompleted > 0 && totalWeeklyRevised >= totalWeeklyCompleted ? (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold px-2 py-0.5">
+                  <Check className="size-3" /> All Revised! 🎉
+                </span>
+              ) : (
+                <span className="mt-1 inline-block text-[11px] text-ink-faint">
+                  {Math.max(0, totalWeeklyCompleted - totalWeeklyRevised)} remaining to revise
+                </span>
+              )}
             </div>
           </div>
 
           {/* Topics completed this week grouped by Subject */}
-          <div className="mt-5 space-y-3">
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+                <RotateCcw className="size-4 text-emerald-600" />
+                <span>This Week&apos;s Completed Topics</span>
+              </h3>
+              {!isFriday && (
+                <button
+                  onClick={() => setModeOverride("daily")}
+                  className="text-xs font-semibold text-leaf hover:underline"
+                >
+                  ← Back to Daily Study
+                </button>
+              )}
+            </div>
+
             {fridaySubjects.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-line bg-white/60 dark:bg-card/60 p-4 text-center text-xs text-ink-faint">
-                No topics were completed yet this week. Visit the syllabus section to review past topics.
+              <div className="rounded-2xl border border-dashed border-line p-8 text-center text-xs text-ink-faint space-y-1.5">
+                <p className="text-sm font-semibold text-ink">No topics completed this week yet</p>
+                <p className="text-ink-faint max-w-md mx-auto">
+                  Topics you mark as Completed from Saturday to Thursday will automatically appear here on Friday for revision.
+                </p>
               </div>
             ) : (
-              fridaySubjects.map((sub) => (
-                <div
-                  key={sub.subjectId}
-                  className="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-card/80 p-4 shadow-2xs"
-                >
-                  <div className="flex items-center justify-between gap-2 border-b border-line/60 pb-2.5 mb-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="grid size-6 place-items-center rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                        📖
-                      </span>
-                      <span className="font-display text-xs sm:text-sm font-bold text-ink">
-                        {sub.subjectName}
-                      </span>
-                      {sub.subjectNameBn && (
-                        <span className="text-[11px] text-ink-faint hidden sm:inline">
-                          ({sub.subjectNameBn})
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                      {sub.topics.length} {sub.topics.length === 1 ? "topic" : "topics"}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {sub.topics.map((top) => (
-                      <div
-                        key={top.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-paper/50 dark:bg-card/50 px-3 py-2 text-xs"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-ink truncate">{top.name}</p>
-                          {top.chapter && (
-                            <p className="text-[10.5px] text-ink-faint truncate">
-                              Chapter: {top.chapter}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {fridaySubjects.map((sub) => (
+                  <div
+                    key={sub.subjectId}
+                    className="card flex flex-col justify-between p-4 transition-all hover:border-emerald-500/50 hover:shadow-xs group"
+                  >
+                    <div>
+                      {/* Subject Header: English name top, Bengali name subtitle */}
+                      <div className="flex items-start justify-between gap-2 border-b border-line/60 pb-3">
+                        <div className="min-w-0">
+                          <p className="font-display text-sm font-bold text-ink truncate group-hover:text-emerald-600 transition-colors">
+                            {sub.subjectName}
+                          </p>
+                          {sub.subjectNameBn && (
+                            <p className="text-[11px] text-ink-faint truncate">
+                              {sub.subjectNameBn}
                             </p>
                           )}
                         </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {top.isRevisedToday ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-200">
-                              <Check className="size-3" />
-                              <span>Revised</span>
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleMarkRevised(sub.subjectId, top.id)}
-                              disabled={isPending}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-[11px] font-bold transition shadow-2xs active:scale-95 disabled:opacity-50"
-                            >
-                              <RotateCcw className="size-3" />
-                              <span>Mark Revised</span>
-                            </button>
-                          )}
-                        </div>
+                        <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-bold shrink-0">
+                          {sub.topics.length} {sub.topics.length === 1 ? "topic" : "topics"}
+                        </span>
                       </div>
-                    ))}
+
+                      {/* Topic list */}
+                      <div className="mt-3 space-y-2.5">
+                        {sub.topics.map((top) => (
+                          <div
+                            key={top.id}
+                            className={`relative rounded-xl border p-2.5 text-xs transition-all ${
+                              top.isRevisedToday
+                                ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                                : "border-line bg-paper/40 hover:bg-paper"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className={`font-medium truncate ${top.isRevisedToday ? "text-emerald-900 dark:text-emerald-200 font-semibold" : "text-ink"}`}>
+                                  {top.name}
+                                </p>
+                                {top.chapter && (
+                                  <p className="text-[10.5px] text-ink-faint truncate">
+                                    {top.chapter}
+                                  </p>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => handleMarkRevised(sub.subjectId, top.id)}
+                                disabled={isPending}
+                                className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition shadow-2xs ${
+                                  top.isRevisedToday
+                                    ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
+                                    : "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95"
+                                }`}
+                              >
+                                {top.isRevisedToday ? (
+                                  <>
+                                    <Check className="size-3" />
+                                    <span>Revised</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <RotateCcw className="size-3" />
+                                    <span>Mark Revised</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
       ) : (
-        /* Not Friday: Compact Weekly Revision Queue Preview */
-        <div className="rounded-2xl border border-line bg-gradient-to-r from-paper via-card to-paper p-4 shadow-2xs">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="grid size-8 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 shrink-0">
-                <RotateCcw className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-ink">
-                  Friday Weekly Revision
-                </p>
-                <p className="text-[11.5px] text-ink-faint truncate">
-                  <strong className="text-ink font-semibold">
-                    {totalWeeklyCompleted}
-                  </strong>{" "}
-                  {totalWeeklyCompleted === 1 ? "topic" : "topics"} completed this week ready for Friday revision
-                </p>
-              </div>
-            </div>
-
-            {totalWeeklyCompleted > 0 && (
-              <button
-                onClick={() => setShowPreviewFriday(!showPreviewFriday)}
-                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-leaf hover:underline shrink-0"
-              >
-                <span>{showPreviewFriday ? "Hide" : "View Revision List"}</span>
-                {showPreviewFriday ? (
-                  <ChevronUp className="size-3.5" />
-                ) : (
-                  <ChevronDown className="size-3.5" />
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Collapsible preview */}
-          {showPreviewFriday && fridaySubjects.length > 0 && (
-            <div className="mt-3.5 pt-3 border-t border-line/60 space-y-2 animate-in fade-in">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">
-                Scheduled for Friday Revision ({totalWeeklyCompleted} {totalWeeklyCompleted === 1 ? "topic" : "topics"}):
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {fridaySubjects.map((sub) => (
-                  <div
-                    key={sub.subjectId}
-                    className="rounded-xl border border-line/80 bg-paper/50 p-2.5 text-xs"
+        /* ─────────────────────────────────────────────────────────── */
+        /* SATURDAY - THURSDAY: REGULAR DAILY STUDY & TOPICS           */
+        /* ─────────────────────────────────────────────────────────── */
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-8 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
+                  <Target className="size-4" />
+                </span>
+                <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                  Daily reach your target
+                </h2>
+                {totalWeeklyCompleted > 0 && (
+                  <button
+                    onClick={() => setModeOverride("friday")}
+                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/30 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors ml-1"
+                    title="Preview Friday Weekly Revision"
                   >
-                    <p className="font-bold text-ink truncate mb-1">
-                      {sub.subjectName} {sub.subjectNameBn ? `(${sub.subjectNameBn})` : ""} ({sub.topics.length})
-                    </p>
-                    <ul className="space-y-1 text-ink-faint text-[11px]">
-                      {sub.topics.slice(0, 3).map((t) => (
-                        <li key={t.id} className="truncate flex items-center gap-1.5">
-                          <span className="size-1 rounded-full bg-emerald-500" />
-                          <span className="truncate">{t.name}</span>
-                        </li>
-                      ))}
-                      {sub.topics.length > 3 && (
-                        <li className="text-[10px] text-ink-faint font-semibold pl-2.5">
-                          + {sub.topics.length - 3} more topics
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                ))}
+                    <RotateCcw className="size-3" />
+                    <span>Friday Revision ({totalWeeklyCompleted})</span>
+                  </button>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      )}
 
-      {/* ─────────────────────────────────────────────────────────── */}
-      {/* 2. TARGET STUDY PACE & COUNTDOWN SECTION                   */}
-      {/* ─────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <span className="grid size-8 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
-                <Target className="size-4" />
-              </span>
-              <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
-                Daily reach your target
-              </h2>
+            {/* Today's Target Progress Indicator */}
+            <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 min-w-[200px]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep">
+                Today&apos;s Progress
+              </p>
+              <div className="mt-1 flex items-baseline justify-center gap-1">
+                <span className="font-display text-2xl sm:text-3xl font-bold text-ink">
+                  {data.doneToday}
+                </span>
+                <span className="text-sm font-bold text-ink-faint">
+                  / {data.requiredTopicsPerDay || 1}
+                </span>
+                <span className="text-xs text-ink-faint font-medium ml-1">Topics</span>
+              </div>
+              {data.isTargetMetToday ? (
+                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold px-2 py-0.5">
+                  <Check className="size-3" /> Target Met Today! 🎉
+                </span>
+              ) : (
+                <span className="mt-1 inline-block text-[11px] text-ink-faint">
+                  {Math.max(0, (data.requiredTopicsPerDay || 1) - data.doneToday)} remaining today
+                </span>
+              )}
             </div>
           </div>
-
-          {/* Today's Target Progress Indicator */}
-          <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 min-w-[200px]">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep">
-              Today&apos;s Progress
-            </p>
-            <div className="mt-1 flex items-baseline justify-center gap-1">
-              <span className="font-display text-2xl sm:text-3xl font-bold text-ink">
-                {data.doneToday}
-              </span>
-              <span className="text-sm font-bold text-ink-faint">
-                / {data.requiredTopicsPerDay || 1}
-              </span>
-              <span className="text-xs text-ink-faint font-medium ml-1">Topics</span>
-            </div>
-            {data.isTargetMetToday ? (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold px-2 py-0.5">
-                <Check className="size-3" /> Target Met Today! 🎉
-              </span>
-            ) : (
-              <span className="mt-1 inline-block text-[11px] text-ink-faint">
-                {Math.max(0, (data.requiredTopicsPerDay || 1) - data.doneToday)} remaining today
-              </span>
-            )}
-          </div>
-        </div>
 
         {/* ─────────────────────────────────────────────────────────── */}
         {/* 3. CUMULATIVE BACKLOG NOTICE (Carryover Alert)            */}
@@ -681,6 +664,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
