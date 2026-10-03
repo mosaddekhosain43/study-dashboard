@@ -103,54 +103,47 @@ export default async function DashboardPage() {
 
       {/* ── Stats (mobile) ─────────────────────────────────── */}
       <section className="rise space-y-3 sm:hidden">
-        <Link
-          href="/subjects"
-          className="relative flex items-center gap-4 overflow-hidden rounded-[22px] bg-gradient-to-br from-[#1f5a45] to-[#2d6b55] p-4 text-white shadow-card"
-        >
-          <div className="pointer-events-none absolute -right-10 -bottom-16 size-48 rounded-full bg-white/5" />
-          <div className="relative grid size-[92px] shrink-0 place-items-center">
-            <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90">
-              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="9" />
-              <circle
-                cx="50" cy="50" r="42" fill="none" stroke="#7ee8b5" strokeWidth="9" strokeLinecap="round"
-                strokeDasharray={`${Math.max(0.03, data.progress) * 263.9} 263.9`}
-              />
-            </svg>
-            <div className="text-center">
-              <p className="font-display text-[22px] font-bold leading-none">{Math.round(data.progress * 100)}%</p>
-              <p className="mt-1 text-[8.5px] font-semibold tracking-[0.14em] text-white/75">OVERALL</p>
-            </div>
-          </div>
-          <div className="h-16 w-px shrink-0 bg-white/25" />
+        <Link href="/subjects" className="card relative flex items-center gap-4 overflow-hidden rounded-[22px] p-4">
+          <Donut
+            size={104}
+            stroke={13}
+            segments={[
+              { value: data.completed, color: STATUS_META.completed.color },
+              { value: data.inProgress, color: STATUS_META.in_progress.color },
+              { value: data.notCompleted, color: STATUS_META.not_completed.color },
+              { value: data.notStarted, color: STATUS_META.not_started.color },
+            ]}
+            centerLabel={`${Math.round(data.progress * 100)}%`}
+            centerSub="Overall"
+          />
           <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-white/80">Overall Syllabus</p>
-            <p className="mt-1 text-[15px] leading-snug">
-              <span className="font-bold">{data.completed}</span> of <span className="font-bold">{data.total}</span> topics completed
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-faint">Overall Syllabus</p>
+            <p className="mt-1 text-[13px] text-ink-soft">
+              <span className="font-bold text-ink">{data.completed}</span> of{" "}
+              <span className="font-bold text-ink">{data.total}</span> topics completed
             </p>
-            <p className="mt-0.5 text-[12.5px] text-white/70">{data.remaining} remaining</p>
+            <p className="mt-0.5 text-[12px] text-ink-faint">{data.remaining} remaining</p>
           </div>
-          <div className="flex flex-col items-end gap-3 self-stretch justify-center">
-            <BookMarked className="size-5 text-white/80" />
-            <ChevronRight className="size-4 text-white/80" />
-          </div>
+          <ChevronRight className="size-4 shrink-0 text-ink-faint" />
         </Link>
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { href: "/subjects", label: "Completed", value: String(data.completed), sub: "topics done", icon: <CheckCircle2 className="size-5 text-white" />, iconBg: "bg-emerald-700/90 ring-8 ring-emerald-100", card: "bg-emerald-50/60 border-emerald-100", labelCls: "text-emerald-900" },
-            { href: "/subjects", label: "In Progress", value: String(data.inProgress), sub: "being studied", icon: <CircleDashed className="size-5 text-amber-600" />, iconBg: "bg-amber-100", card: "bg-amber-50/60 border-amber-100", labelCls: "text-amber-900" },
-            { href: "/remaining", label: "Remaining", value: String(data.remaining), sub: `${data.notStarted} never started`, icon: <Hourglass className="size-5 text-blue-800" />, iconBg: "bg-blue-100", card: "bg-blue-50/60 border-blue-100", labelCls: "text-blue-900" },
-            { href: "/timer", label: "Today's Time", value: formatMinutes(data.todayMinutes), sub: "study time logged", icon: <Timer className="size-5 text-violet-700" />, iconBg: "bg-violet-100", card: "bg-violet-50/60 border-violet-100", labelCls: "text-violet-900" },
+            { href: "/subjects", label: "Completed", value: String(data.completed), sub: "topics done", icon: <CheckCircle2 className="size-4 text-emerald-600" />, accent: "#0f9d6e" },
+            { href: "/subjects", label: "In Progress", value: String(data.inProgress), sub: "being studied", icon: <CircleDashed className="size-4 text-amber-600" />, accent: "#e5a100" },
+            { href: "/remaining", label: "Remaining", value: String(data.remaining), sub: `${data.notStarted} never started`, icon: <Hourglass className="size-4 text-ink-faint" />, accent: "#94a3b8" },
+            { href: "/timer", label: "Today's Time", value: formatMinutes(data.todayMinutes), sub: "study time logged", icon: <Timer className="size-4 text-leaf" />, accent: "#0c7a5b" },
           ].map((s) => (
-            <Link key={s.label} href={s.href} className={`relative flex flex-col gap-2 rounded-[18px] border p-3.5 ${s.card}`}>
-              <div className="flex items-center gap-2.5">
-                <span className={`grid size-10 shrink-0 place-items-center rounded-full ${s.iconBg}`}>{s.icon}</span>
-                <p className={`text-[10.5px] font-bold uppercase tracking-[0.12em] ${s.labelCls}`}>{s.label}</p>
+            <Link key={s.label} href={s.href} className="card relative overflow-hidden rounded-[18px] p-3.5">
+              <div className="pointer-events-none absolute -right-6 -top-6 size-20 rounded-full opacity-15" style={{ background: s.accent }} />
+              <div className="relative flex items-center gap-1.5">
+                {s.icon}
+                <p className="truncate text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-faint">{s.label}</p>
               </div>
-              <div className="flex items-end justify-between">
+              <div className="relative mt-2 flex items-end justify-between">
                 <div className="min-w-0">
                   <p className="font-display text-[26px] font-bold leading-none tabular-nums text-ink">{s.value}</p>
-                  <p className="mt-1 truncate text-[11.5px] text-ink-soft">{s.sub}</p>
+                  <p className="mt-1 truncate text-[11.5px] text-ink-faint">{s.sub}</p>
                 </div>
                 <ChevronRight className="size-4 shrink-0 text-ink-faint" />
               </div>
@@ -158,21 +151,17 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <Link href="/log" className="flex items-center gap-3.5 rounded-[18px] border border-rose-100 bg-rose-50/70 p-3.5">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-rose-100">
-            <Flame className="size-5 text-rose-500" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-soft">Streak</p>
-            <p className="font-display text-[26px] font-bold leading-none tabular-nums text-ink">{data.streak}d</p>
-            <p className="mt-1 text-[11.5px] text-ink-soft">{data.streak > 0 ? "keep it burning" : "study today to start"}</p>
+        <Link href="/log" className="card relative flex items-end justify-between overflow-hidden rounded-[18px] p-3.5">
+          <div className="pointer-events-none absolute -right-6 -top-6 size-20 rounded-full opacity-15" style={{ background: "#f97316" }} />
+          <div className="relative min-w-0">
+            <div className="flex items-center gap-1.5">
+              <Flame className="size-4 text-orange-500" />
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-ink-faint">Streak</p>
+            </div>
+            <p className="mt-2 font-display text-[26px] font-bold leading-none tabular-nums text-ink">{data.streak}d</p>
+            <p className="mt-1 text-[11.5px] text-ink-faint">{data.streak > 0 ? "keep it burning" : "study today to start"}</p>
           </div>
-          <div className="flex items-end gap-1">
-            <span className="h-2.5 w-1.5 rounded-full bg-rose-200" />
-            <span className="h-4 w-1.5 rounded-full bg-rose-300" />
-            <span className="h-5 w-1.5 rounded-full bg-rose-300" />
-          </div>
-          <ChevronRight className="size-4 shrink-0 text-ink-faint" />
+          <ChevronRight className="relative size-4 shrink-0 text-ink-faint" />
         </Link>
       </section>
 
