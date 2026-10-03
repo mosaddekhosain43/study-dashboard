@@ -24,6 +24,8 @@ export default async function WeeklyPage({
   const dates = weekDates(weekStart);
   const delta = w.totalMinutes - w.prevTotalMinutes;
 
+  const isFriday = new Date().getDay() === 5;
+
   return (
     <div className="space-y-6">
       <header className="rise flex flex-wrap items-center justify-between gap-3">
@@ -51,6 +53,32 @@ export default async function WeeklyPage({
           </Link>
         </div>
       </header>
+
+      {/* Friday Revision Highlight Banner */}
+      <div className={`card p-4 border-l-4 ${isFriday ? "border-l-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-l-leaf bg-paper/60"}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="grid size-6 place-items-center rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
+                🔄
+              </span>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
+                {isFriday ? "আজ শুক্রবার — সাপ্তাহিক রিভিশন দিন!" : "শুক্রবার সাপ্তাহিক রিভিশন গাইড"}
+              </p>
+            </div>
+            <p className="text-xs text-ink-faint">
+              এই সপ্তাহে মোট <strong className="text-ink font-semibold">{w.topicsCompleted.length}টি টপিক</strong> সম্পন্ন হয়েছে। প্রতি শুক্রবার পুরো সপ্তাহের পড়াগুলো রিভিশন দেওয়া আবশ্যক যাতে পড়া স্থায়ী স্মৃতিতে জমা হয়।
+            </p>
+          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 text-xs font-bold text-leaf hover:underline shrink-0"
+          >
+            <span>ড্যাশবোর্ড রিভিশন তালিকা</span>
+            <ChevronRight className="size-3.5" />
+          </Link>
+        </div>
+      </div>
 
       {/* summary tiles */}
       <section className="rise rise-1 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -447,20 +447,46 @@ export interface TargetInfo {
 
 export async function getTargetInfo(): Promise<TargetInfo> {
   const cfg = await getExamConfig();
-  const [tops, todayDoneRows, weekDoneRows, last14Rows] = await Promise.all([
-    db.select().from(topics),
+  const user = await getCurrentUser();
+  const userPersonalTops = user
+    ? await db.select().from(topics).where(eq(topics.userId, user.id))
+    : [];
+  const tops =
+    userPersonalTops.length > 0
+      ? userPersonalTops
+      : await db.select().from(topics).where(isNull(topics.userId));
+
+  const [todayDoneRows, weekDoneRows, last14Rows] = await Promise.all([
     db
       .select({ c: sql<number>`count(*)` })
       .from(updateItems)
-      .where(and(eq(updateItems.date, todayKey()), eq(updateItems.status, "completed"))),
+      .where(
+        and(
+          user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId),
+          eq(updateItems.date, todayKey()),
+          eq(updateItems.status, "completed")
+        )
+      ),
     db
       .select({ c: sql<number>`count(*)` })
       .from(updateItems)
-      .where(and(gte(updateItems.date, startOfWeek(todayKey())), eq(updateItems.status, "completed"))),
+      .where(
+        and(
+          user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId),
+          gte(updateItems.date, startOfWeek(todayKey())),
+          eq(updateItems.status, "completed")
+        )
+      ),
     db
       .select({ c: sql<number>`count(*)` })
       .from(updateItems)
-      .where(and(gte(updateItems.date, addDays(todayKey(), -13)), eq(updateItems.status, "completed"))),
+      .where(
+        and(
+          user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId),
+          gte(updateItems.date, addDays(todayKey(), -13)),
+          eq(updateItems.status, "completed")
+        )
+      ),
   ]);
 
   const total = tops.length;

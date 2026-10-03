@@ -20,7 +20,6 @@ const bengali = Noto_Sans_Bengali({
   subsets: ["bengali"],
   variable: "--ff-bengali",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
 });
 
 export const viewport: Viewport = {
