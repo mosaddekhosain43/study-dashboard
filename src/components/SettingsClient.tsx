@@ -63,15 +63,6 @@ export interface StudentProfileData {
 
 const AVATAR_OPTIONS = ["🎓", "📚", "🕌", "🌙", "🔬", "💡", "✍️", "🏆", "🌟", "📖"];
 
-const CLASS_LEVEL_OPTIONS = [
-  { value: "alim", label: "Alim (HSC Madrasah)" },
-  { value: "alim_1st", label: "Alim 1st Year" },
-  { value: "alim_2nd", label: "Alim 2nd Year" },
-  { value: "dakhil", label: "Dakhil (SSC Madrasah)" },
-  { value: "hsc", label: "HSC General" },
-  { value: "other", label: "Other" },
-];
-
 const STREAM_GROUP_OPTIONS = [
   { value: "general_madrasah", label: "General Madrasah" },
   { value: "science", label: "Science" },
@@ -96,8 +87,6 @@ export default function SettingsClient({
   const [name, setName] = useState(profile.name || "");
   const [phone, setPhone] = useState(profile.phone || "");
   const [institution, setInstitution] = useState(profile.institution || "");
-  const [classLevel, setClassLevel] = useState(profile.classLevel || "alim");
-  const [streamGroup, setStreamGroup] = useState(profile.streamGroup || "general_madrasah");
   const [rollNumber, setRollNumber] = useState(profile.rollNumber || "");
   const [targetGoal, setTargetGoal] = useState(profile.targetGoal || "");
   const [bio, setBio] = useState(profile.bio || "");
@@ -133,8 +122,8 @@ export default function SettingsClient({
         name,
         phone,
         institution,
-        classLevel,
-        streamGroup,
+        classLevel: profile.classLevel,
+        streamGroup: profile.streamGroup,
         board: "madrasah",
         rollNumber,
         targetGoal,
@@ -519,42 +508,55 @@ export default function SettingsClient({
                 />
               </div>
 
-              {/* Class Level */}
+              {/* Academic Program / Batch (Read-only as selected at account registration) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
-                  <BookOpen className="size-3.5 text-leaf" />
-                  <span>Class / Academic Level</span>
+                <label className="text-xs font-bold text-ink flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <BookOpen className="size-3.5 text-leaf" />
+                    <span>Academic Program / Batch</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-leaf-deep bg-leaf-soft px-2 py-0.5 rounded-full">
+                    Selected at Registration
+                  </span>
                 </label>
-                <select
-                  value={classLevel}
-                  onChange={(e) => setClassLevel(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white dark:bg-card px-3.5 py-2.5 text-xs font-medium text-ink focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-                >
-                  {CLASS_LEVEL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    disabled
+                    value={profile.batchName || "Alim 2027"}
+                    className="w-full rounded-xl border border-line bg-paper/60 px-3.5 py-2.5 text-xs font-semibold text-ink-soft cursor-not-allowed select-none opacity-85"
+                  />
+                  <Lock className="size-3.5 text-ink-faint absolute right-3.5 top-3" />
+                </div>
               </div>
 
-              {/* Stream / Group */}
+              {/* Stream / Group (Read-only as selected during setup) */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
-                  <Target className="size-3.5 text-leaf" />
-                  <span>Stream / Group</span>
+                <label className="text-xs font-bold text-ink flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Target className="size-3.5 text-leaf" />
+                    <span>Stream / Group</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-leaf-deep bg-leaf-soft px-2 py-0.5 rounded-full">
+                    Active Syllabus
+                  </span>
                 </label>
-                <select
-                  value={streamGroup}
-                  onChange={(e) => setStreamGroup(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-white dark:bg-card px-3.5 py-2.5 text-xs font-medium text-ink focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
-                >
-                  {STREAM_GROUP_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    disabled
+                    value={
+                      STREAM_GROUP_OPTIONS.find((s) => s.value === profile.streamGroup)?.label ||
+                      (profile.streamGroup === "science"
+                        ? "Science"
+                        : profile.streamGroup === "humanities"
+                        ? "Humanities"
+                        : "General Madrasah")
+                    }
+                    className="w-full rounded-xl border border-line bg-paper/60 px-3.5 py-2.5 text-xs font-semibold text-ink-soft cursor-not-allowed select-none opacity-85"
+                  />
+                  <Lock className="size-3.5 text-ink-faint absolute right-3.5 top-3" />
+                </div>
               </div>
 
               {/* Dream Target / Higher Study Goal */}
