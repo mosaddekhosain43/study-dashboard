@@ -65,17 +65,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ── Header ─────────────────────────────────────────── */}
-      <header className="rise flex flex-wrap items-end justify-between gap-4">
+      <header className="rise flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[12px] font-bold uppercase tracking-[0.2em] text-leaf">
+          <h1 className="font-display text-[22px] sm:text-[26px] font-bold tracking-tight text-ink">
             {today}
-          </p>
-          <h1 className="mt-1 font-display text-[30px] font-bold leading-none tracking-tight text-ink sm:text-[34px]">
-            Study Dashboard
           </h1>
-          <p className="mt-1.5 text-[13.5px] text-ink-faint">
-            {data.stats.length > 0 ? `${data.stats.length} subjects` : "Alim Examination"} · Countdown active
-          </p>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2.5">
           <div className="card flex items-center gap-2.5 p-3 sm:px-4 sm:py-2.5">
