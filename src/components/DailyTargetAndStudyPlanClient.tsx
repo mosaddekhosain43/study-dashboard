@@ -379,7 +379,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         /* ─────────────────────────────────────────────────────────── */
         /* SATURDAY - THURSDAY: REGULAR DAILY STUDY & TOPICS           */
         /* ─────────────────────────────────────────────────────────── */
-        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
+        <div className="relative rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
@@ -458,10 +458,15 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {data.recommendedBooks.map((book) => {
+                const isAnyMenuOpenInThisCard = book.topics.some(
+                  (t) => t.id === openStatusMenuTopicId
+                );
                 return (
                   <div
                     key={book.subjectId}
-                    className="card flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group"
+                    className={`card !overflow-visible flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group ${
+                      isAnyMenuOpenInThisCard ? "relative z-30" : "relative z-0"
+                    }`}
                   >
                     <div>
                       {/* Book Header */}
@@ -568,7 +573,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
 
                                   {/* Dropdown popup menu */}
                                   {isMenuOpen && (
-                                    <div className="absolute right-0 top-full mt-1.5 z-40 w-36 rounded-xl border border-line bg-white dark:bg-card p-1 shadow-lg animate-in fade-in zoom-in-95">
+                                    <div className="absolute right-0 top-full mt-1.5 z-50 w-36 rounded-xl border border-line bg-white dark:bg-card p-1 shadow-xl animate-in fade-in zoom-in-95">
                                       {STATUS_OPTIONS.map((opt) => {
                                         const isSelected = topic.status === opt.value;
                                         return (
