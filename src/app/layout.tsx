@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Inter, Noto_Sans_Bengali, Sora } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
+import OfflineManager from "@/components/OfflineManager";
 import { getSubjects } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -65,6 +66,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <AppShell subjects={subjects.map((s) => ({ id: s.id, name: s.name }))} user={user}>
           {children}
         </AppShell>
+        <OfflineManager />
       </body>
     </html>
   );
