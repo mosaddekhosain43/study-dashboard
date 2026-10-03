@@ -443,9 +443,9 @@ export default function SettingsClient({
               <div className="space-y-1.5 md:col-span-2">
                 <label className="text-xs font-bold text-ink flex items-center gap-1.5">
                   <User className="size-3.5 text-leaf" />
-                  <span>Gender (Auto Profile Avatar)</span>
+                  <span>Gender</span>
                 </label>
-                <div className="grid grid-cols-2 gap-3 max-w-md">
+                <div className="grid grid-cols-2 gap-3 max-w-xs">
                   <button
                     type="button"
                     onClick={() => setGender("male")}
@@ -455,11 +455,8 @@ export default function SettingsClient({
                         : "border-line bg-paper/30 hover:border-leaf/40"
                     }`}
                   >
-                    <StudentAvatar gender="male" size={40} />
-                    <div>
-                      <p className="text-xs font-bold text-ink">Male Student</p>
-                      <p className="text-[10.5px] text-ink-faint">Islamic Cap & Kurta</p>
-                    </div>
+                    <StudentAvatar gender="male" size={38} />
+                    <span className="text-xs font-bold text-ink">Male</span>
                   </button>
 
                   <button
@@ -471,11 +468,8 @@ export default function SettingsClient({
                         : "border-line bg-paper/30 hover:border-leaf/40"
                     }`}
                   >
-                    <StudentAvatar gender="female" size={40} />
-                    <div>
-                      <p className="text-xs font-bold text-ink">Female Student</p>
-                      <p className="text-[10.5px] text-ink-faint">Islamic Hijab</p>
-                    </div>
+                    <StudentAvatar gender="female" size={38} />
+                    <span className="text-xs font-bold text-ink">Female</span>
                   </button>
                 </div>
               </div>

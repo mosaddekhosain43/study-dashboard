@@ -151,7 +151,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                Gender (Avatar) <span className="text-rose-500">*</span>
+                Gender <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex items-center gap-3 rounded-xl border border-line bg-paper/30 p-2.5 cursor-pointer hover:border-leaf/50 transition has-[:checked]:border-leaf has-[:checked]:bg-leaf-soft/20">
