@@ -147,7 +147,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
     startTransition(async () => {
       if (typeof window !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
-        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
+        showToast("Saved offline! Will auto-sync when online. 📱");
         return;
       }
 
@@ -163,11 +163,11 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           showToast(labels[newStatus] || "Topic status updated.");
         } else {
           enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
-          showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
+          showToast("Saved offline! Will auto-sync when online. 📱");
         }
       } catch {
         enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
-        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
+        showToast("Saved offline! Will auto-sync when online. 📱");
       }
     });
   };
@@ -211,7 +211,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
     startTransition(async () => {
       if (typeof window !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction("MARK_REVISED", { topicId });
-        showToast("অফলাইনে রিভিশন সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        showToast("Revision saved offline! Will auto-sync when online. 🔄");
         return;
       }
 
@@ -221,11 +221,11 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           showToast("Topic marked as revised! 🔄");
         } else {
           enqueueOfflineAction("MARK_REVISED", { topicId });
-          showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+          showToast("Revision saved offline! Will auto-sync when online. 🔄");
         }
       } catch {
         enqueueOfflineAction("MARK_REVISED", { topicId });
-        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        showToast("Revision saved offline! Will auto-sync when online. 🔄");
       }
     });
   };

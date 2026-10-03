@@ -96,10 +96,10 @@ export default function OfflineManager() {
             <WifiOff className="size-5 shrink-0 animate-pulse text-amber-100" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight">
-                Offline Mode (অফলাইন মোড)
+                Offline Mode
               </p>
               <p className="text-[11px] text-amber-100 leading-tight mt-0.5">
-                ইন্টারনেট সংযোগ নেই। পূর্বের ক্যাশ করা পড়া দেখতে পাচ্ছেন।
+                No internet connection. Viewing cached data.
               </p>
             </div>
           </div>
@@ -113,10 +113,10 @@ export default function OfflineManager() {
             <Wifi className="size-5 shrink-0 text-emerald-200" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight">
-                Back Online (সংযোগ ফিরে এসেছে)
+                Back Online
               </p>
               <p className="text-[11px] text-emerald-100 leading-tight mt-0.5">
-                ইন্টারনেট কানেকশন আবার চালু হয়েছে।
+                Internet connection restored.
               </p>
             </div>
           </div>
@@ -130,10 +130,10 @@ export default function OfflineManager() {
             <CheckCircle2 className="size-5 shrink-0 text-teal-200" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight">
-                Auto-Synced with Cloud (অটো-সিঙ্ক সম্পন্ন)
+                Auto-Synced with Cloud
               </p>
               <p className="text-[11px] text-teal-100 leading-tight mt-0.5">
-                অফলাইনে পড়া {syncedCount}টি টপিক স্বয়ংক্রিয়ভাবে ক্লাউড ডাটাবেজে আপডেট হয়েছে।
+                {syncedCount} offline topic{syncedCount === 1 ? "" : "s"} synced to server.
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function OfflineManager() {
             title="Install Dashboard as an app on your device"
           >
             <Download className="size-4 text-glow" />
-            <span>Install App (অ্যাপ ইনস্টল করুন)</span>
+            <span>Install App</span>
           </button>
         </div>
       )}

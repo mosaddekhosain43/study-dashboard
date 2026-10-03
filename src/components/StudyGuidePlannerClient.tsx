@@ -51,7 +51,7 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
     startTransition(async () => {
       if (typeof window !== "undefined" && !navigator.onLine) {
         enqueueOfflineAction("MARK_REVISED", { topicId });
-        setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        setMsg("Saved offline! Will auto-sync when online. 🔄");
         setTimeout(() => setMsg(null), 4000);
         return;
       }
@@ -59,14 +59,14 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
       try {
         const res = await markTopicRevisedAction(topicId);
         if (res.ok) {
-          setMsg("টপিকটি সফলভাবে রিভিশন সম্পন্ন হিসেবে চিহ্নিত করা হয়েছে!");
+          setMsg("Topic marked as revised! 🔄");
         } else {
           enqueueOfflineAction("MARK_REVISED", { topicId });
-          setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+          setMsg("Saved offline! Will auto-sync when online. 🔄");
         }
       } catch {
         enqueueOfflineAction("MARK_REVISED", { topicId });
-        setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        setMsg("Saved offline! Will auto-sync when online. 🔄");
       }
       setTimeout(() => setMsg(null), 4000);
     });
