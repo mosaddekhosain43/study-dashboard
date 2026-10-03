@@ -6,6 +6,7 @@ import {
   Award,
   BookOpen,
   Calendar,
+  Check,
   CheckCircle2,
   Database,
   Download,
@@ -235,10 +236,15 @@ export default function SettingsClient({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4.5">
             {/* Avatar Pill / Badge */}
-            <div className="relative grid size-18 place-items-center rounded-2xl bg-paper/90 border border-line shadow-sm shrink-0 ring-4 ring-white/80 dark:ring-card overflow-hidden">
-              <StudentAvatar gender={gender} size={58} />
-              <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white text-[10px]">
-                ✓
+            <div className="relative shrink-0">
+              <div className="grid size-18 place-items-center rounded-2xl bg-paper/90 border border-line shadow-sm ring-4 ring-white/80 dark:ring-card overflow-hidden">
+                <StudentAvatar gender={gender} size={58} />
+              </div>
+              <span
+                className="absolute -bottom-1 -right-1 z-10 grid size-4.5 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white dark:ring-card shadow-sm"
+                title="Verified Student Account"
+              >
+                <Check className="size-2.5 text-white" strokeWidth={3.5} />
               </span>
             </div>
 
