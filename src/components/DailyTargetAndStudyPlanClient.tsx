@@ -410,22 +410,14 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
       <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="grid size-7 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-8 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
                 <Target className="size-4" />
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-leaf">
-                Target Study Pace
-              </span>
+              <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                Daily reach your target
+              </h2>
             </div>
-            <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
-              Complete ~<span className="text-leaf font-extrabold">{data.requiredTopicsPerDay || 1}</span> topics daily to reach your target
-            </h2>
-            <p className="text-xs sm:text-[13px] text-ink-faint">
-              Target Date: <strong className="text-ink font-semibold">{data.targetDate}</strong> · Remaining:{" "}
-              <strong className="text-ink font-semibold">{data.daysToTarget} days</strong> · Remaining Syllabus:{" "}
-              <strong className="text-ink font-semibold">{data.remainingTopics} topics</strong>
-            </p>
           </div>
 
           {/* Today's Target Progress Indicator */}
