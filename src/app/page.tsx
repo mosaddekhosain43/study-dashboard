@@ -102,53 +102,8 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Daily Target Pace, Suggested Books & Friday Revision ─ */}
-      {dailyTargetPlan && dailyTargetPlan.totalTopics > 0 && (
-        <section className="rise">
-          <DailyTargetAndStudyPlanClient initialData={dailyTargetPlan} />
-        </section>
-      )}
-
-      {/* ── Classroom Tasks & Materials (if enrolled in a batch) ─ */}
-      {classroom && (
-        <div className="rise rise-1">
-          <ClassroomCard
-            batchName={classroom.batch.name}
-            batchId={classroom.batch.id}
-            materials={classroom.materials}
-            initialMessages={classroom.messages}
-            userName={classroom.user.name}
-          />
-        </div>
-      )}
-
-      {data.total === 0 && (
-        <div className="card rise p-5 border-leaf/40 bg-leaf-soft/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-2xl bg-leaf text-white shadow-sm shrink-0">
-              <Sparkles className="size-5" />
-            </span>
-            <div>
-              <h2 className="font-display text-base font-bold text-ink">
-                Set Up Your Exam Syllabus & Books
-              </h2>
-              <p className="text-xs text-ink-faint">
-                Select your class books and exam chapters to get started with personalized tracking.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/syllabus"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf px-4 py-2.5 text-xs font-bold text-white transition hover:bg-leaf-deep shrink-0 shadow-sm"
-          >
-            <span>Set Up Syllabus</span>
-            <ArrowRight className="size-4" />
-          </Link>
-        </div>
-      )}
-
       {/* ── Stats ──────────────────────────────────────────── */}
-      <section className="rise rise-2 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
+      <section className="rise grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
         <div className="card col-span-2 flex items-center gap-4 p-4 max-xl:row-span-1 sm:max-xl:col-span-3">
           <Donut
             size={120}
@@ -219,6 +174,51 @@ export default async function DashboardPage() {
           accent="#f97316"
         />
       </section>
+
+      {/* ── Daily Target Pace, Suggested Books & Friday Revision ─ */}
+      {dailyTargetPlan && dailyTargetPlan.totalTopics > 0 && (
+        <section className="rise rise-1">
+          <DailyTargetAndStudyPlanClient initialData={dailyTargetPlan} />
+        </section>
+      )}
+
+      {/* ── Classroom Tasks & Materials (if enrolled in a batch) ─ */}
+      {classroom && (
+        <div className="rise rise-2">
+          <ClassroomCard
+            batchName={classroom.batch.name}
+            batchId={classroom.batch.id}
+            materials={classroom.materials}
+            initialMessages={classroom.messages}
+            userName={classroom.user.name}
+          />
+        </div>
+      )}
+
+      {data.total === 0 && (
+        <div className="card rise p-5 border-leaf/40 bg-leaf-soft/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-2xl bg-leaf text-white shadow-sm shrink-0">
+              <Sparkles className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-bold text-ink">
+                Set Up Your Exam Syllabus & Books
+              </h2>
+              <p className="text-xs text-ink-faint">
+                Select your class books and exam chapters to get started with personalized tracking.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/syllabus"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-leaf px-4 py-2.5 text-xs font-bold text-white transition hover:bg-leaf-deep shrink-0 shadow-sm"
+          >
+            <span>Set Up Syllabus</span>
+            <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      )}
 
 
 
