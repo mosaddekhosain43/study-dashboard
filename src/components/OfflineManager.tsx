@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WifiOff, Wifi, Download, Check } from "lucide-react";
+import { WifiOff, Wifi, Download, Check, CheckCircle2 } from "lucide-react";
+import { processOfflineSyncQueue } from "@/lib/offlineSync";
 
 export default function OfflineManager() {
   const [isOffline, setIsOffline] = useState(false);
   const [showReconnected, setShowReconnected] = useState(false);
+  const [syncedCount, setSyncedCount] = useState<number | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [installed, setInstalled] = useState(false);
 
@@ -22,20 +24,36 @@ export default function OfflineManager() {
         });
     }
 
-    // 2. Online / Offline status tracking
+    // 2. Online / Offline status tracking and Auto-Sync
     const updateOnlineStatus = () => {
       const offline = !navigator.onLine;
       setIsOffline(offline);
       if (!offline) {
         setShowReconnected(true);
+        // Automatically sync any queued offline actions
+        processOfflineSyncQueue().catch(() => {});
         const timer = setTimeout(() => setShowReconnected(false), 4000);
         return () => clearTimeout(timer);
       }
     };
 
     updateOnlineStatus();
+    // Also try syncing on startup if online
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      processOfflineSyncQueue().catch(() => {});
+    }
+
+    const handleSyncedEvent = (e: any) => {
+      const count = e.detail?.count || 0;
+      if (count > 0) {
+        setSyncedCount(count);
+        setTimeout(() => setSyncedCount(null), 5000);
+      }
+    };
+
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
+    window.addEventListener("alim-offline-synced", handleSyncedEvent);
 
     // 3. PWA Install Prompt Capture
     const handleBeforeInstall = (e: any) => {
@@ -99,6 +117,23 @@ export default function OfflineManager() {
               </p>
               <p className="text-[11px] text-emerald-100 leading-tight mt-0.5">
                 ইন্টারনেট কানেকশন আবার চালু হয়েছে।
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Sync Confirmation Toast */}
+      {syncedCount !== null && (
+        <div className="fixed bottom-18 left-4 right-4 z-50 mx-auto max-w-md rise">
+          <div className="flex items-center gap-3 rounded-2xl bg-teal-700/95 px-4 py-3 text-white shadow-xl backdrop-blur-sm ring-1 ring-white/20">
+            <CheckCircle2 className="size-5 shrink-0 text-teal-200" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold leading-tight">
+                Auto-Synced with Cloud (অটো-সিঙ্ক সম্পন্ন)
+              </p>
+              <p className="text-[11px] text-teal-100 leading-tight mt-0.5">
+                অফলাইনে পড়া {syncedCount}টি টপিক স্বয়ংক্রিয়ভাবে ক্লাউড ডাটাবেজে আপডেট হয়েছে।
               </p>
             </div>
           </div>

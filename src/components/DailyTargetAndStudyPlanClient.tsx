@@ -35,6 +35,7 @@ import {
   markTopicRevisedAction,
 } from "@/actions/planner";
 import { setTopicStatusAction } from "@/actions/index";
+import { enqueueOfflineAction } from "@/lib/offlineSync";
 import { formatLong, toBnDigits } from "@/lib/dates";
 
 interface Props {
@@ -144,17 +145,29 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
     });
 
     startTransition(async () => {
-      const res = await setTopicStatusAction(topicId, newStatus);
-      if (res.ok) {
-        const labels: Record<string, string> = {
-          completed: "Topic marked as Completed! 🎉",
-          in_progress: "Topic marked as In Progress.",
-          not_completed: "Topic marked as Not Completed.",
-          not_started: "Topic status reset to Not Started.",
-        };
-        showToast(labels[newStatus] || "Topic status updated.");
-      } else {
-        showToast(res.error || "Failed to update status.");
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
+        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
+        return;
+      }
+
+      try {
+        const res = await setTopicStatusAction(topicId, newStatus);
+        if (res.ok) {
+          const labels: Record<string, string> = {
+            completed: "Topic marked as Completed! 🎉",
+            in_progress: "Topic marked as In Progress.",
+            not_completed: "Topic marked as Not Completed.",
+            not_started: "Topic status reset to Not Started.",
+          };
+          showToast(labels[newStatus] || "Topic status updated.");
+        } else {
+          enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
+          showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
+        }
+      } catch {
+        enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: newStatus });
+        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 📱");
       }
     });
   };
@@ -196,11 +209,23 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
     });
 
     startTransition(async () => {
-      const res = await markTopicRevisedAction(topicId);
-      if (res.ok) {
-        showToast("Topic marked as revised! 🔄");
-      } else {
-        showToast(res.error || "Failed to log revision.");
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        enqueueOfflineAction("MARK_REVISED", { topicId });
+        showToast("অফলাইনে রিভিশন সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        return;
+      }
+
+      try {
+        const res = await markTopicRevisedAction(topicId);
+        if (res.ok) {
+          showToast("Topic marked as revised! 🔄");
+        } else {
+          enqueueOfflineAction("MARK_REVISED", { topicId });
+          showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        }
+      } catch {
+        enqueueOfflineAction("MARK_REVISED", { topicId });
+        showToast("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
       }
     });
   };

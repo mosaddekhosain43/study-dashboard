@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import type { StudentStudyPlan, TimeSlot } from "@/lib/studyPlanner";
 import { markTopicRevisedAction } from "@/actions/planner";
+import { enqueueOfflineAction } from "@/lib/offlineSync";
 import { ProgressBar } from "@/components/ui";
 
 interface Props {
@@ -46,15 +47,28 @@ export default function StudyGuidePlannerClient({ initialPlan }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
 
   const handleMarkRevised = (topicId: number) => {
+    setRevisedTopicIds((prev) => new Set(prev).add(topicId));
     startTransition(async () => {
-      const res = await markTopicRevisedAction(topicId);
-      if (res.ok) {
-        setRevisedTopicIds((prev) => new Set(prev).add(topicId));
-        setMsg("টপিকটি সফলভাবে রিভিশন সম্পন্ন হিসেবে চিহ্নিত করা হয়েছে!");
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        enqueueOfflineAction("MARK_REVISED", { topicId });
+        setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
         setTimeout(() => setMsg(null), 4000);
-      } else {
-        alert(res.error || "Failed to mark revision.");
+        return;
       }
+
+      try {
+        const res = await markTopicRevisedAction(topicId);
+        if (res.ok) {
+          setMsg("টপিকটি সফলভাবে রিভিশন সম্পন্ন হিসেবে চিহ্নিত করা হয়েছে!");
+        } else {
+          enqueueOfflineAction("MARK_REVISED", { topicId });
+          setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+        }
+      } catch {
+        enqueueOfflineAction("MARK_REVISED", { topicId });
+        setMsg("অফলাইনে সংরক্ষিত হয়েছে! ইন্টারনেট পেলে অটো সিঙ্ক হবে। 🔄");
+      }
+      setTimeout(() => setMsg(null), 4000);
     });
   };
 
