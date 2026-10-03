@@ -477,13 +477,56 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
 
     candidateSubjects.sort((a, b) => b.score - a.score);
 
-    // Number of books to suggest today (2 to 4 subjects)
+    // Number of books to suggest today (3 to 5 subjects depending on candidates and daily target)
     const bookCount = Math.min(
       candidateSubjects.length,
-      Math.max(2, Math.min(4, requiredTopicsPerDay || 2))
+      Math.max(3, Math.min(5, requiredTopicsPerDay || 3))
     );
 
     const selectedCandidates = candidateSubjects.slice(0, bookCount);
+
+    // Distribute the exact requiredTopicsPerDay quota across selected books
+    // so the total suggested topics matches the student's daily target!
+    const targetMap = new Map<number, number>();
+    for (const cand of selectedCandidates) {
+      targetMap.set(cand.subject.id, 1);
+    }
+
+    let allocatedTotal = selectedCandidates.length;
+    let extraNeeded = Math.max(0, requiredTopicsPerDay - allocatedTotal);
+
+    let loopGuard = 0;
+    while (extraNeeded > 0 && loopGuard < 50) {
+      loopGuard++;
+      let anyAdded = false;
+
+      // 1st priority: distribute among non-Bangla subjects that have more pending topics
+      for (const cand of selectedCandidates) {
+        if (extraNeeded <= 0) break;
+        if (cand.isBanglaFirstPaper) continue; // Keep Bangla 1st paper at 1 topic per day
+        const currentCount = targetMap.get(cand.subject.id) || 1;
+        if (currentCount < cand.pendingTopics.length) {
+          targetMap.set(cand.subject.id, currentCount + 1);
+          extraNeeded--;
+          anyAdded = true;
+        }
+      }
+
+      // 2nd fallback: if non-Bangla reached pending topics limit, distribute to any candidate with pending topics
+      if (!anyAdded && extraNeeded > 0) {
+        for (const cand of selectedCandidates) {
+          if (extraNeeded <= 0) break;
+          const currentCount = targetMap.get(cand.subject.id) || 1;
+          if (currentCount < cand.pendingTopics.length) {
+            targetMap.set(cand.subject.id, currentCount + 1);
+            extraNeeded--;
+            anyAdded = true;
+          }
+        }
+      }
+
+      if (!anyAdded) break;
+    }
 
     const recommendedBooks: RecommendedBookItem[] = selectedCandidates.map((cand) => {
       const recTopics: RecommendedBookTopic[] = [];
@@ -520,9 +563,8 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         }
       }
 
-      // 3. Add fresh not_started topics if more topics are needed for today
-      // For Bangla 1st paper, allocate only 1 topic because it's a 3-day topic
-      const targetCount = isBangla ? 1 : Math.max(1, Math.floor(requiredTopicsPerDay / (bookCount || 1)) || 1);
+      // 3. Add fresh not_started topics to meet this book's allocated quota
+      const targetCount = targetMap.get(cand.subject.id) || 1;
       const freshPending = cand.pendingTopics.filter(
         (t) => t.status === "not_started" && !recTopics.some((r) => r.id === t.id)
       );
@@ -571,6 +613,38 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         isBanglaFirstPaper: isBangla,
       };
     });
+
+    // Top-up pass: ensure total suggested topics matches requiredTopicsPerDay exactly
+    let totalSuggestedActive = recommendedBooks.reduce(
+      (sum, b) => sum + b.topics.filter((t) => t.status !== "completed").length,
+      0
+    );
+
+    if (totalSuggestedActive < requiredTopicsPerDay) {
+      for (const book of recommendedBooks) {
+        if (totalSuggestedActive >= requiredTopicsPerDay) break;
+        const cand = selectedCandidates.find((c) => c.subject.id === book.subjectId);
+        if (!cand) continue;
+        const freshPending = cand.pendingTopics.filter(
+          (t) => t.status === "not_started" && !book.topics.some((r) => r.id === t.id)
+        );
+        for (const pt of freshPending) {
+          if (totalSuggestedActive >= requiredTopicsPerDay) break;
+          book.topics.push({
+            id: pt.id,
+            name: pt.name,
+            chapter: pt.chapter,
+            status: pt.status,
+            isCompletedToday: false,
+            isBacklog: false,
+            isMultiDay: book.isBanglaFirstPaper,
+            multiDayTargetDays: book.isBanglaFirstPaper ? 3 : undefined,
+          });
+          book.targetTopicCount++;
+          totalSuggestedActive++;
+        }
+      }
+    }
 
     // 7. Weekly Friday Revision: Gather all topics completed this week
     const completedThisWeekTopics = userTopics.filter(
