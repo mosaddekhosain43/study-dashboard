@@ -335,8 +335,8 @@ export async function runInitAndSeed(
         existingMasterTopsRes?.rows?.[0]?.count ?? existingMasterTopsRes?.[0]?.count ?? 0
       );
 
-      // Only seed NCTB curriculum if master topics are not seeded yet (less than 700)
-      if (existingMasterCount < 700) {
+      // Only seed NCTB curriculum if master topics are not seeded yet (less than 500)
+      if (existingMasterCount < 500) {
         // Deduplicate master subjects by slug
         await rawQuery(
           "DELETE FROM subjects WHERE user_id IS NULL AND id NOT IN (SELECT min(id) FROM subjects WHERE user_id IS NULL GROUP BY slug)"
