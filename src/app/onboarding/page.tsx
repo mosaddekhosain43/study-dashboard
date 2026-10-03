@@ -1,4 +1,7 @@
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { subjects } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getOnboardingDataAction } from "@/actions/onboarding";
 import StudentOnboardingWizard from "@/components/onboarding/StudentOnboardingWizard";
@@ -39,11 +42,30 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
     redirect("/");
   }
 
+  // If editing, find currently enrolled book IDs
+  let currentBookIds: number[] = [];
+  if (isEditing) {
+    const userSubs = await db
+      .select({ id: subjects.id, name: subjects.name, slug: subjects.slug })
+      .from(subjects)
+      .where(eq(subjects.userId, user.id));
+
+    const masterBooks = res.data.masterBooks || [];
+    currentBookIds = masterBooks
+      .filter((mb) =>
+        userSubs.some(
+          (s) => s.name === mb.name || (Boolean(s.slug) && Boolean(mb.slug) && s.slug.startsWith(mb.slug))
+        )
+      )
+      .map((mb) => mb.id);
+  }
+
   return (
     <StudentOnboardingWizard
       initialData={res.data}
       isReconfiguring={isEditing}
-      skipRedirectUrl="/"
+      initialBookIds={currentBookIds.length > 0 ? currentBookIds : undefined}
+      skipRedirectUrl={isEditing ? "/syllabus" : "/"}
     />
   );
 }

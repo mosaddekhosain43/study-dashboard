@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Sparkles,
   Pencil,
@@ -173,14 +174,13 @@ export default function SyllabusClientView({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowOnboarding(true)}
+          <Link
+            href="/onboarding?edit=true"
             className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink-soft hover:border-leaf hover:text-leaf transition shadow-xs cursor-pointer"
           >
             <Pencil className="size-3.5 text-leaf" />
             <span>Edit Setup / Books</span>
-          </button>
+          </Link>
 
           <button
             type="button"
@@ -221,13 +221,12 @@ export default function SyllabusClientView({
             <CheckCircle2 className="size-3.5" />
             <span>Current Saved Setup</span>
           </span>
-          <button
-            type="button"
-            onClick={() => setShowOnboarding(true)}
+          <Link
+            href="/onboarding?edit=true"
             className="text-xs font-semibold text-leaf hover:underline cursor-pointer"
           >
             Change
-          </button>
+          </Link>
         </div>
 
         {/* Group & Books */}

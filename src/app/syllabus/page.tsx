@@ -84,7 +84,11 @@ export default async function SyllabusPage() {
 
   const masterBooks = status.masterBooks ?? onboardingRes.data?.masterBooks ?? [];
   const currentBookIds = masterBooks
-    .filter((mb) => subs.some((s) => s.name === mb.name || s.slug.startsWith(mb.slug)))
+    .filter((mb) =>
+      subs.some(
+        (s) => s.name === mb.name || (Boolean(s.slug) && Boolean(mb.slug) && s.slug.startsWith(mb.slug))
+      )
+    )
     .map((mb) => mb.id);
 
   return (

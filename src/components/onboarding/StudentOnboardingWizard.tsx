@@ -87,17 +87,20 @@ export default function StudentOnboardingWizard({
   const [error, setError] = useState<string | null>(null);
 
   // Group State
-  const [selectedGroup, setSelectedGroup] = useState<string>(
-    initialData.user.streamGroup || "science"
-  );
+  const [selectedGroup, setSelectedGroup] = useState<string>(() => {
+    const raw = initialData?.user?.streamGroup || "general_madrasah";
+    if (raw === "science") return "science";
+    if (raw === "business_studies" || raw === "commerce") return "business_studies";
+    return "general_madrasah";
+  });
 
   // Filter master books based on group
   const groupBooks = useMemo(() => {
-    const all = initialData.masterBooks || [];
+    const all = (initialData?.masterBooks || []).filter(Boolean);
 
     if (selectedGroup === "science") {
       return all.filter((b) => {
-        const slug = b.slug.toLowerCase();
+        const slug = (b?.slug || "").toLowerCase();
         const isArtsSpecific =
           slug.includes("balaghat") ||
           slug.includes("islamic-history") ||
@@ -111,7 +114,7 @@ export default function StudentOnboardingWizard({
 
     if (selectedGroup === "general_madrasah") {
       return all.filter((b) => {
-        const slug = b.slug.toLowerCase();
+        const slug = (b?.slug || "").toLowerCase();
         const isScienceSpecific =
           slug.includes("physics") ||
           slug.includes("chemistry") ||
@@ -124,7 +127,7 @@ export default function StudentOnboardingWizard({
 
     // Commerce
     return all.filter((b) => {
-      const slug = b.slug.toLowerCase();
+      const slug = (b?.slug || "").toLowerCase();
       const isScienceSpecific =
         slug.includes("physics") ||
         slug.includes("chemistry") ||
@@ -133,20 +136,20 @@ export default function StudentOnboardingWizard({
         slug.includes("arabic-science");
       return !isScienceSpecific;
     });
-  }, [initialData.masterBooks, selectedGroup]);
+  }, [initialData?.masterBooks, selectedGroup]);
 
   // Selected books record: Record<bookId, boolean>
   const [selectedBookIds, setSelectedBookIds] = useState<Record<number, boolean>>(() => {
     if (initialBookIds && initialBookIds.length > 0) {
       const map: Record<number, boolean> = {};
       for (const id of initialBookIds) {
-        map[id] = true;
+        if (id) map[id] = true;
       }
       return map;
     }
-    const nextGroupBooks = (initialData.masterBooks || []).filter((b) => {
-      const slug = b.slug.toLowerCase();
-      const groupId = initialData.user.streamGroup || "science";
+    const nextGroupBooks = (initialData?.masterBooks || []).filter((b) => {
+      const slug = (b?.slug || "").toLowerCase();
+      const groupId = initialData?.user?.streamGroup || "general_madrasah";
       if (groupId === "science") {
         return (
           !slug.includes("balaghat") &&
@@ -167,14 +170,14 @@ export default function StudentOnboardingWizard({
     });
     const initMap: Record<number, boolean> = {};
     for (const b of nextGroupBooks) {
-      initMap[b.id] = true;
+      if (b?.id) initMap[b.id] = true;
     }
     return initMap;
   });
 
   const resetBooksForGroup = (groupId: string) => {
-    const nextGroupBooks = (initialData.masterBooks || []).filter((b) => {
-      const slug = b.slug.toLowerCase();
+    const nextGroupBooks = (initialData?.masterBooks || []).filter((b) => {
+      const slug = (b?.slug || "").toLowerCase();
       if (groupId === "science") {
         return (
           !slug.includes("balaghat") &&
@@ -196,7 +199,7 @@ export default function StudentOnboardingWizard({
 
     const initMap: Record<number, boolean> = {};
     for (const b of nextGroupBooks) {
-      initMap[b.id] = true;
+      if (b?.id) initMap[b.id] = true;
     }
     setSelectedBookIds(initMap);
   };
@@ -222,14 +225,14 @@ export default function StudentOnboardingWizard({
 
   // 3 Target Setup Dates
   const [examDate, setExamDate] = useState<string>(
-    initialData.defaultExamDate || "2027-04-15"
+    initialData?.defaultExamDate || "2027-04-15"
   );
   const [targetStartDate, setTargetStartDate] = useState<string>(
-    initialData.defaultTargetStartDate ||
+    initialData?.defaultTargetStartDate ||
       new Date().toISOString().split("T")[0]
   );
   const [targetDate, setTargetDate] = useState<string>(
-    initialData.defaultTargetDate || "2027-02-28"
+    initialData?.defaultTargetDate || "2027-02-28"
   );
 
   // Today's date string YYYY-MM-DD
@@ -256,10 +259,13 @@ export default function StudentOnboardingWizard({
 
   // Selected books array
   const chosenBooks = useMemo(() => {
-    return groupBooks.filter((b) => selectedBookIds[b.id]);
+    return groupBooks.filter((b) => b && selectedBookIds[b.id]);
   }, [groupBooks, selectedBookIds]);
 
-  const chosenGroupObj = GROUPS.find((g) => g.id === selectedGroup) || GROUPS[0];
+  const chosenGroupObj =
+    GROUPS.find((g) => g.id === selectedGroup) ||
+    GROUPS.find((g) => g.id === "general_madrasah") ||
+    GROUPS[0];
 
   // Navigation steps
   const stepList: { key: Step; title: string; num: number }[] = [
