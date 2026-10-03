@@ -153,6 +153,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      prefetch={true}
                       onClick={() => {
                         if (item.href.includes("?")) {
                           const tab = new URLSearchParams(item.href.split("?")[1]).get("tab");

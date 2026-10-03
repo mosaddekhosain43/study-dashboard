@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function TimerPage() {
   const [subjects, todayMinutes, streak] = await Promise.all([
-    getSubjects(),
+    getSubjects().catch(() => []),
     getMinutesForDate(todayKey()).catch(() => 0),
     getStreak().catch(() => 0),
   ]);

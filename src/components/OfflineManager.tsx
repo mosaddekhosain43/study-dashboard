@@ -18,10 +18,21 @@ export default function OfflineManager() {
         .register("/sw.js")
         .then((reg) => {
           console.log("[PWA] Service Worker registered:", reg.scope);
+          reg.update().catch(() => {});
         })
         .catch((err) => {
           console.warn("[PWA] Service Worker registration failed:", err);
         });
+
+      // Warm offline cache for essential routes in the background
+      if (navigator.onLine) {
+        setTimeout(() => {
+          const routesToWarm = ["/", "/timer", "/subjects", "/remaining", "/settings"];
+          routesToWarm.forEach((r) => {
+            fetch(r, { credentials: "same-origin" }).catch(() => {});
+          });
+        }, 1500);
+      }
     }
 
     // 2. Online / Offline status tracking and Auto-Sync

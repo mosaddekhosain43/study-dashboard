@@ -1,6 +1,6 @@
 "use client";
 
-import { setTopicStatusAction } from "@/actions/index";
+import { setTopicStatusAction, saveStudySessionAction } from "@/actions/index";
 import { markTopicRevisedAction } from "@/actions/planner";
 
 export interface OfflineQueueItem {
@@ -88,6 +88,13 @@ export async function processOfflineSyncQueue(): Promise<{
         }
       } else if (item.type === "MARK_REVISED") {
         const res = await markTopicRevisedAction(item.payload.topicId);
+        if (res.ok) {
+          syncedCount++;
+        } else {
+          remainingQueue.push(item);
+        }
+      } else if (item.type === "LOG_TIMER") {
+        const res = await saveStudySessionAction(item.payload);
         if (res.ok) {
           syncedCount++;
         } else {

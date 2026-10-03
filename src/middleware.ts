@@ -34,6 +34,20 @@ function parseSessionToken(token: string): TokenUser | null {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Allow PWA and static service files to pass through without session check
+  if (
+    pathname === "/sw.js" ||
+    pathname === "/manifest.json" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/icon.png" ||
+    pathname === "/apple-icon.png" ||
+    pathname.startsWith("/avatars/") ||
+    pathname.startsWith("/icon-")
+  ) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("alim_session")?.value;
   const user = token ? parseSessionToken(token) : null;
 
@@ -84,8 +98,8 @@ export const config = {
      * - api routes
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico, manifest.json, sw.js, static icons
+     * - favicon.ico, manifest.json, sw.js, static icons, avatars
      */
-    "/((?!api|_next/static|_next/image|manifest\\.json|favicon\\.ico|icon-.*\\.png).*)",
+    "/((?!api|_next/static|_next/image|sw\\.js|manifest\\.json|favicon\\.ico|icon\\.png|apple-icon\\.png|icon-.*\\.png|avatars/.*).*)",
   ],
 };

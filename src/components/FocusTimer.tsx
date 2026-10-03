@@ -32,6 +32,7 @@ import {
   timerStartAction,
   timerStopAction,
 } from "@/actions";
+import { enqueueOfflineAction } from "@/lib/offlineSync";
 
 // Soothing chime sound using Web Audio API
 function playCelebrationChime() {
@@ -250,11 +251,22 @@ export default function FocusTimer({
               if (typeof navigator !== "undefined" && navigator.vibrate) {
                 navigator.vibrate([200, 100, 200]);
               }
-              // Automatically save session to database when countdown finishes
-              saveStudySessionAction({
+              // Automatically save session to database or queue offline
+              const payload = {
                 subjectId: selectedSubject === "" ? null : selectedSubject,
                 minutes: targetMinutes,
-              }).catch(() => {});
+              };
+              if (typeof window !== "undefined" && !navigator.onLine) {
+                enqueueOfflineAction("LOG_TIMER", payload);
+              } else {
+                saveStudySessionAction(payload)
+                  .then((res) => {
+                    if (!res?.ok) enqueueOfflineAction("LOG_TIMER", payload);
+                  })
+                  .catch(() => {
+                    enqueueOfflineAction("LOG_TIMER", payload);
+                  });
+              }
               setTodayMinutes((m) => m + targetMinutes);
               return 0;
             }
@@ -386,18 +398,30 @@ export default function FocusTimer({
       studiedMinutes = Math.max(1, Math.round(freeSeconds / 60));
     }
 
-    try {
-      await saveStudySessionAction({
-        subjectId: selectedSubject === "" ? null : selectedSubject,
-        minutes: studiedMinutes,
-      });
+    // Always update local state immediately so user is never blocked
+    setTodayMinutes((m) => m + studiedMinutes);
+    setLastLoggedMinutes(studiedMinutes);
+    setIsRunning(false);
+    setFlowState("completed");
 
-      setTodayMinutes((m) => m + studiedMinutes);
-      setLastLoggedMinutes(studiedMinutes);
-      setIsRunning(false);
-      setFlowState("completed");
-    } catch (err) {
-      console.error("Failed to save session:", err);
+    const payload = {
+      subjectId: selectedSubject === "" ? null : selectedSubject,
+      minutes: studiedMinutes,
+    };
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("LOG_TIMER", payload);
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const res = await saveStudySessionAction(payload);
+      if (!res?.ok) {
+        enqueueOfflineAction("LOG_TIMER", payload);
+      }
+    } catch {
+      enqueueOfflineAction("LOG_TIMER", payload);
     } finally {
       setIsSaving(false);
     }
