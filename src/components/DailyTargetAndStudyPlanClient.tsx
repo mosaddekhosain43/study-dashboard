@@ -279,11 +279,11 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                         📖
                       </span>
                       <span className="font-display text-xs sm:text-sm font-bold text-ink">
-                        {sub.subjectNameBn || sub.subjectName}
+                        {sub.subjectName}
                       </span>
                       {sub.subjectNameBn && (
                         <span className="text-[11px] text-ink-faint hidden sm:inline">
-                          ({sub.subjectName})
+                          ({sub.subjectNameBn})
                         </span>
                       )}
                     </div>
@@ -381,7 +381,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                     className="rounded-xl border border-line/80 bg-paper/50 p-2.5 text-xs"
                   >
                     <p className="font-bold text-ink truncate mb-1">
-                      {sub.subjectNameBn || sub.subjectName} ({sub.topics.length})
+                      {sub.subjectName} {sub.subjectNameBn ? `(${sub.subjectNameBn})` : ""} ({sub.topics.length})
                     </p>
                     <ul className="space-y-1 text-ink-faint text-[11px]">
                       {sub.topics.slice(0, 3).map((t) => (
@@ -507,11 +507,11 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                       <div className="flex items-start justify-between gap-2 border-b border-line/60 pb-3">
                         <div className="min-w-0">
                           <p className="font-display text-sm font-bold text-ink truncate group-hover:text-leaf transition-colors">
-                            {book.subjectNameBn || book.subjectName}
+                            {book.subjectName}
                           </p>
                           {book.subjectNameBn && (
                             <p className="text-[11px] text-ink-faint truncate">
-                              {book.subjectName}
+                              {book.subjectNameBn}
                             </p>
                           )}
                         </div>
