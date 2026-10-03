@@ -207,3 +207,101 @@ export async function resetPasswordWithEmailAction(formData: FormData) {
   };
 }
 
+export async function updateStudentProfileAction(data: {
+  name: string;
+  phone?: string | null;
+  institution?: string | null;
+  classLevel?: string | null;
+  streamGroup?: string | null;
+  board?: string | null;
+  rollNumber?: string | null;
+  targetGoal?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: "Please log in to update your profile." };
+  }
+
+  const name = data.name?.trim();
+  if (!name) {
+    return { ok: false, error: "Full Name cannot be empty." };
+  }
+
+  await db
+    .update(users)
+    .set({
+      name,
+      phone: data.phone?.trim() || null,
+      institution: data.institution?.trim() || null,
+      classLevel: data.classLevel?.trim() || user.classLevel || null,
+      streamGroup: data.streamGroup?.trim() || user.streamGroup || null,
+      board: data.board?.trim() || user.board || null,
+      rollNumber: data.rollNumber?.trim() || null,
+      targetGoal: data.targetGoal?.trim() || null,
+      bio: data.bio?.trim() || null,
+      avatarUrl: data.avatarUrl?.trim() || null,
+    })
+    .where(eq(users.id, user.id));
+
+  // Update session cookie
+  await setSessionCookie({
+    ...user,
+    name,
+    phone: data.phone?.trim() || null,
+    institution: data.institution?.trim() || null,
+    classLevel: data.classLevel?.trim() || user.classLevel || null,
+    streamGroup: data.streamGroup?.trim() || user.streamGroup || null,
+    board: data.board?.trim() || user.board || null,
+    rollNumber: data.rollNumber?.trim() || null,
+    targetGoal: data.targetGoal?.trim() || null,
+    bio: data.bio?.trim() || null,
+    avatarUrl: data.avatarUrl?.trim() || null,
+  });
+
+  revalidatePath("/", "layout");
+  revalidatePath("/settings");
+  return { ok: true, message: "Profile updated successfully! 🎉" };
+}
+
+export async function changeStudentPasswordAction(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: "Please log in to change your password." };
+  }
+
+  const { currentPassword, newPassword, confirmPassword } = data;
+  if (!currentPassword || !newPassword) {
+    return { ok: false, error: "Please provide both current and new password." };
+  }
+
+  if (newPassword.length < 6) {
+    return { ok: false, error: "New password must be at least 6 characters long." };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { ok: false, error: "New passwords do not match. Please re-enter." };
+  }
+
+  const userRows = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+  const userRow = userRows[0];
+  if (!userRow) {
+    return { ok: false, error: "User account not found." };
+  }
+
+  if (!verifyPassword(currentPassword, userRow.passwordHash)) {
+    return { ok: false, error: "Current password is incorrect." };
+  }
+
+  const newHash = hashPassword(newPassword);
+  await db.update(users).set({ passwordHash: newHash }).where(eq(users.id, user.id));
+
+  return { ok: true, message: "Password changed successfully! 🔒" };
+}
+
+

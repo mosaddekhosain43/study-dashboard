@@ -17,6 +17,12 @@ export interface SessionUser {
   examDate?: string | null;
   targetStartDate?: string | null;
   targetDate?: string | null;
+  phone?: string | null;
+  institution?: string | null;
+  rollNumber?: string | null;
+  targetGoal?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
 }
 
 export function hashPassword(password: string): string {

@@ -43,6 +43,11 @@ export const users = pgTable(
     examDate: text("exam_date"),
     targetStartDate: text("target_start_date"),
     targetDate: text("target_date"),
+    institution: text("institution"),
+    rollNumber: text("roll_number"),
+    targetGoal: text("target_goal"),
+    bio: text("bio"),
+    avatarUrl: text("avatar_url"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

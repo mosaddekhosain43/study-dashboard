@@ -26,6 +26,11 @@ CREATE TABLE IF NOT EXISTS users (
   exam_date TEXT,
   target_start_date TEXT,
   target_date TEXT,
+  institution TEXT,
+  roll_number TEXT,
+  target_goal TEXT,
+  bio TEXT,
+  avatar_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -243,6 +248,19 @@ export async function runInitAndSeed(
           await rawExec(`DROP INDEX IF EXISTS "${idx}";`);
         } catch {}
       }
+    } catch {
+      // ignore
+    }
+
+    // Safe migration: Add student profile columns to users table if not already present
+    try {
+      await rawExec(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS institution TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS roll_number TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS target_goal TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+      `);
     } catch {
       // ignore
     }
