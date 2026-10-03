@@ -33,36 +33,28 @@ const CATEGORIES = [
     id: "feature_request",
     title: "Feature Request",
     titleBn: "কি কি যোগ করা যায়",
-    desc: "নতুন কোনো ফিচার, ক্যালকুলেশন বা অ্যাপটি আরও উন্নত করার পরামর্শ দিন।",
     icon: Lightbulb,
-    color: "from-amber-500/20 to-amber-500/5 text-amber-500 border-amber-500/30",
     badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   },
   {
     id: "data_problem",
     title: "Data & Date Problem",
     titleBn: "তারিখ বা ডেটার সমস্যা",
-    desc: "সিলেবাসে কোনো টপিক মিসিং, পরীক্ষার তারিখ অমিল বা হিসাবের সমস্যা জানান।",
     icon: Calendar,
-    color: "from-rose-500/20 to-rose-500/5 text-rose-500 border-rose-500/30",
     badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
   },
   {
     id: "general",
     title: "App Opinion & Review",
     titleBn: "অ্যাপ সম্পর্কে মতামত",
-    desc: "অ্যাপটি ব্যবহার করে কেমন লাগছে এবং আপনার সার্বিক অভিমত বা দোয়া জানান।",
     icon: Heart,
-    color: "from-emerald-500/20 to-emerald-500/5 text-emerald-500 border-emerald-500/30",
     badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
   {
     id: "bug",
     title: "Bug & Issue Report",
     titleBn: "কোনো সমস্যা বা ত্রুটি",
-    desc: "অ্যাপ ব্যবহার করার সময় কোথাও এরর আসলে বা আটকে গেলে রিপোর্ট করুন।",
     icon: AlertTriangle,
-    color: "from-indigo-500/20 to-indigo-500/5 text-indigo-500 border-indigo-500/30",
     badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
   },
 ] as const;
@@ -299,11 +291,11 @@ export default function FeedbackClient({
         /* ── Feedback Form ───────────────────────────────────── */
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Category Selection Cards */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted">
-              মতামতের বিষয় নির্বাচন করুন (Category)
+              মতামতের বিষয় (Category)
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {CATEGORIES.map((c) => {
                 const isSelected = category === c.id;
                 const Icon = c.icon;
@@ -312,34 +304,22 @@ export default function FeedbackClient({
                     type="button"
                     key={c.id}
                     onClick={() => setCategory(c.id)}
-                    className={`text-left rounded-2xl border p-4 transition-all duration-200 relative overflow-hidden ${
+                    className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition-all duration-150 text-left ${
                       isSelected
-                        ? `border-leaf bg-leaf/10 ring-1 ring-leaf/40 shadow-xs`
-                        : "border-line bg-card hover:border-line/80 hover:bg-paper"
+                        ? "border-leaf bg-leaf/10 text-leaf ring-1 ring-leaf/40 font-bold shadow-xs"
+                        : "border-line bg-card text-ink hover:bg-paper"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <span
-                        className={`grid size-9 place-items-center rounded-xl shrink-0 ${
-                          isSelected ? "bg-leaf text-white" : "bg-muted/10 text-muted"
-                        }`}
-                      >
-                        <Icon className="size-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold text-ink">
-                            {c.titleBn}
-                          </p>
-                          {isSelected && (
-                            <span className="size-2 rounded-full bg-leaf ring-4 ring-leaf/20" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-muted mt-1 leading-snug">
-                          {c.desc}
-                        </p>
-                      </div>
-                    </div>
+                    <span
+                      className={`grid size-7 place-items-center rounded-lg shrink-0 ${
+                        isSelected ? "bg-leaf text-white" : "bg-muted/10 text-muted"
+                      }`}
+                    >
+                      <Icon className="size-3.5" />
+                    </span>
+                    <span className="text-xs font-semibold truncate">
+                      {c.titleBn}
+                    </span>
                   </button>
                 );
               })}
@@ -347,13 +327,13 @@ export default function FeedbackClient({
           </div>
 
           {/* Message Details */}
-          <div className="space-y-4 rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-xs">
+          <div className="space-y-2 rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-xs">
             <div className="space-y-1.5">
               <label
                 htmlFor="message"
                 className="text-xs font-bold text-ink flex items-center justify-between"
               >
-                <span>বিস্তারিত মতামত বা সমস্যার বিবরণ (Details) *</span>
+                <span>মতামত বা সমস্যার বিবরণ *</span>
                 <span className="text-[10px] text-muted">
                   {message.length} characters
                 </span>
@@ -364,7 +344,7 @@ export default function FeedbackClient({
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="এখানে বিস্তারিত লিখুন: অ্যাপে কোন কোন বিষয় যোগ করলে আপনার পড়াশোনায় আরও সুবিধা হবে? অথবা তারিখ, সিলেবাস কিংবা টাইমারে কী সমস্যা হয়েছে বিস্তারিত বুঝিয়ে বলুন..."
+                placeholder="আপনার মতামত, পরামর্শ বা সমস্যার কথা বিস্তারিত লিখুন..."
                 className="w-full rounded-xl border border-line bg-paper p-3.5 text-xs text-ink placeholder:text-muted/60 focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf transition leading-relaxed resize-y min-h-[120px]"
               />
             </div>
@@ -372,11 +352,10 @@ export default function FeedbackClient({
 
           {/* Submitter info display */}
           {currentUser && (
-            <div className="flex items-center gap-2 rounded-xl bg-paper px-4 py-2.5 border border-line text-xs text-muted">
+            <div className="flex items-center gap-2 rounded-xl bg-paper px-4 py-2 border border-line text-xs text-muted">
               <User className="size-3.5 text-leaf shrink-0" />
               <span>
-                আপনি <strong>{currentUser.name}</strong> ({currentUser.email}) হিসেবে
-                মতামত পাঠাচ্ছেন।
+                <strong>{currentUser.name}</strong> ({currentUser.email}) হিসেবে পাঠানো হচ্ছে।
               </span>
             </div>
           )}
@@ -388,11 +367,11 @@ export default function FeedbackClient({
           )}
 
           {/* Submit Button */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-1">
             <button
               type="submit"
               disabled={isPending || !message.trim()}
-              className="inline-flex items-center gap-2 rounded-2xl bg-leaf px-6 py-3 text-xs font-bold text-white shadow-md shadow-leaf/20 hover:bg-leaf/90 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
+              className="inline-flex items-center gap-2 rounded-2xl bg-leaf px-6 py-2.5 text-xs font-bold text-white shadow-md shadow-leaf/20 hover:bg-leaf/90 disabled:opacity-50 disabled:cursor-not-allowed transition active:scale-95"
             >
               {isPending ? (
                 <>
@@ -402,7 +381,7 @@ export default function FeedbackClient({
               ) : (
                 <>
                   <Send className="size-3.5" />
-                  <span>মতামত জমা দিন (Submit Feedback)</span>
+                  <span>মতামত পাঠান (Submit)</span>
                 </>
               )}
             </button>
