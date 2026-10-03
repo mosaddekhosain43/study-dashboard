@@ -67,14 +67,6 @@ const CATEGORIES = [
   },
 ] as const;
 
-const QUICK_IDEAS = [
-  "সিলেবাসের কোনো টপিক ভুল আছে বা আপডেট দরকার",
-  "ডেইলি টার্গেটের বই সিলেকশন আরও কাস্টমাইজ চাই",
-  "পড়ার টাইমার ও স্টপওয়াচ আরও উন্নত করা হোক",
-  "নির্দিষ্ট কোনো সাবজেক্টের নোট যুক্ত করা যায় কি?",
-  "অফলাইন সিঙ্ক সুবিধাটি অনেক দারুণ হয়েছে!",
-];
-
 export default function FeedbackClient({
   initialMyFeedbacks,
   currentUser,
@@ -82,7 +74,6 @@ export default function FeedbackClient({
   const [category, setCategory] = useState<
     "general" | "data_problem" | "feature_request" | "bug"
   >("feature_request");
-  const [rating, setRating] = useState<number>(5);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>(initialMyFeedbacks);
@@ -103,7 +94,6 @@ export default function FeedbackClient({
     startTransition(async () => {
       const res = await submitFeedbackAction({
         category,
-        rating,
         subject: subject.trim(),
         message: message.trim(),
       });
@@ -118,7 +108,7 @@ export default function FeedbackClient({
           category,
           subject: subject.trim() || null,
           message: message.trim(),
-          rating,
+          rating: null,
           status: "new",
           createdAt: new Date(),
         };
@@ -312,10 +302,10 @@ export default function FeedbackClient({
       ) : (
         /* ── Feedback Form ───────────────────────────────────── */
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 1. Category Selection Cards */}
+          {/* Category Selection Cards */}
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-wider text-muted">
-              ১. মতামতের বিষয় নির্বাচন করুন (Category)
+              মতামতের বিষয় নির্বাচন করুন (Category)
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {CATEGORIES.map((c) => {
@@ -360,73 +350,7 @@ export default function FeedbackClient({
             </div>
           </div>
 
-          {/* 2. Rating & Overall Experience */}
-          <div className="rounded-2xl border border-line bg-card p-4 sm:p-5 space-y-3 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <label className="text-xs font-bold text-ink">
-                  ২. সার্বিক রেটিং (Overall Experience)
-                </label>
-                <p className="text-[11px] text-muted">
-                  অ্যাপটি ব্যবহার করে আপনার কেমন লাগছে?
-                </p>
-              </div>
-
-              {/* Star Selectors */}
-              <div className="flex items-center gap-1.5">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    type="button"
-                    key={star}
-                    onClick={() => setRating(star)}
-                    className="p-1 text-amber-400 hover:scale-110 active:scale-95 transition"
-                    title={`${star} Star`}
-                  >
-                    <Star
-                      className={`size-6 ${
-                        star <= rating
-                          ? "fill-amber-400 text-amber-400 drop-shadow-sm"
-                          : "text-muted/30"
-                      }`}
-                    />
-                  </button>
-                ))}
-                <span className="ml-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  {rating === 5
-                    ? "অসাধারণ! 🎉"
-                    : rating === 4
-                    ? "অনেক ভালো 👍"
-                    : rating === 3
-                    ? "মোটামুটি 🙂"
-                    : "উন্নতি দরকার"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Quick Suggestion Ideas */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-muted">
-              দ্রুত আইডিয়া নির্বাচন করতে ট্যাপ করুন:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_IDEAS.map((idea, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => {
-                    if (!subject) setSubject(idea);
-                    else setMessage((prev) => (prev ? `${prev}\n• ${idea}` : idea));
-                  }}
-                  className="rounded-full border border-line bg-paper px-3 py-1 text-[11px] text-ink/80 hover:border-leaf/50 hover:text-leaf transition active:scale-95"
-                >
-                  + {idea}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 4. Subject and Message Details */}
+          {/* Subject and Message Details */}
           <div className="space-y-4 rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-xs">
             <div className="space-y-1.5">
               <label
