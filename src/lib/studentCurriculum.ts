@@ -2,11 +2,15 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { lessons, subjects, topics, users } from "@/db/schema";
 
+const initializedUserSet = new Set<number>();
+
 /**
  * Ensures a student has their own cloned copy of subjects, chapters, and topics.
  * If they already have personal subjects, this is a fast no-op.
  */
 export async function ensureStudentHasPersonalCurriculum(userId: number): Promise<boolean> {
+  if (initializedUserSet.has(userId)) return true;
+
   try {
     // 1. Check if user already has personal subjects
     const existingPersonalSubs = await db
@@ -16,6 +20,7 @@ export async function ensureStudentHasPersonalCurriculum(userId: number): Promis
       .limit(1);
 
     if (existingPersonalSubs.length > 0) {
+      initializedUserSet.add(userId);
       return true;
     }
 
@@ -188,6 +193,7 @@ export async function ensureStudentHasPersonalCurriculum(userId: number): Promis
       }
     }
 
+    initializedUserSet.add(userId);
     return true;
   } catch (err) {
     console.error("ensureStudentHasPersonalCurriculum error:", err);

@@ -295,15 +295,21 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       .where(eq(users.id, user.id))
       .limit(1);
 
-    const [examSetting, targetSetting, targetStartSetting] = await Promise.all([
-      db.select().from(settings).where(eq(settings.key, SETTING_EXAM_DATE)).limit(1),
-      db.select().from(settings).where(eq(settings.key, SETTING_TARGET_DATE)).limit(1),
-      db.select().from(settings).where(eq(settings.key, SETTING_TARGET_START_DATE)).limit(1),
-    ]);
+    const settingRows = await db
+      .select({ key: settings.key, value: settings.value })
+      .from(settings)
+      .where(
+        inArray(settings.key, [
+          SETTING_EXAM_DATE,
+          SETTING_TARGET_DATE,
+          SETTING_TARGET_START_DATE,
+        ])
+      );
+    const settingMap = new Map(settingRows.map((s) => [s.key, s.value]));
 
-    const examDate = userRow[0]?.examDate || examSetting[0]?.value || "2027-04-15";
-    const targetDate = userRow[0]?.targetDate || targetSetting[0]?.value || "2027-02-28";
-    const targetStartDate = userRow[0]?.targetStartDate || targetStartSetting[0]?.value || today;
+    const examDate = userRow[0]?.examDate || settingMap.get(SETTING_EXAM_DATE) || "2027-04-15";
+    const targetDate = userRow[0]?.targetDate || settingMap.get(SETTING_TARGET_DATE) || "2027-02-28";
+    const targetStartDate = userRow[0]?.targetStartDate || settingMap.get(SETTING_TARGET_START_DATE) || today;
 
     const daysToExam = Math.max(0, diffDays(today, examDate));
     const daysToTarget = Math.max(1, diffDays(today, targetDate));

@@ -152,9 +152,25 @@ CREATE TABLE IF NOT EXISTS settings (
 
 export async function runInitAndSeed(
   rawQuery: (sqlText: string, params?: any[]) => Promise<any>,
-  rawExec: (sqlText: string) => Promise<any> = rawQuery
+  rawExec: (sqlText: string) => Promise<any> = rawQuery,
+  force = false
 ) {
   try {
+    // Fast-path: If database already exists and is fully seeded, skip all schema DDL and migrations!
+    if (!force) {
+      try {
+        const probe = await rawQuery(
+          "SELECT count(*) as count FROM topics WHERE user_id IS NULL"
+        );
+        const count = Number(probe?.rows?.[0]?.count ?? probe?.[0]?.count ?? 0);
+        if (count >= 500) {
+          return;
+        }
+      } catch {
+        // Database tables not created yet, proceed to initialize
+      }
+    }
+
     await rawExec(INIT_SQL);
     try {
       await rawExec(

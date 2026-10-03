@@ -104,7 +104,7 @@ let initPromise: Promise<void> | null = null;
 export async function initializeDb(force = false) {
   if (!initPromise || force) {
     initPromise = (async () => {
-      await runInitAndSeed(rawQueryFn, rawExecFn);
+      await runInitAndSeed(rawQueryFn, rawExecFn, force);
     })();
   }
   return initPromise;
