@@ -445,8 +445,8 @@ export interface TargetInfo {
   onTrack: boolean;
 }
 
-export async function getTargetInfo(): Promise<TargetInfo> {
-  const cfg = await getExamConfig();
+export async function getTargetInfo(preCfg?: ExamConfig): Promise<TargetInfo> {
+  const cfg = preCfg ?? (await getExamConfig());
   const user = await getCurrentUser();
   const userPersonalTops = user
     ? await db.select().from(topics).where(eq(topics.userId, user.id))
@@ -538,13 +538,16 @@ export interface Alert {
   detail: string;
 }
 
-export async function getAlerts(): Promise<Alert[]> {
-  const [stats, cfg, target, streak] = await Promise.all([
-    getSubjectStats(),
-    getExamConfig(),
-    getTargetInfo(),
-    getStreak(),
-  ]);
+export async function getAlerts(
+  preStats?: SubjectStats[],
+  preCfg?: ExamConfig,
+  preTarget?: TargetInfo,
+  preStreak?: number
+): Promise<Alert[]> {
+  const stats = preStats ?? (await getSubjectStats());
+  const cfg = preCfg ?? (await getExamConfig());
+  const target = preTarget ?? (await getTargetInfo(cfg));
+  const streak = preStreak ?? (await getStreak());
   const t = todayKey();
   const alerts: Alert[] = [];
   const anyActivity = stats.some((s) => s.lastStudied !== null);
@@ -637,20 +640,20 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const stats = await getSubjectStats();
+  const [stats, todayMinutes, streak, exam, recent] = await Promise.all([
+    getSubjectStats(),
+    getMinutesForDate(todayKey()),
+    getStreak(),
+    getExamConfig(),
+    getRecentUpdates(6),
+  ]);
+  const target = await getTargetInfo(exam);
+  const alerts = await getAlerts(stats, exam, target, streak);
   const total = stats.reduce((a, s) => a + s.total, 0);
   const completed = stats.reduce((a, s) => a + s.completed, 0);
   const inProgress = stats.reduce((a, s) => a + s.inProgress, 0);
   const notCompleted = stats.reduce((a, s) => a + s.notCompleted, 0);
   const notStarted = stats.reduce((a, s) => a + s.notStarted, 0);
-  const [todayMinutes, streak, exam, target, alerts, recent] = await Promise.all([
-    getMinutesForDate(todayKey()),
-    getStreak(),
-    getExamConfig(),
-    getTargetInfo(),
-    getAlerts(),
-    getRecentUpdates(6),
-  ]);
   return {
     stats,
     total,

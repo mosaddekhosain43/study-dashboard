@@ -31,7 +31,7 @@ import {
 import { redirect } from "next/navigation";
 import { formatLong, formatMinutes, relativeDay, todayKey } from "@/lib/dates";
 import { getDashboardData, getStudentClassroomData, getSubjects } from "@/lib/queries";
-import { getStudentStudyPlanAction, getStudentDailyTargetPlanAction } from "@/actions/planner";
+import { getStudentDailyTargetPlanAction } from "@/actions/planner";
 import DailyTargetAndStudyPlanClient from "@/components/DailyTargetAndStudyPlanClient";
 import { STATUS_META } from "@/lib/constants";
 import { getCurrentUser } from "@/lib/auth";
@@ -50,14 +50,12 @@ export default async function DashboardPage() {
     redirect("/teacher");
   }
 
-  const [data, subjects, classroom, planRes, dailyPlanRes] = await Promise.all([
+  const [data, subjects, classroom, dailyPlanRes] = await Promise.all([
     getDashboardData(),
     getSubjects(),
     getStudentClassroomData(),
-    getStudentStudyPlanAction(),
     getStudentDailyTargetPlanAction(),
   ]);
-  const studyPlan = planRes?.ok ? planRes.plan : null;
   const dailyTargetPlan = dailyPlanRes?.ok ? dailyPlanRes.data : null;
   const subjectOpts = subjects.map((s) => ({ id: s.id, name: s.name }));
   const today = formatLong(todayKey());

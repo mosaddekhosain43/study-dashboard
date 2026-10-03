@@ -49,11 +49,12 @@ if (shouldUsePg && databaseUrl) {
     new Pool({
       connectionString: databaseUrl,
       ssl: { rejectUnauthorized: false },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.__arenaNextJsPostgresqlPool = pool;
-  }
+  globalForDb.__arenaNextJsPostgresqlPool = pool;
 
   dbInstance = drizzlePg(pool, { schema });
   rawQueryFn = async (text: string, params?: any[]) => {

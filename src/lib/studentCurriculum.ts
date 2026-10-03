@@ -104,6 +104,8 @@ export async function ensureStudentHasPersonalCurriculum(userId: number): Promis
       .where(and(inArray(lessons.subjectId, relevantSubIds), isNull(lessons.userId)))
       .orderBy(lessons.sortOrder, lessons.id);
 
+    const masterToPersonalLessonMap = new Map<number, number>();
+
     if (allMasterChapters.length > 0) {
       const newLessonValues = allMasterChapters
         .map((mCh) => {
@@ -134,56 +136,55 @@ export async function ensureStudentHasPersonalCurriculum(userId: number): Promis
           ? await db.insert(lessons).values(lessonRowsToInsert).returning()
           : [];
 
-      const masterToPersonalLessonMap = new Map<number, number>();
       for (let i = 0; i < newLessonValues.length; i++) {
         masterToPersonalLessonMap.set(
           newLessonValues[i].masterChapterId,
           insertedPersonalLessons[i].id
         );
       }
+    }
 
-      // 6. Clone all topics
-      const masterChapterIds = allMasterChapters.map((c) => c.id);
-      const allMasterTopics = await db
-        .select()
-        .from(topics)
-        .where(and(inArray(topics.lessonId, masterChapterIds), isNull(topics.userId)))
-        .orderBy(topics.sortOrder, topics.id);
+    // 6. Clone all topics for student's subjects (linked by subjectId)
+    const allMasterTopics = await db
+      .select()
+      .from(topics)
+      .where(and(inArray(topics.subjectId, relevantSubIds), isNull(topics.userId)))
+      .orderBy(topics.sortOrder, topics.id);
 
-      if (allMasterTopics.length > 0) {
-        const newTopicValues = allMasterTopics
-          .map((mT) => {
-            if (!mT.lessonId) return null;
-            const personalLessonId = masterToPersonalLessonMap.get(mT.lessonId);
-            const personalSubId = masterToPersonalSubMap.get(mT.subjectId);
-            if (!personalLessonId || !personalSubId) return null;
-            return {
-              subjectId: personalSubId,
-              lessonId: personalLessonId,
-              userId: userId,
-              name: mT.name,
-              chapter: mT.chapter,
-              notes: mT.notes,
-              sortOrder: mT.sortOrder,
-              status: "not_started" as const,
-            };
-          })
-          .filter(Boolean) as Array<{
-            subjectId: number;
-            lessonId: number;
-            userId: number;
-            name: string;
-            chapter: string | null;
-            notes: string | null;
-            sortOrder: number;
-            status: "not_started";
-          }>;
+    if (allMasterTopics.length > 0) {
+      const newTopicValues = allMasterTopics
+        .map((mT) => {
+          const personalSubId = masterToPersonalSubMap.get(mT.subjectId);
+          if (!personalSubId) return null;
+          const personalLessonId = mT.lessonId
+            ? masterToPersonalLessonMap.get(mT.lessonId) || null
+            : null;
+          return {
+            subjectId: personalSubId,
+            lessonId: personalLessonId,
+            userId: userId,
+            name: mT.name,
+            chapter: mT.chapter,
+            notes: mT.notes,
+            sortOrder: mT.sortOrder,
+            status: "not_started" as const,
+          };
+        })
+        .filter(Boolean) as Array<{
+          subjectId: number;
+          lessonId: number | null;
+          userId: number;
+          name: string;
+          chapter: string | null;
+          notes: string | null;
+          sortOrder: number;
+          status: "not_started";
+        }>;
 
-        const CHUNK_SIZE = 200;
-        for (let i = 0; i < newTopicValues.length; i += CHUNK_SIZE) {
-          const chunk = newTopicValues.slice(i, i + CHUNK_SIZE);
-          await db.insert(topics).values(chunk);
-        }
+      const CHUNK_SIZE = 150;
+      for (let i = 0; i < newTopicValues.length; i += CHUNK_SIZE) {
+        const chunk = newTopicValues.slice(i, i + CHUNK_SIZE);
+        await db.insert(topics).values(chunk);
       }
     }
 

@@ -367,7 +367,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
     userSubs = Array.from(seenSubjectNames.values());
 
     // 3. Fetch topics for user
-    const userTopics = await db
+    let userTopics = await db
       .select({
         id: topics.id,
         subjectId: topics.subjectId,
@@ -384,6 +384,39 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       .from(topics)
       .where(isPersonal ? eq(topics.userId, user.id) : isNull(topics.userId))
       .orderBy(topics.sortOrder, topics.id);
+
+    // Guaranteed fallback: If personal topics are not yet available, immediately fall back to master topics
+    if (userTopics.length === 0) {
+      userTopics = await db
+        .select({
+          id: topics.id,
+          subjectId: topics.subjectId,
+          lessonId: topics.lessonId,
+          name: topics.name,
+          chapter: topics.chapter,
+          sortOrder: topics.sortOrder,
+          status: topics.status,
+          completedAt: topics.completedAt,
+          lastRevisedAt: topics.lastRevisedAt,
+          revisionCount: topics.revisionCount,
+          nextRevisionDue: topics.nextRevisionDue,
+        })
+        .from(topics)
+        .where(isNull(topics.userId))
+        .orderBy(topics.sortOrder, topics.id);
+
+      userSubs = await db
+        .select({
+          id: subjects.id,
+          name: subjects.name,
+          nameBn: subjects.nameBn,
+          sortOrder: subjects.sortOrder,
+          subjectType: subjects.subjectType,
+        })
+        .from(subjects)
+        .where(isNull(subjects.userId))
+        .orderBy(subjects.sortOrder, subjects.id);
+    }
 
     // 4. Activity history for subjects (lastStudied date)
     const [subLastItemRows, subLastSessionRows] = await Promise.all([
