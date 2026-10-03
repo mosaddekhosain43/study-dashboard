@@ -74,7 +74,6 @@ export default function FeedbackClient({
   const [category, setCategory] = useState<
     "general" | "data_problem" | "feature_request" | "bug"
   >("feature_request");
-  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>(initialMyFeedbacks);
   const [isPending, startTransition] = useTransition();
@@ -94,7 +93,6 @@ export default function FeedbackClient({
     startTransition(async () => {
       const res = await submitFeedbackAction({
         category,
-        subject: subject.trim(),
         message: message.trim(),
       });
 
@@ -106,14 +104,13 @@ export default function FeedbackClient({
           userName: currentUser?.name || "Student",
           userEmail: currentUser?.email || null,
           category,
-          subject: subject.trim() || null,
+          subject: null,
           message: message.trim(),
           rating: null,
           status: "new",
           createdAt: new Date(),
         };
         setFeedbacks((prev) => [newEntry, ...prev]);
-        setSubject("");
         setMessage("");
       } else {
         setErrorMsg(res.error || "মতামত পাঠাতে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
@@ -284,7 +281,6 @@ export default function FeedbackClient({
             <button
               onClick={() => {
                 setSubmittedSuccess(false);
-                setSubject("");
                 setMessage("");
               }}
               className="rounded-xl bg-leaf px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-leaf/90 transition"
@@ -350,26 +346,8 @@ export default function FeedbackClient({
             </div>
           </div>
 
-          {/* Subject and Message Details */}
+          {/* Message Details */}
           <div className="space-y-4 rounded-2xl border border-line bg-card p-4 sm:p-5 shadow-xs">
-            <div className="space-y-1.5">
-              <label
-                htmlFor="subject"
-                className="text-xs font-bold text-ink flex items-center justify-between"
-              >
-                <span>বিষয় বা সমস্যা সংক্ষেপে (Title)</span>
-                <span className="text-[10px] text-muted">ঐচ্ছিক</span>
-              </label>
-              <input
-                id="subject"
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="যেমন: বাংলা ২য় পত্রের অধ্যায় বাদ পড়েছে / নতুন রিমাইন্ডার ফিচার ইত্যাদি"
-                className="w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-xs text-ink placeholder:text-muted/60 focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf transition"
-              />
-            </div>
-
             <div className="space-y-1.5">
               <label
                 htmlFor="message"
