@@ -71,7 +71,6 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         { href: "/log", label: "Daily Log", icon: CalendarDays },
         { href: "/weekly", label: "Weekly Review", icon: CalendarRange },
         { href: "/analytics", label: "Analytics", icon: BarChart3 },
-        { href: "/feedback", label: "Feedback", icon: MessageSquarePlus },
       ],
     },
     ...(user
@@ -109,6 +108,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         { href: "/syllabus", label: "Syllabus Setup", icon: NotebookPen },
         { href: "/search", label: "Search", icon: Search },
         { href: "/settings", label: "Settings", icon: Settings },
+        { href: "/feedback", label: "Feedback", icon: MessageSquarePlus },
       ],
     },
   ];
