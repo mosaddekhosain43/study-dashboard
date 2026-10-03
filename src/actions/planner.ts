@@ -3,7 +3,7 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db, initializeDb } from "@/db";
-import { lessons, sessions, settings, subjects, topics, updateItems, users } from "@/db/schema";
+import { lessons, sessions, settings, subjects, topics, updateItems, updates, users } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getExamConfig } from "@/lib/queries";
 import {
@@ -18,6 +18,7 @@ import {
   SETTING_TARGET_DATE,
   SETTING_TARGET_START_DATE,
 } from "@/lib/constants";
+import { ensureStudentHasPersonalCurriculum } from "@/lib/studentCurriculum";
 
 export async function getStudentStudyPlanAction(): Promise<{
   ok: boolean;
@@ -34,7 +35,7 @@ export async function getStudentStudyPlanAction(): Promise<{
     const examConfig = await getExamConfig();
 
     // Fetch user subjects
-    const userSubjects = await db
+    let userSubjects = await db
       .select({
         id: subjects.id,
         name: subjects.name,
@@ -45,6 +46,21 @@ export async function getStudentStudyPlanAction(): Promise<{
       .from(subjects)
       .where(eq(subjects.userId, user.id))
       .orderBy(subjects.sortOrder, subjects.id);
+
+    if (userSubjects.length === 0) {
+      await ensureStudentHasPersonalCurriculum(user.id);
+      userSubjects = await db
+        .select({
+          id: subjects.id,
+          name: subjects.name,
+          nameBn: subjects.nameBn,
+          streamGroup: subjects.streamGroup,
+          sortOrder: subjects.sortOrder,
+        })
+        .from(subjects)
+        .where(eq(subjects.userId, user.id))
+        .orderBy(subjects.sortOrder, subjects.id);
+    }
 
     if (userSubjects.length === 0) {
       // Return empty plan if no syllabus set up yet
@@ -304,6 +320,21 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       .from(subjects)
       .where(eq(subjects.userId, user.id))
       .orderBy(subjects.sortOrder, subjects.id);
+
+    if (userSubs.length === 0) {
+      await ensureStudentHasPersonalCurriculum(user.id);
+      userSubs = await db
+        .select({
+          id: subjects.id,
+          name: subjects.name,
+          nameBn: subjects.nameBn,
+          sortOrder: subjects.sortOrder,
+          subjectType: subjects.subjectType,
+        })
+        .from(subjects)
+        .where(eq(subjects.userId, user.id))
+        .orderBy(subjects.sortOrder, subjects.id);
+    }
 
     const isPersonal = userSubs.length > 0;
     if (!isPersonal) {
@@ -742,11 +773,19 @@ export async function toggleTopicCompleteAction(topicId: number): Promise<{
   }
 
   try {
-    const [topic] = await db
+    let [topic] = await db
       .select()
       .from(topics)
       .where(and(eq(topics.id, topicId), eq(topics.userId, user.id)))
       .limit(1);
+
+    if (!topic) {
+      [topic] = await db
+        .select()
+        .from(topics)
+        .where(eq(topics.id, topicId))
+        .limit(1);
+    }
 
     if (!topic) {
       return { ok: false, error: "Topic not found." };
@@ -763,7 +802,67 @@ export async function toggleTopicCompleteAction(topicId: number): Promise<{
         completedAt,
         updatedAt: new Date(),
       })
-      .where(eq(topics.id, topicId));
+      .where(eq(topics.id, topic.id));
+
+    // Keep activity log & streak synced
+    const effectiveUserId = user?.id ?? topic.userId;
+    if (effectiveUserId) {
+      if (newStatus === "completed") {
+        const existingItem = await db
+          .select()
+          .from(updateItems)
+          .where(
+            and(
+              eq(updateItems.topicId, topic.id),
+              eq(updateItems.userId, effectiveUserId),
+              eq(updateItems.date, today)
+            )
+          )
+          .limit(1);
+
+        if (!existingItem.length) {
+          let [upd] = await db
+            .select()
+            .from(updates)
+            .where(and(eq(updates.userId, effectiveUserId), eq(updates.date, today)))
+            .limit(1);
+
+          if (!upd) {
+            const [newUpd] = await db
+              .insert(updates)
+              .values({
+                userId: effectiveUserId,
+                rawText: "Daily target topic completion",
+                date: today,
+              })
+              .returning();
+            upd = newUpd;
+          }
+
+          if (upd) {
+            await db.insert(updateItems).values({
+              updateId: upd.id,
+              userId: effectiveUserId,
+              subjectId: topic.subjectId,
+              topicId: topic.id,
+              topicText: topic.name,
+              status: "completed",
+              date: today,
+            });
+          }
+        }
+      } else {
+        await db
+          .delete(updateItems)
+          .where(
+            and(
+              eq(updateItems.topicId, topic.id),
+              eq(updateItems.userId, effectiveUserId),
+              eq(updateItems.date, today)
+            )
+          );
+      }
+    }
 
     revalidatePath("/");
     revalidatePath("/planner");

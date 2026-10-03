@@ -1,8 +1,8 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { db } from "@/db";
+import { db, initializeDb } from "@/db";
 import {
   lessons,
   sessions,
@@ -27,9 +27,14 @@ import { addDays, dateKey, todayKey } from "@/lib/dates";
 import { canonicalTopic, parseStudyUpdate, type ParseResult } from "@/lib/parser";
 import { ensureSeeded, safeUpsertSetting } from "@/lib/queries";
 import { getCurrentUser } from "@/lib/auth";
+import { ensureStudentHasPersonalCurriculum } from "@/lib/studentCurriculum";
 
 function refresh() {
   revalidatePath("/", "layout");
+  revalidatePath("/");
+  revalidatePath("/planner");
+  revalidatePath("/weekly");
+  revalidatePath("/subjects");
 }
 
 function ok<T extends object>(extra?: T) {
@@ -296,7 +301,107 @@ export async function setTopicStatusAction(
   status: string
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    await applyStatusToTopic(topicId, validStatus(status), todayKey());
+    await initializeDb();
+    const user = await getCurrentUser();
+    const valid = validStatus(status);
+    const date = todayKey();
+
+    const [targetTopic] = await db
+      .select()
+      .from(topics)
+      .where(eq(topics.id, topicId))
+      .limit(1);
+
+    if (!targetTopic) {
+      return fail("Topic not found.");
+    }
+
+    let finalTopicId = topicId;
+
+    if (user && targetTopic.userId === null) {
+      await ensureStudentHasPersonalCurriculum(user.id);
+      const [personalTopic] = await db
+        .select()
+        .from(topics)
+        .where(
+          and(
+            eq(topics.userId, user.id),
+            eq(topics.name, targetTopic.name)
+          )
+        )
+        .limit(1);
+      if (personalTopic) {
+        finalTopicId = personalTopic.id;
+      }
+    }
+
+    await applyStatusToTopic(finalTopicId, valid, date);
+
+    // Keep master in sync if student also updated it
+    if (finalTopicId !== topicId) {
+      await applyStatusToTopic(topicId, valid, date);
+    }
+
+    // Keep activity log & streak synced
+    const effectiveUserId = user?.id ?? targetTopic.userId;
+    if (effectiveUserId) {
+      if (valid === "completed") {
+        const existingItem = await db
+          .select()
+          .from(updateItems)
+          .where(
+            and(
+              eq(updateItems.topicId, finalTopicId),
+              eq(updateItems.userId, effectiveUserId),
+              eq(updateItems.date, date)
+            )
+          )
+          .limit(1);
+
+        if (!existingItem.length) {
+          let [upd] = await db
+            .select()
+            .from(updates)
+            .where(and(eq(updates.userId, effectiveUserId), eq(updates.date, date)))
+            .limit(1);
+
+          if (!upd) {
+            const [newUpd] = await db
+              .insert(updates)
+              .values({
+                userId: effectiveUserId,
+                rawText: "Daily target topic completion",
+                date,
+              })
+              .returning();
+            upd = newUpd;
+          }
+
+          if (upd) {
+            await db.insert(updateItems).values({
+              updateId: upd.id,
+              userId: effectiveUserId,
+              subjectId: targetTopic.subjectId,
+              topicId: finalTopicId,
+              topicText: targetTopic.name,
+              status: "completed",
+              date,
+            });
+          }
+        }
+      } else {
+        await db
+          .delete(updateItems)
+          .where(
+            and(
+              eq(updateItems.topicId, finalTopicId),
+              eq(updateItems.userId, effectiveUserId),
+              eq(updateItems.date, date)
+            )
+          );
+      }
+    }
+
     refresh();
     return ok();
   } catch (err: any) {

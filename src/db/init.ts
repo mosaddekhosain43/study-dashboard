@@ -328,21 +328,30 @@ export async function runInitAndSeed(
 
     // 3. Seed comprehensive NCTB Curriculum data
     try {
-      // Deduplicate master subjects by slug
-      await rawQuery(
-        "DELETE FROM subjects WHERE user_id IS NULL AND id NOT IN (SELECT min(id) FROM subjects WHERE user_id IS NULL GROUP BY slug)"
+      const existingMasterTopsRes = await rawQuery(
+        "SELECT count(*) as count FROM topics WHERE user_id IS NULL"
+      );
+      const existingMasterCount = Number(
+        existingMasterTopsRes?.rows?.[0]?.count ?? existingMasterTopsRes?.[0]?.count ?? 0
       );
 
-      // Clean master lessons and topics before seeding curriculum
-      await rawQuery("DELETE FROM topics WHERE user_id IS NULL");
-      await rawQuery("DELETE FROM lessons WHERE user_id IS NULL");
+      // Only seed NCTB curriculum if master topics are not seeded yet (less than 700)
+      if (existingMasterCount < 700) {
+        // Deduplicate master subjects by slug
+        await rawQuery(
+          "DELETE FROM subjects WHERE user_id IS NULL AND id NOT IN (SELECT min(id) FROM subjects WHERE user_id IS NULL GROUP BY slug)"
+        );
 
-      const existingSlugsRes = await rawQuery("SELECT id, slug FROM subjects WHERE user_id IS NULL");
-      const existingRows = existingSlugsRes.rows || existingSlugsRes || [];
-      const existingMap = new Map<string, number>();
-      for (const r of existingRows) {
-        existingMap.set(r.slug, r.id);
-      }
+        // Clean master lessons and topics before seeding curriculum
+        await rawQuery("DELETE FROM topics WHERE user_id IS NULL");
+        await rawQuery("DELETE FROM lessons WHERE user_id IS NULL");
+
+        const existingSlugsRes = await rawQuery("SELECT id, slug FROM subjects WHERE user_id IS NULL");
+        const existingRows = existingSlugsRes.rows || existingSlugsRes || [];
+        const existingMap = new Map<string, number>();
+        for (const r of existingRows) {
+          existingMap.set(r.slug, r.id);
+        }
 
       for (let i = 0; i < NCTB_CURRICULUM_DATA.length; i++) {
         const def = NCTB_CURRICULUM_DATA[i];
@@ -427,6 +436,7 @@ export async function runInitAndSeed(
             );
           }
         }
+      }
       }
     } catch (nctbErr) {
       console.error("Error seeding NCTB curriculum:", nctbErr);
