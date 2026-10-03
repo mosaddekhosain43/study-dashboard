@@ -23,6 +23,7 @@ export interface SessionUser {
   targetGoal?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
+  gender?: string | null;
 }
 
 export function hashPassword(password: string): string {

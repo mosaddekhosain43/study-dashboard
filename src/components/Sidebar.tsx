@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import type { SessionUser } from "@/lib/auth";
+import StudentAvatar from "@/components/StudentAvatar";
 
 interface SidebarProps {
   subjects: { id: number; name: string }[];
@@ -186,13 +187,18 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
       <div className="border-t border-white/8 px-4 py-3 space-y-3">
         {user ? (
           <div className="flex items-center justify-between rounded-xl bg-white/5 p-2.5">
-            <div className="min-w-0 flex-1 pr-2">
-              <p className="truncate text-xs font-semibold text-white">
-                {user.name}
-              </p>
-              <span className="inline-block rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
-                {user.role}
-              </span>
+            <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+              <div className="shrink-0 rounded-full overflow-hidden bg-white/10 ring-1 ring-white/20 p-0.5">
+                <StudentAvatar gender={user.gender || (user.avatarUrl === "female" ? "female" : "male")} size={32} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-white">
+                  {user.name}
+                </p>
+                <span className="inline-block rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-300">
+                  {user.role}
+                </span>
+              </div>
             </div>
             <button
               onClick={handleLogout}

@@ -13,6 +13,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { getBatchesAction, registerStudentAction } from "@/actions/auth";
+import StudentAvatar from "@/components/StudentAvatar";
 
 interface Batch {
   id: number;
@@ -145,6 +146,39 @@ export default function RegisterPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                Gender (Avatar) <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-3 rounded-xl border border-line bg-paper/30 p-2.5 cursor-pointer hover:border-leaf/50 transition has-[:checked]:border-leaf has-[:checked]:bg-leaf-soft/20">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="male"
+                    defaultChecked
+                    className="size-4 text-leaf accent-leaf focus:ring-leaf"
+                  />
+                  <div className="flex items-center gap-2.5">
+                    <StudentAvatar gender="male" size={28} />
+                    <span className="text-xs font-semibold text-ink">Male</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-line bg-paper/30 p-2.5 cursor-pointer hover:border-leaf/50 transition has-[:checked]:border-leaf has-[:checked]:bg-leaf-soft/20">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="female"
+                    className="size-4 text-leaf accent-leaf focus:ring-leaf"
+                  />
+                  <div className="flex items-center gap-2.5">
+                    <StudentAvatar gender="female" size={28} />
+                    <span className="text-xs font-semibold text-ink">Female</span>
+                  </div>
+                </label>
               </div>
             </div>
 

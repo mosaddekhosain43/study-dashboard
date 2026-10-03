@@ -69,7 +69,8 @@ export default async function SettingsPage() {
     rollNumber: userRow?.rollNumber || "",
     targetGoal: userRow?.targetGoal || "",
     bio: userRow?.bio || "",
-    avatarUrl: userRow?.avatarUrl || "🎓",
+    avatarUrl: userRow?.avatarUrl || "male",
+    gender: userRow?.gender || sessionUser?.gender || "male",
     createdAt: userRow?.createdAt ? new Date(userRow.createdAt).toISOString() : null,
     stats: {
       totalSubjects,

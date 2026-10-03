@@ -48,6 +48,7 @@ export const users = pgTable(
     targetGoal: text("target_goal"),
     bio: text("bio"),
     avatarUrl: text("avatar_url"),
+    gender: text("gender").default("male"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

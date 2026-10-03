@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
   target_goal TEXT,
   bio TEXT,
   avatar_url TEXT,
+  gender TEXT DEFAULT 'male',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -260,6 +261,7 @@ export async function runInitAndSeed(
         ALTER TABLE users ADD COLUMN IF NOT EXISTS target_goal TEXT;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
         ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'male';
       `);
     } catch {
       // ignore

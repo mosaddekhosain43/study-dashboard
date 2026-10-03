@@ -90,6 +90,9 @@ export async function registerStudentAction(formData: FormData) {
     return { ok: false, error: "An account with this email already exists." };
   }
 
+  const genderRaw = (formData.get("gender") as string)?.trim().toLowerCase();
+  const gender = genderRaw === "female" ? "female" : "male";
+
   const passwordHash = hashPassword(password);
 
   const role = email === "mosaddekhosain43@gmail.com" ? "admin" : "student";
@@ -103,6 +106,8 @@ export async function registerStudentAction(formData: FormData) {
       passwordHash,
       role,
       batchId: Number.isInteger(batchId) ? batchId : null,
+      gender,
+      avatarUrl: gender,
     })
     .returning();
 
@@ -116,6 +121,8 @@ export async function registerStudentAction(formData: FormData) {
     examDate: null,
     targetStartDate: null,
     targetDate: null,
+    gender,
+    avatarUrl: gender,
   });
 
   revalidatePath("/", "layout");
@@ -218,6 +225,7 @@ export async function updateStudentProfileAction(data: {
   targetGoal?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
+  gender?: string | null;
 }) {
   const user = await getCurrentUser();
   if (!user) {
@@ -228,6 +236,8 @@ export async function updateStudentProfileAction(data: {
   if (!name) {
     return { ok: false, error: "Full Name cannot be empty." };
   }
+
+  const gender = data.gender === "female" ? "female" : "male";
 
   await db
     .update(users)
@@ -241,7 +251,8 @@ export async function updateStudentProfileAction(data: {
       rollNumber: data.rollNumber?.trim() || null,
       targetGoal: data.targetGoal?.trim() || null,
       bio: data.bio?.trim() || null,
-      avatarUrl: data.avatarUrl?.trim() || null,
+      avatarUrl: gender,
+      gender,
     })
     .where(eq(users.id, user.id));
 
@@ -257,7 +268,8 @@ export async function updateStudentProfileAction(data: {
     rollNumber: data.rollNumber?.trim() || null,
     targetGoal: data.targetGoal?.trim() || null,
     bio: data.bio?.trim() || null,
-    avatarUrl: data.avatarUrl?.trim() || null,
+    avatarUrl: gender,
+    gender,
   });
 
   revalidatePath("/", "layout");

@@ -36,6 +36,7 @@ import {
   updateStudentProfileAction,
   changeStudentPasswordAction,
 } from "@/actions/auth";
+import StudentAvatar from "@/components/StudentAvatar";
 
 export interface StudentProfileData {
   id: number;
@@ -52,6 +53,7 @@ export interface StudentProfileData {
   targetGoal: string;
   bio: string;
   avatarUrl: string;
+  gender?: string;
   createdAt: string | null;
   stats: {
     totalSubjects: number;
@@ -60,8 +62,6 @@ export interface StudentProfileData {
     progressPercent: number;
   };
 }
-
-const AVATAR_OPTIONS = ["🎓", "📚", "🕌", "🌙", "🔬", "💡", "✍️", "🏆", "🌟", "📖"];
 
 const STREAM_GROUP_OPTIONS = [
   { value: "general_madrasah", label: "General Madrasah" },
@@ -90,7 +90,9 @@ export default function SettingsClient({
   const [rollNumber, setRollNumber] = useState(profile.rollNumber || "");
   const [targetGoal, setTargetGoal] = useState(profile.targetGoal || "");
   const [bio, setBio] = useState(profile.bio || "");
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "🎓");
+  const [gender, setGender] = useState<string>(
+    profile.gender || (profile.avatarUrl === "female" ? "female" : "male")
+  );
 
   // Password Form State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -128,7 +130,8 @@ export default function SettingsClient({
         rollNumber,
         targetGoal,
         bio,
-        avatarUrl,
+        avatarUrl: gender,
+        gender,
       });
 
       if (res.ok) {
@@ -232,8 +235,8 @@ export default function SettingsClient({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4.5">
             {/* Avatar Pill / Badge */}
-            <div className="relative grid size-18 place-items-center rounded-2xl bg-gradient-to-tr from-leaf to-emerald-500 text-3xl shadow-sm text-white shrink-0 ring-4 ring-white/80 dark:ring-card">
-              {avatarUrl || "🎓"}
+            <div className="relative grid size-18 place-items-center rounded-2xl bg-paper/90 border border-line shadow-sm shrink-0 ring-4 ring-white/80 dark:ring-card overflow-hidden">
+              <StudentAvatar gender={gender} size={58} />
               <span className="absolute -bottom-1 -right-1 grid size-5 place-items-center rounded-full bg-emerald-600 text-white ring-2 ring-white text-[10px]">
                 ✓
               </span>
@@ -349,39 +352,6 @@ export default function SettingsClient({
       {/* ───────────────────────────────────────────────────────────── */}
       {activeTab === "profile" && (
         <form onSubmit={handleSaveProfile} className="space-y-6">
-          {/* Avatar Selection Card */}
-          <div className="card p-5 sm:p-6 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-display text-sm font-bold text-ink flex items-center gap-2">
-                  <Sparkles className="size-4 text-leaf" />
-                  <span>Choose Profile Avatar</span>
-                </h3>
-                <p className="text-xs text-ink-faint mt-0.5">
-                  Pick your favorite student icon or avatar.
-                </p>
-              </div>
-              <span className="text-2xl">{avatarUrl}</span>
-            </div>
-
-            <div className="flex flex-wrap gap-2.5 pt-1">
-              {AVATAR_OPTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setAvatarUrl(emoji)}
-                  className={`grid size-11 place-items-center rounded-2xl text-xl transition-all ${
-                    avatarUrl === emoji
-                      ? "bg-leaf-soft border-2 border-leaf scale-110 shadow-xs"
-                      : "bg-paper/70 hover:bg-paper border border-line hover:border-leaf/40"
-                  }`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Personal Information */}
           <div className="card p-5 sm:p-6 space-y-5">
             <div className="border-b border-line/60 pb-3">
@@ -461,6 +431,47 @@ export default function SettingsClient({
                   placeholder="e.g. 112345"
                   className="w-full rounded-xl border border-line bg-white dark:bg-card px-3.5 py-2.5 text-xs font-medium text-ink placeholder:text-ink-faint focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf"
                 />
+              </div>
+
+              {/* Gender & Profile Avatar */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <User className="size-3.5 text-leaf" />
+                  <span>Gender (Auto Profile Avatar)</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3 max-w-md">
+                  <button
+                    type="button"
+                    onClick={() => setGender("male")}
+                    className={`flex items-center gap-3 rounded-2xl border p-2.5 transition text-left ${
+                      gender === "male"
+                        ? "border-leaf bg-leaf-soft/40 shadow-xs ring-1 ring-leaf"
+                        : "border-line bg-paper/30 hover:border-leaf/40"
+                    }`}
+                  >
+                    <StudentAvatar gender="male" size={40} />
+                    <div>
+                      <p className="text-xs font-bold text-ink">Male Student</p>
+                      <p className="text-[10.5px] text-ink-faint">Islamic Cap & Kurta</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGender("female")}
+                    className={`flex items-center gap-3 rounded-2xl border p-2.5 transition text-left ${
+                      gender === "female"
+                        ? "border-leaf bg-leaf-soft/40 shadow-xs ring-1 ring-leaf"
+                        : "border-line bg-paper/30 hover:border-leaf/40"
+                    }`}
+                  >
+                    <StudentAvatar gender="female" size={40} />
+                    <div>
+                      <p className="text-xs font-bold text-ink">Female Student</p>
+                      <p className="text-[10.5px] text-ink-faint">Islamic Hijab</p>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Bio / Study Motto */}
