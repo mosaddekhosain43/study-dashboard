@@ -331,3 +331,31 @@ export const settings = pgTable(
   },
   (t) => [index("settings_key_user_idx").on(t.key, t.userId)]
 );
+
+/**
+ * User feedback, suggestions, and issue reports
+ */
+export const feedbacks = pgTable(
+  "feedbacks",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    userName: text("user_name"),
+    userEmail: text("user_email"),
+    category: text("category").notNull().default("general"), // 'general' | 'data_problem' | 'feature_request' | 'bug'
+    subject: text("subject"),
+    message: text("message").notNull(),
+    rating: integer("rating"),
+    status: text("status").notNull().default("new"), // 'new' | 'reviewed' | 'resolved'
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("feedbacks_user_idx").on(t.userId),
+    index("feedbacks_category_idx").on(t.category),
+    index("feedbacks_status_idx").on(t.status),
+  ]
+);

@@ -5,8 +5,10 @@ import {
   FolderPlus,
   GraduationCap,
   Layers,
+  MessageSquarePlus,
   Plus,
   ShieldCheck,
+  Star,
   Trash2,
   UserCheck,
   UserPlus,
@@ -19,6 +21,10 @@ import {
   deleteBatchAction,
   deleteUserAction,
 } from "@/actions/admin";
+import {
+  updateFeedbackStatusAction,
+  type FeedbackItem,
+} from "@/actions/feedback";
 import MasterCurriculumManager from "@/components/admin/MasterCurriculumManager";
 
 interface Batch {
@@ -56,16 +62,32 @@ interface Props {
     teachers: Teacher[];
     students: Student[];
     curriculum?: any[];
+    feedbacks?: FeedbackItem[];
   };
 }
 
 export default function AdminClient({ initialData }: Props) {
   const [data, setData] = useState(initialData);
-  const [activeTab, setActiveTab] = useState<"batches" | "teachers" | "students" | "curriculum">("batches");
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>(
+    initialData.feedbacks || []
+  );
+  const [activeTab, setActiveTab] = useState<
+    "batches" | "teachers" | "students" | "curriculum" | "feedbacks"
+  >("batches");
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleUpdateFeedbackStatus = async (
+    id: number,
+    status: "new" | "reviewed" | "resolved"
+  ) => {
+    setFeedbackList((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, status } : f))
+    );
+    await updateFeedbackStatusAction(id, status);
+  };
 
   const handleCreateBatch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -226,6 +248,16 @@ export default function AdminClient({ initialData }: Props) {
           }`}
         >
           Master Curriculum ({data.curriculum?.length || 0})
+        </button>
+        <button
+          onClick={() => setActiveTab("feedbacks")}
+          className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+            activeTab === "feedbacks"
+              ? "bg-pine text-white shadow-md shadow-pine/20"
+              : "border border-line bg-card text-ink-soft hover:bg-paper hover:text-ink"
+          }`}
+        >
+          Student Feedbacks ({feedbackList.length})
         </button>
       </div>
 
@@ -585,6 +617,94 @@ export default function AdminClient({ initialData }: Props) {
           batches={data.batches}
           initialCurriculum={data.curriculum || []}
         />
+      )}
+
+      {/* TAB 5: Student Feedbacks */}
+      {activeTab === "feedbacks" && (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+            <div>
+              <h2 className="font-display text-base font-semibold text-ink">
+                Student Feedbacks & Problem Reports ({feedbackList.length})
+              </h2>
+              <p className="text-xs text-ink-faint">
+                Suggestions, feature requests, and syllabus/data issues submitted by students
+              </p>
+            </div>
+          </div>
+
+          {feedbackList.length === 0 ? (
+            <div className="rounded-2xl border border-line bg-card p-12 text-center text-xs text-muted">
+              No feedback or problem reports submitted yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {feedbackList.map((f) => (
+                <div
+                  key={f.id}
+                  className="rounded-2xl border border-line bg-card p-5 shadow-xs space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${
+                        f.category === "data_problem"
+                          ? "bg-rose-500/10 text-rose-600"
+                          : f.category === "feature_request"
+                          ? "bg-amber-500/10 text-amber-600"
+                          : f.category === "bug"
+                          ? "bg-indigo-500/10 text-indigo-600"
+                          : "bg-emerald-500/10 text-emerald-600"
+                      }`}
+                    >
+                      {f.category.replace("_", " ")}
+                    </span>
+
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {f.rating &&
+                        Array.from({ length: f.rating }).map((_, i) => (
+                          <Star key={i} className="size-3 fill-amber-400 text-amber-400" />
+                        ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-ink">{f.subject || "No Subject"}</h3>
+                    <p className="text-xs text-ink/80 mt-1 whitespace-pre-line leading-relaxed bg-paper/50 p-3 rounded-xl border border-line/60">
+                      {f.message}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line text-[11px] text-muted">
+                    <div>
+                      <p className="font-semibold text-ink">{f.userName || "Anonymous"}</p>
+                      <p className="text-[10px] text-muted">{f.userEmail || "No email"}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={f.status}
+                        onChange={(e) =>
+                          handleUpdateFeedbackStatus(
+                            f.id,
+                            e.target.value as "new" | "reviewed" | "resolved"
+                          )
+                        }
+                        className="rounded-lg border border-line bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink focus:outline-none"
+                      >
+                        <option value="new">New</option>
+                        <option value="reviewed">Reviewed</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                      <span className="text-[10px] text-muted">
+                        {new Date(f.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Create Batch Modal */}

@@ -148,6 +148,19 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS feedbacks (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  user_name TEXT,
+  user_email TEXT,
+  category TEXT NOT NULL DEFAULT 'general',
+  subject TEXT,
+  message TEXT NOT NULL,
+  rating INTEGER,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 export async function runInitAndSeed(
@@ -164,6 +177,10 @@ export async function runInitAndSeed(
         );
         const count = Number(probe?.rows?.[0]?.count ?? probe?.[0]?.count ?? 0);
         if (count >= 500) {
+          // Ensure new tables exist even on fast-path
+          await rawExec(
+            "CREATE TABLE IF NOT EXISTS feedbacks (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, user_name TEXT, user_email TEXT, category TEXT NOT NULL DEFAULT 'general', subject TEXT, message TEXT NOT NULL, rating INTEGER, status TEXT NOT NULL DEFAULT 'new', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());"
+          ).catch(() => {});
           return;
         }
       } catch {

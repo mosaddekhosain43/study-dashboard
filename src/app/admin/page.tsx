@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { getAdminDataAction, getMasterCurriculumAction } from "@/actions/admin";
+import { getAllFeedbacksAction } from "@/actions/feedback";
 import { initializeDb } from "@/db";
 import AdminClient from "./AdminClient";
 
@@ -13,9 +14,10 @@ export default async function AdminPage() {
     redirect("/login?relogin=1");
   }
 
-  const [data, currData] = await Promise.all([
+  const [data, currData, feedbackRes] = await Promise.all([
     getAdminDataAction(),
     getMasterCurriculumAction(),
+    getAllFeedbacksAction().catch(() => ({ ok: true, feedbacks: [] })),
   ]);
 
   return (
@@ -34,7 +36,13 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      <AdminClient initialData={{ ...data, curriculum: currData.curriculum }} />
+      <AdminClient
+        initialData={{
+          ...data,
+          curriculum: currData.curriculum,
+          feedbacks: feedbackRes.feedbacks || [],
+        }}
+      />
     </div>
   );
 }

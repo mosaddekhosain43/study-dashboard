@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   MessageSquare,
+  MessageSquarePlus,
   NotebookPen,
   Search,
   Settings,
@@ -70,6 +71,7 @@ export default function Sidebar({ subjects, user }: SidebarProps) {
         { href: "/log", label: "Daily Log", icon: CalendarDays },
         { href: "/weekly", label: "Weekly Review", icon: CalendarRange },
         { href: "/analytics", label: "Analytics", icon: BarChart3 },
+        { href: "/feedback", label: "Feedback", icon: MessageSquarePlus },
       ],
     },
     ...(user
