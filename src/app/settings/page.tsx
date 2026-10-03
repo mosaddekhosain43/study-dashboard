@@ -86,7 +86,7 @@ export default async function SettingsPage() {
           Student Profile & Settings
         </h1>
         <p className="mt-1 text-[13.5px] text-ink-faint">
-          আপনার প্রোফাইল, শিক্ষা প্রতিষ্ঠান এবং অ্যাকাউন্টের নিরাপত্তা সেটিংস পরিচালনা করুন।
+          Manage your personal details, academic information, and account security.
         </p>
       </header>
       <div className="rise rise-1">
