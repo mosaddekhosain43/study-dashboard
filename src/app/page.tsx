@@ -103,7 +103,7 @@ export default async function DashboardPage() {
 
       {/* ── Stats (mobile) ─────────────────────────────────── */}
       <section className="rise space-y-3 sm:hidden">
-        <Link href="/subjects" className="card relative flex items-center gap-4 overflow-hidden rounded-[22px] p-4">
+        <div className="card relative flex items-center gap-4 overflow-hidden rounded-[22px] p-4">
           <Donut
             size={104}
             stroke={13}
@@ -124,8 +124,7 @@ export default async function DashboardPage() {
             </p>
             <p className="mt-0.5 text-[12px] text-ink-faint">{data.remaining} remaining</p>
           </div>
-          <ChevronRight className="size-4 shrink-0 text-ink-faint" />
-        </Link>
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -134,7 +133,7 @@ export default async function DashboardPage() {
             { href: "/remaining", label: "Remaining", value: String(data.remaining), sub: `${data.notStarted} never started`, icon: <Hourglass className="size-4 text-ink-faint" />, accent: "#94a3b8" },
             { href: "/timer", label: "Today's Time", value: formatMinutes(data.todayMinutes), sub: "study time logged", icon: <Timer className="size-4 text-leaf" />, accent: "#0c7a5b" },
           ].map((s) => (
-            <Link key={s.label} href={s.href} className="card relative overflow-hidden rounded-[18px] p-3.5">
+            <div key={s.label} className="card relative overflow-hidden rounded-[18px] p-3.5">
               <div className="pointer-events-none absolute -right-6 -top-6 size-20 rounded-full opacity-15" style={{ background: s.accent }} />
               <div className="relative flex items-center gap-1.5">
                 {s.icon}
@@ -145,13 +144,12 @@ export default async function DashboardPage() {
                   <p className="font-display text-[26px] font-bold leading-none tabular-nums text-ink">{s.value}</p>
                   <p className="mt-1 truncate text-[11.5px] text-ink-faint">{s.sub}</p>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-ink-faint" />
               </div>
-            </Link>
+            </div>
           ))}
         </div>
 
-        <Link href="/log" className="card relative flex items-end justify-between overflow-hidden rounded-[18px] p-3.5">
+        <div className="card relative flex items-end justify-between overflow-hidden rounded-[18px] p-3.5">
           <div className="pointer-events-none absolute -right-6 -top-6 size-20 rounded-full opacity-15" style={{ background: "#f97316" }} />
           <div className="relative min-w-0">
             <div className="flex items-center gap-1.5">
@@ -161,8 +159,7 @@ export default async function DashboardPage() {
             <p className="mt-2 font-display text-[26px] font-bold leading-none tabular-nums text-ink">{data.streak}d</p>
             <p className="mt-1 text-[11.5px] text-ink-faint">{data.streak > 0 ? "keep it burning" : "study today to start"}</p>
           </div>
-          <ChevronRight className="relative size-4 shrink-0 text-ink-faint" />
-        </Link>
+        </div>
       </section>
 
       {/* ── Stats ──────────────────────────────────────────── */}
