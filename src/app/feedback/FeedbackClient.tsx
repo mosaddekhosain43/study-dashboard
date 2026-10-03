@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import {
   MessageSquarePlus,
   Sparkles,
@@ -72,6 +72,20 @@ export default function FeedbackClient({
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"form" | "history">("form");
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Automatically grow the textarea height as the user types
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.max(120, textareaRef.current.scrollHeight)}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [message]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,13 +353,13 @@ export default function FeedbackClient({
                 </span>
               </label>
               <textarea
+                ref={textareaRef}
                 id="message"
-                rows={5}
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="আপনার মতামত, পরামর্শ বা সমস্যার কথা বিস্তারিত লিখুন..."
-                className="w-full rounded-xl border border-line bg-paper p-3.5 text-xs text-ink placeholder:text-muted/60 focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf transition leading-relaxed resize-y min-h-[120px]"
+                className="w-full rounded-xl border border-line bg-paper p-3.5 text-xs text-ink placeholder:text-muted/60 focus:border-leaf focus:outline-none focus:ring-1 focus:ring-leaf transition leading-relaxed resize-none overflow-hidden min-h-[120px]"
               />
             </div>
           </div>
