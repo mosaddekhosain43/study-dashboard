@@ -351,6 +351,21 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         .orderBy(subjects.sortOrder, subjects.id);
     }
 
+    // Deduplicate userSubs by name, mapping duplicate subject IDs to the primary subject ID
+    const seenSubjectNames = new Map<string, (typeof userSubs)[0]>();
+    const subIdAliasMap = new Map<number, number>();
+
+    for (const s of userSubs) {
+      const key = s.name.trim().toLowerCase();
+      if (!seenSubjectNames.has(key)) {
+        seenSubjectNames.set(key, s);
+      } else {
+        const primary = seenSubjectNames.get(key)!;
+        subIdAliasMap.set(s.id, primary.id);
+      }
+    }
+    userSubs = Array.from(seenSubjectNames.values());
+
     // 3. Fetch topics for user
     const userTopics = await db
       .select({
@@ -407,6 +422,15 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       }
     }
 
+    // Merge lastStudiedMap entries for any aliased duplicate subjects
+    for (const [dupId, primId] of subIdAliasMap.entries()) {
+      const dDate = lastStudiedMap.get(dupId);
+      if (dDate) {
+        const pDate = lastStudiedMap.get(primId);
+        if (!pDate || dDate > pDate) lastStudiedMap.set(primId, dDate);
+      }
+    }
+
     // 5. Total, Completed, Remaining, Backlog
     const totalTopics = userTopics.length;
     const completedTopics = userTopics.filter((t) => t.status === "completed").length;
@@ -433,9 +457,10 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
     // 6. Group topics by subject and pick recommended books for today
     const topicsBySub = new Map<number, typeof userTopics>();
     for (const t of userTopics) {
-      const list = topicsBySub.get(t.subjectId) || [];
-      list.push(t);
-      topicsBySub.set(t.subjectId, list);
+      const targetSubId = subIdAliasMap.get(t.subjectId) || t.subjectId;
+      const list = topicsBySub.get(targetSubId) || [];
+      list.push({ ...t, subjectId: targetSubId });
+      topicsBySub.set(targetSubId, list);
     }
 
     interface SubjectCandidate {
@@ -688,7 +713,8 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
 
     const fridaySubMap = new Map<number, WeeklyFridayTopicItem[]>();
     for (const t of completedThisWeekTopics) {
-      const list = fridaySubMap.get(t.subjectId) || [];
+      const targetSubId = subIdAliasMap.get(t.subjectId) || t.subjectId;
+      const list = fridaySubMap.get(targetSubId) || [];
       list.push({
         id: t.id,
         name: t.name,
@@ -698,7 +724,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         lastRevisedAt: t.lastRevisedAt,
         isRevisedToday: t.lastRevisedAt === today,
       });
-      fridaySubMap.set(t.subjectId, list);
+      fridaySubMap.set(targetSubId, list);
     }
 
     const fridaySubjects: WeeklyFridaySubjectGroup[] = [];

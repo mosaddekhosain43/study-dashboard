@@ -22,7 +22,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  AlertTriangle,
   PlayCircle,
 } from "lucide-react";
 import type {
@@ -149,8 +148,8 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
       if (res.ok) {
         const labels: Record<string, string> = {
           completed: "Topic marked as Completed! 🎉",
-          in_progress: "Topic marked as In Progress (carryover active).",
-          not_completed: "Topic marked as Not Completed (carryover active).",
+          in_progress: "Topic marked as In Progress.",
+          not_completed: "Topic marked as Not Completed.",
           not_started: "Topic status reset to Not Started.",
         };
         showToast(labels[newStatus] || "Topic status updated.");
@@ -430,25 +429,6 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           </div>
 
         {/* ─────────────────────────────────────────────────────────── */}
-        {/* 3. CUMULATIVE BACKLOG NOTICE (Carryover Alert)            */}
-        {/* ─────────────────────────────────────────────────────────── */}
-        {totalBacklog > 0 && (
-          <div className="mt-5 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4 text-xs">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-bold text-amber-900 dark:text-amber-200">
-                  Carryover Alert: {totalBacklog} {totalBacklog === 1 ? "topic" : "topics"} pending
-                </p>
-                <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                  Topics marked In Progress or Not Completed remain pinned to your daily list until completed.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────── */}
         {/* 4. TODAY'S RECOMMENDED BOOKS & TOPICS                      */}
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mt-6 space-y-4">
@@ -481,9 +461,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                 return (
                   <div
                     key={book.subjectId}
-                    className={`card flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group ${
-                      book.hasBacklog ? "border-amber-300/60 dark:border-amber-800/40" : ""
-                    }`}
+                    className="card flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group"
                   >
                     <div>
                       {/* Book Header */}
@@ -524,10 +502,6 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                               className={`relative rounded-xl border p-2.5 text-xs transition-all ${
                                 isDone
                                   ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
-                                  : isInProgress
-                                  ? "border-amber-200 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20"
-                                  : isNotCompleted
-                                  ? "border-rose-200 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20"
                                   : "border-line bg-paper/40 hover:bg-paper"
                               }`}
                             >
@@ -541,10 +515,6 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                   className={`mt-0.5 grid size-5 place-items-center rounded-lg border transition-all shrink-0 ${
                                     isDone
                                       ? "border-emerald-600 bg-emerald-600 text-white"
-                                      : isInProgress
-                                      ? "border-amber-500 bg-amber-100 text-amber-700"
-                                      : isNotCompleted
-                                      ? "border-rose-500 bg-rose-100 text-rose-700"
                                       : "border-line bg-white hover:border-leaf text-transparent hover:text-leaf/40"
                                   }`}
                                   aria-label="Toggle completion"
@@ -563,18 +533,13 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                   >
                                     {topic.name}
                                   </p>
-                                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
-                                    {topic.chapter && (
+                                  {topic.chapter && (
+                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
                                       <span className="text-ink-faint truncate">
                                         {topic.chapter}
                                       </span>
-                                    )}
-                                    {topic.isBacklog && (
-                                      <span className="rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-1.5 py-0.2 font-semibold">
-                                        Carryover
-                                      </span>
-                                    )}
-                                  </div>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Status Dropdown Menu */}
