@@ -148,14 +148,14 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
       const res = await setTopicStatusAction(topicId, newStatus);
       if (res.ok) {
         const labels: Record<string, string> = {
-          completed: "টপিকটি সম্পন্ন হয়েছে হিসেবে চিহ্নিত! 🎉",
-          in_progress: "টপিকটি চলমান (In Progress) হিসেবে চিহ্নিত। এটি শেষ না হওয়া পর্যন্ত ড্যাশবোর্ডে জমা থাকবে।",
-          not_completed: "টপিকটি অসম্পূর্ণ (Not Completed) হিসেবে চিহ্নিত। এটি পরবর্তী দিনের জন্য জমা থাকবে।",
-          not_started: "টপিকটি শুরু হয়নি হিসেবে রাখা হলো।",
+          completed: "Topic marked as Completed! 🎉",
+          in_progress: "Topic marked as In Progress (carryover active).",
+          not_completed: "Topic marked as Not Completed (carryover active).",
+          not_started: "Topic status reset to Not Started.",
         };
-        showToast(labels[newStatus] || "স্ট্যাটাস আপডেট সম্পন্ন হয়েছে।");
+        showToast(labels[newStatus] || "Topic status updated.");
       } else {
-        showToast(res.error || "আপডেট করা সম্ভব হয়নি।");
+        showToast(res.error || "Failed to update status.");
       }
     });
   };
@@ -199,9 +199,9 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
     startTransition(async () => {
       const res = await markTopicRevisedAction(topicId);
       if (res.ok) {
-        showToast("টপিকটির রিভিশন সফলভাবে রেকর্ড করা হয়েছে! 🔄");
+        showToast("Topic marked as revised! 🔄");
       } else {
-        showToast(res.error || "রিভিশন আপডেট ব্যর্থ হয়েছে।");
+        showToast(res.error || "Failed to log revision.");
       }
     });
   };
@@ -231,31 +231,31 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-xs">
                 <RotateCcw className="size-3.5" />
-                <span>আজ শুক্রবার — সাপ্তাহিক রিভিশন দিন 🔄</span>
+                <span>Friday Weekly Revision 🔄</span>
               </div>
               <h2 className="font-display text-lg sm:text-xl font-bold text-ink">
-                এই সপ্তাহের পড়া বিষয় ও টপিকগুলো আজ রিভিশন দিন
+                Review Topics Completed This Week
               </h2>
               <p className="text-xs sm:text-[13px] text-ink-faint leading-relaxed max-w-2xl">
-                সপ্তাহে যা পড়েছেন তা শুক্রবারে রিভিশন দিলে স্মৃতি স্থায়ী হয়। এই সপ্তাহে আপনি{" "}
-                <strong className="text-ink font-bold font-bengali">
-                  {toBnDigits(fridaySubjects.length)}
+                Weekly revision cements retention before starting new topics. You completed{" "}
+                <strong className="text-ink font-bold">
+                  {totalWeeklyCompleted}
                 </strong>{" "}
-                টি বিষয়ের মোট{" "}
-                <strong className="text-ink font-bold font-bengali">
-                  {toBnDigits(totalWeeklyCompleted)}
+                {totalWeeklyCompleted === 1 ? "topic" : "topics"} across{" "}
+                <strong className="text-ink font-bold">
+                  {fridaySubjects.length}
                 </strong>{" "}
-                টি টপিক সম্পন্ন করেছেন। নতুন পড়ার চেয়ে এগুলো রিভিশন দেওয়া আজ বেশি জরুরি।
+                subjects this week.
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
               <div className="rounded-2xl border border-emerald-200 bg-white dark:bg-card px-4 py-2.5 text-center shadow-xs">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                  রিভিশন সম্পন্ন
+                  Revision Progress
                 </p>
-                <p className="font-display text-lg font-bold text-ink font-bengali">
-                  {toBnDigits(totalWeeklyRevised)} / {toBnDigits(totalWeeklyCompleted)}
+                <p className="font-display text-lg font-bold text-ink">
+                  {totalWeeklyRevised} / {totalWeeklyCompleted}
                 </p>
               </div>
             </div>
@@ -265,8 +265,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           <div className="mt-5 space-y-3">
             {fridaySubjects.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line bg-white/60 dark:bg-card/60 p-4 text-center text-xs text-ink-faint">
-                এই সপ্তাহে (শনিবার থেকে বৃহস্পতিবার) এখনো কোনো টপিক সম্পন্ন হিসেবে রেকর্ড করা হয়নি।
-                আগের কোনো টপিক রিভিশন দিতে চাইলে সিলেবাস সেকশন দেখুন।
+                No topics were completed yet this week. Visit the syllabus section to review past topics.
               </div>
             ) : (
               fridaySubjects.map((sub) => (
@@ -288,8 +287,8 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                         </span>
                       )}
                     </div>
-                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 font-bengali">
-                      {toBnDigits(sub.topics.length)}টি টপিক
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      {sub.topics.length} {sub.topics.length === 1 ? "topic" : "topics"}
                     </span>
                   </div>
 
@@ -303,7 +302,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                           <p className="font-medium text-ink truncate">{top.name}</p>
                           {top.chapter && (
                             <p className="text-[10.5px] text-ink-faint truncate">
-                              অধ্যায়: {top.chapter}
+                              Chapter: {top.chapter}
                             </p>
                           )}
                         </div>
@@ -312,7 +311,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                           {top.isRevisedToday ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-1 text-[11px] font-bold text-emerald-800 dark:text-emerald-200">
                               <Check className="size-3" />
-                              <span>রিভিশন সম্পন্ন</span>
+                              <span>Revised</span>
                             </span>
                           ) : (
                             <button
@@ -321,7 +320,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-[11px] font-bold transition shadow-2xs active:scale-95 disabled:opacity-50"
                             >
                               <RotateCcw className="size-3" />
-                              <span>রিভিশন সম্পন্ন করুন</span>
+                              <span>Mark Revised</span>
                             </button>
                           )}
                         </div>
@@ -343,14 +342,13 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
               </span>
               <div className="min-w-0">
                 <p className="text-xs font-bold text-ink">
-                  শুক্রবার সাপ্তাহিক রিভিশন প্রস্তুতি
+                  Friday Weekly Revision
                 </p>
                 <p className="text-[11.5px] text-ink-faint truncate">
-                  এই সপ্তাহে ইতোমধ্যে{" "}
-                  <strong className="text-ink font-semibold font-bengali">
-                    {toBnDigits(totalWeeklyCompleted)}
+                  <strong className="text-ink font-semibold">
+                    {totalWeeklyCompleted}
                   </strong>{" "}
-                  টি টপিক সম্পন্ন হয়েছে (যা আগামী শুক্রবারে রিভিশন দিতে হবে)
+                  {totalWeeklyCompleted === 1 ? "topic" : "topics"} completed this week ready for Friday revision
                 </p>
               </div>
             </div>
@@ -360,7 +358,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                 onClick={() => setShowPreviewFriday(!showPreviewFriday)}
                 className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-leaf hover:underline shrink-0"
               >
-                <span>{showPreviewFriday ? "লুকান" : "রিভিশন তালিকা দেখুন"}</span>
+                <span>{showPreviewFriday ? "Hide" : "View Revision List"}</span>
                 {showPreviewFriday ? (
                   <ChevronUp className="size-3.5" />
                 ) : (
@@ -374,7 +372,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           {showPreviewFriday && fridaySubjects.length > 0 && (
             <div className="mt-3.5 pt-3 border-t border-line/60 space-y-2 animate-in fade-in">
               <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">
-                শুক্রবার রিভিশনের জন্য নির্ধারিত তালিকা ({toBnDigits(totalWeeklyCompleted)}টি টপিক):
+                Scheduled for Friday Revision ({totalWeeklyCompleted} {totalWeeklyCompleted === 1 ? "topic" : "topics"}):
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {fridaySubjects.map((sub) => (
@@ -383,7 +381,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                     className="rounded-xl border border-line/80 bg-paper/50 p-2.5 text-xs"
                   >
                     <p className="font-bold text-ink truncate mb-1">
-                      {sub.subjectNameBn || sub.subjectName} ({toBnDigits(sub.topics.length)})
+                      {sub.subjectNameBn || sub.subjectName} ({sub.topics.length})
                     </p>
                     <ul className="space-y-1 text-ink-faint text-[11px]">
                       {sub.topics.slice(0, 3).map((t) => (
@@ -394,7 +392,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                       ))}
                       {sub.topics.length > 3 && (
                         <li className="text-[10px] text-ink-faint font-semibold pl-2.5">
-                          + আরো {toBnDigits(sub.topics.length - 3)}টি টপিক
+                          + {sub.topics.length - 3} more topics
                         </li>
                       )}
                     </ul>
@@ -417,58 +415,47 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                 <Target className="size-4" />
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-leaf">
-                টার্গেট স্টাডি পেস (Target Study Pace)
+                Target Study Pace
               </span>
             </div>
             <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
-              টার্গেটে পৌঁছাতে প্রতিদিন গড়ে{" "}
-              <span className="text-leaf font-extrabold font-bengali">
-                {toBnDigits(data.requiredTopicsPerDay || 1)}
-              </span>
-              টি টপিক শেষ করতে হবে
+              Complete ~<span className="text-leaf font-extrabold">{data.requiredTopicsPerDay || 1}</span> topics daily to reach your target
             </h2>
             <p className="text-xs sm:text-[13px] text-ink-faint">
-              আপনার টার্গেট তারিখ:{" "}
-              <strong className="text-ink font-semibold">{data.targetDate}</strong> · বাকি সময়:{" "}
-              <strong className="text-ink font-semibold font-bengali">
-                {toBnDigits(data.daysToTarget)}
-              </strong>{" "}
-              দিন · অবশিষ্ট সিলেবাস:{" "}
-              <strong className="text-ink font-semibold font-bengali">
-                {toBnDigits(data.remainingTopics)}
-              </strong>{" "}
-              টি টপিক
+              Target Date: <strong className="text-ink font-semibold">{data.targetDate}</strong> · Remaining:{" "}
+              <strong className="text-ink font-semibold">{data.daysToTarget} days</strong> · Remaining Syllabus:{" "}
+              <strong className="text-ink font-semibold">{data.remainingTopics} topics</strong>
             </p>
           </div>
 
           {/* Today's Target Progress Indicator */}
           <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 min-w-[200px]">
             <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep">
-              আজকের পড়ার অগ্রগতি
+              Today&apos;s Progress
             </p>
             <div className="mt-1 flex items-baseline justify-center gap-1">
-              <span className="font-display text-2xl sm:text-3xl font-bold text-ink font-bengali">
-                {toBnDigits(data.doneToday)}
+              <span className="font-display text-2xl sm:text-3xl font-bold text-ink">
+                {data.doneToday}
               </span>
-              <span className="text-sm font-bold text-ink-faint font-bengali">
-                / {toBnDigits(data.requiredTopicsPerDay || 1)}
+              <span className="text-sm font-bold text-ink-faint">
+                / {data.requiredTopicsPerDay || 1}
               </span>
-              <span className="text-xs text-ink-faint font-medium ml-1">টপিক</span>
+              <span className="text-xs text-ink-faint font-medium ml-1">Topics</span>
             </div>
             {data.isTargetMetToday ? (
               <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-bold px-2 py-0.5">
-                <Check className="size-3" /> আজকের টার্গেট পূরণ! 🎉
+                <Check className="size-3" /> Target Met Today! 🎉
               </span>
             ) : (
-              <span className="mt-1 inline-block text-[11px] text-ink-faint font-bengali">
-                আজ আরো {toBnDigits(Math.max(0, (data.requiredTopicsPerDay || 1) - data.doneToday))}টি বাকি
+              <span className="mt-1 inline-block text-[11px] text-ink-faint">
+                {Math.max(0, (data.requiredTopicsPerDay || 1) - data.doneToday)} remaining today
               </span>
             )}
           </div>
         </div>
 
         {/* ─────────────────────────────────────────────────────────── */}
-        {/* 3. CUMULATIVE BACKLOG NOTICE (বকেয়া টপিক নোটিস)           */}
+        {/* 3. CUMULATIVE BACKLOG NOTICE (Carryover Alert)            */}
         {/* ─────────────────────────────────────────────────────────── */}
         {totalBacklog > 0 && (
           <div className="mt-5 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4 text-xs">
@@ -476,11 +463,10 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
               <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-amber-900 dark:text-amber-200">
-                  বকেয়া টপিক অ্যালার্ট: {toBnDigits(totalBacklog)}টি টপিক জমা আছে
+                  Carryover Alert: {totalBacklog} {totalBacklog === 1 ? "topic" : "topics"} pending
                 </p>
                 <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                  আগের দিনে শুরু করে শেষ না করা টপিকগুলো (In Progress / Not Completed) নিচের বইয়ের তালিকায় জমা রয়েছে।
-                  প্রতিদিনের পড়ার সাথে এগুলো সম্পন্ন না করা পর্যন্ত জমা থাকবে।
+                  Topics marked In Progress or Not Completed remain pinned to your daily list until completed.
                 </p>
               </div>
             </div>
@@ -495,17 +481,17 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             <div>
               <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
                 <BookOpen className="size-4 text-leaf" />
-                <span>আজকের পড়ার জন্য প্রস্তাবিত বই ও টপিক</span>
+                <span>Today&apos;s Recommended Books & Topics</span>
               </h3>
               <p className="text-xs text-ink-faint">
-                সবগুলো বিষয় যেন ধারাবাহিকভাবে নিয়মিত পড়া হয় সেজন্য আজকের নির্বাচিত বিষয়সমূহ:
+                Balanced daily distribution across your subjects to maintain steady progress.
               </p>
             </div>
             <Link
               href="/planner"
               className="inline-flex items-center gap-1 text-xs font-semibold text-leaf hover:underline shrink-0"
             >
-              <span>পূর্ণাঙ্গ সিলেবাস রুটিন</span>
+              <span>Full Routine</span>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
@@ -513,17 +499,15 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           {/* Book Cards Grid */}
           {data.recommendedBooks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-line p-6 text-center text-xs text-ink-faint">
-              সিলেবাসে কোনো টপিক পাওয়া যায়নি। আপনার সিলেবাস সেটআপ করতে{" "}
+              No topics found in your syllabus. Set up your subjects in the{" "}
               <Link href="/syllabus" className="text-leaf font-bold underline">
-                সিলেবাস পেজে যান
-              </Link>
-              ।
+                Syllabus
+              </Link>{" "}
+              page.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {data.recommendedBooks.map((book) => {
-                const isBangla = book.isBanglaFirstPaper;
-
                 return (
                   <div
                     key={book.subjectId}
@@ -545,24 +529,11 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="rounded-lg bg-leaf-soft px-2 py-0.5 text-[11px] font-bold text-leaf font-bengali">
-                            {toBnDigits(Math.round(book.progress * 100))}% সম্পন্ন
+                          <span className="rounded-lg bg-leaf-soft px-2 py-0.5 text-[11px] font-bold text-leaf">
+                            {Math.round(book.progress * 100)}% done
                           </span>
-                          {isBangla && (
-                            <span className="rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 text-[10px] font-bold">
-                              ৩ দিনের টপিক (গদ্য/পদ্য)
-                            </span>
-                          )}
                         </div>
                       </div>
-
-                      {/* Bangla 1st paper explanatory tip */}
-                      {isBangla && (
-                        <div className="mt-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 p-2 text-[11px] text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
-                          <Clock className="size-3.5 shrink-0" />
-                          <span>গদ্য ও পদ্যের পরিধি বড় হওয়ায় প্রতিটি ১টি টপিক ৩ দিনে শেষ করার লক্ষ্যমাত্রা।</span>
-                        </div>
-                      )}
 
                       {/* Recommended Topics for this book */}
                       <div className="mt-3 space-y-2.5">
@@ -570,7 +541,6 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                           const isDone = topic.status === "completed";
                           const isInProgress = topic.status === "in_progress";
                           const isNotCompleted = topic.status === "not_completed";
-                          const isNotStarted = topic.status === "not_started";
                           const isMenuOpen = openStatusMenuTopicId === topic.id;
 
                           // Current status label and colors
@@ -607,8 +577,8 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                       ? "border-rose-500 bg-rose-100 text-rose-700"
                                       : "border-line bg-white hover:border-leaf text-transparent hover:text-leaf/40"
                                   }`}
-                                  aria-label="Quick toggle completion"
-                                  title="সম্পন্ন হিসেবে চিহ্নিত করতে ক্লিক করুন"
+                                  aria-label="Toggle completion"
+                                  title="Click to toggle complete"
                                 >
                                   <Check className="size-3.5 stroke-[3]" />
                                 </button>
@@ -631,18 +601,13 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                     )}
                                     {topic.isBacklog && (
                                       <span className="rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-1.5 py-0.2 font-semibold">
-                                        বকেয়া জমা
-                                      </span>
-                                    )}
-                                    {topic.isMultiDay && (
-                                      <span className="rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.2 font-semibold">
-                                        ৩ দিন
+                                        Carryover
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                {/* Status Dropdown Menu (Matching Image 2) */}
+                                {/* Status Dropdown Menu */}
                                 <div className="status-dropdown-container relative shrink-0">
                                   <button
                                     onClick={(e) => {
@@ -711,15 +676,15 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
 
                     {/* Footer Actions */}
                     <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-2 text-[11.5px]">
-                      <span className="text-ink-faint font-bengali">
-                        মোট {toBnDigits(book.totalTopics)}টি টপিক
+                      <span className="text-ink-faint">
+                        {book.totalTopics} {book.totalTopics === 1 ? "topic" : "topics"}
                       </span>
                       <Link
                         href={`/timer?subjectId=${book.subjectId}`}
                         className="inline-flex items-center gap-1 text-leaf font-semibold hover:underline"
                       >
                         <Timer className="size-3.5" />
-                        <span>পড়তে শুরু করুন</span>
+                        <span>Start Study</span>
                       </Link>
                     </div>
                   </div>
