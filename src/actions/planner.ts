@@ -162,8 +162,11 @@ export interface RecommendedBookTopic {
   id: number;
   name: string;
   chapter: string | null;
-  status: string;
+  status: string; // 'not_started' | 'in_progress' | 'completed' | 'not_completed'
   isCompletedToday: boolean;
+  isBacklog: boolean; // carry-forward/unfinished topic from previous days
+  isMultiDay: boolean; // Bangla 1st paper 3-day topic rule
+  multiDayTargetDays?: number; // 3
 }
 
 export interface RecommendedBookItem {
@@ -176,6 +179,32 @@ export interface RecommendedBookItem {
   progress: number;
   topics: RecommendedBookTopic[];
   targetTopicCount: number;
+  hasBacklog: boolean;
+  isBanglaFirstPaper: boolean;
+}
+
+function isBangla1stPaper(subjectName: string, subjectNameBn?: string | null): boolean {
+  const n = (subjectName + " " + (subjectNameBn || "")).toLowerCase();
+  return (
+    n.includes("bangla 1") ||
+    n.includes("বাংলা ১ম") ||
+    n.includes("bangla first") ||
+    n.includes("২৩৬")
+  );
+}
+
+function isBanglaMultiDayTopic(chapter?: string | null, topicName?: string | null): boolean {
+  const text = ((chapter || "") + " " + (topicName || "")).toLowerCase();
+  return (
+    text.includes("গদ্য") ||
+    text.includes("গদ্যাংশ") ||
+    text.includes("পদ্য") ||
+    text.includes("পদ্যাংশ") ||
+    text.includes("উপন্যাস") ||
+    text.includes("নাটক") ||
+    text.includes("সহপাঠ") ||
+    true // all literature topics in Bangla 1st paper benefit from multi-day allocation
+  );
 }
 
 export interface WeeklyFridayTopicItem {
@@ -208,6 +237,7 @@ export interface StudentDailyTargetPlanData {
   requiredTopicsPerDay: number;
   exactPacePerDay: number;
   doneToday: number;
+  totalBacklogCount: number; // accumulated in-progress or not-completed topics
   isTargetMetToday: boolean;
   recommendedBooks: RecommendedBookItem[];
   allActiveSubjects: { id: number; name: string; nameBn: string | null }[];
@@ -346,11 +376,17 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       }
     }
 
-    // 5. Total, Completed, Remaining
+    // 5. Total, Completed, Remaining, Backlog
     const totalTopics = userTopics.length;
     const completedTopics = userTopics.filter((t) => t.status === "completed").length;
     const remainingTopics = totalTopics - completedTopics;
     const overallProgress = totalTopics > 0 ? completedTopics / totalTopics : 0;
+
+    // Count accumulated backlog (in_progress or not_completed from previous study)
+    const backlogTopics = userTopics.filter(
+      (t) => t.status === "in_progress" || t.status === "not_completed"
+    );
+    const totalBacklogCount = backlogTopics.length;
 
     // Pace calculation: exactly how many topics per day are needed to hit the student's target!
     const exactPacePerDay = remainingTopics > 0 ? remainingTopics / daysToTarget : 0;
@@ -380,7 +416,9 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       lastStudied: string | null;
       daysSinceLastStudied: number;
       pendingTopics: typeof userTopics;
+      backlogTopics: typeof userTopics;
       completedTodayTopics: typeof userTopics;
+      isBanglaFirstPaper: boolean;
       score: number;
     }
 
@@ -394,6 +432,9 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       const sTopics = topicsBySub.get(s.id) || [];
       const sCompleted = sTopics.filter((t) => t.status === "completed").length;
       const sPending = sTopics.filter((t) => t.status !== "completed");
+      const sBacklog = sTopics.filter(
+        (t) => t.status === "in_progress" || t.status === "not_completed"
+      );
       const sCompletedToday = sTopics.filter(
         (t) => t.status === "completed" && t.completedAt === today
       );
@@ -401,14 +442,17 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       const sProgress = sTotal > 0 ? sCompleted / sTotal : 0;
       const lastDate = lastStudiedMap.get(s.id) || null;
       const daysSince = lastDate ? diffDays(lastDate, today) : 999;
+      const isBangla = isBangla1stPaper(s.name, s.nameBn);
 
       if (sPending.length > 0 || sCompletedToday.length > 0) {
         // Balanced rotation score:
+        // Priority 0: Backlog topics that the student started earlier MUST accumulate (+1000)
         // Priority 1: Subjects untouched longest (prevents subject neglect)
         // Priority 2: Lower progress subjects
         // Priority 3: Systematic daily rotation through all subjects
         const rotationTurn = (i + dayOfYear) % Math.max(1, userSubs.length);
         const score =
+          (sBacklog.length > 0 ? 1000 : 0) +
           daysSince * 20 +
           (1 - sProgress) * 50 +
           rotationTurn * 5 +
@@ -423,7 +467,9 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           lastStudied: lastDate,
           daysSinceLastStudied: daysSince,
           pendingTopics: sPending,
+          backlogTopics: sBacklog,
           completedTodayTopics: sCompletedToday,
+          isBanglaFirstPaper: isBangla,
           score,
         });
       }
@@ -441,7 +487,9 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
 
     const recommendedBooks: RecommendedBookItem[] = selectedCandidates.map((cand) => {
       const recTopics: RecommendedBookTopic[] = [];
+      const isBangla = cand.isBanglaFirstPaper;
 
+      // 1. Add completed today topics (if any)
       for (const ct of cand.completedTodayTopics) {
         recTopics.push({
           id: ct.id,
@@ -449,18 +497,63 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           chapter: ct.chapter,
           status: "completed",
           isCompletedToday: true,
+          isBacklog: false,
+          isMultiDay: isBangla,
+          multiDayTargetDays: isBangla ? 3 : undefined,
         });
       }
 
-      const pendingNeeded = Math.max(1, 2 - recTopics.length);
-      for (let p = 0; p < Math.min(pendingNeeded, cand.pendingTopics.length); p++) {
-        const pt = cand.pendingTopics[p];
+      // 2. Add accumulated backlog topics (in_progress or not_completed) - NEVER disappear until completed
+      for (const bt of cand.backlogTopics) {
+        // Avoid duplicating if already added in completed today
+        if (!recTopics.some((r) => r.id === bt.id)) {
+          recTopics.push({
+            id: bt.id,
+            name: bt.name,
+            chapter: bt.chapter,
+            status: bt.status,
+            isCompletedToday: false,
+            isBacklog: true,
+            isMultiDay: isBangla,
+            multiDayTargetDays: isBangla ? 3 : undefined,
+          });
+        }
+      }
+
+      // 3. Add fresh not_started topics if more topics are needed for today
+      // For Bangla 1st paper, allocate only 1 topic because it's a 3-day topic
+      const targetCount = isBangla ? 1 : Math.max(1, Math.floor(requiredTopicsPerDay / (bookCount || 1)) || 1);
+      const freshPending = cand.pendingTopics.filter(
+        (t) => t.status === "not_started" && !recTopics.some((r) => r.id === t.id)
+      );
+
+      const maxFreshToAdd = Math.max(0, targetCount - recTopics.filter((t) => t.status !== "completed").length);
+      for (let p = 0; p < Math.min(maxFreshToAdd, freshPending.length); p++) {
+        const pt = freshPending[p];
         recTopics.push({
           id: pt.id,
           name: pt.name,
           chapter: pt.chapter,
           status: pt.status,
           isCompletedToday: false,
+          isBacklog: false,
+          isMultiDay: isBangla,
+          multiDayTargetDays: isBangla ? 3 : undefined,
+        });
+      }
+
+      // Fallback: if no topics added yet, add at least 1 pending topic
+      if (recTopics.length === 0 && cand.pendingTopics.length > 0) {
+        const pt = cand.pendingTopics[0];
+        recTopics.push({
+          id: pt.id,
+          name: pt.name,
+          chapter: pt.chapter,
+          status: pt.status,
+          isCompletedToday: false,
+          isBacklog: pt.status === "in_progress" || pt.status === "not_completed",
+          isMultiDay: isBangla,
+          multiDayTargetDays: isBangla ? 3 : undefined,
         });
       }
 
@@ -473,7 +566,9 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         completedTopics: cand.completed,
         progress: cand.progress,
         topics: recTopics,
-        targetTopicCount: Math.max(1, Math.floor(requiredTopicsPerDay / (bookCount || 1)) || 1),
+        targetTopicCount: targetCount,
+        hasBacklog: cand.backlogTopics.length > 0,
+        isBanglaFirstPaper: isBangla,
       };
     });
 
@@ -540,6 +635,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         requiredTopicsPerDay,
         exactPacePerDay: Math.round(exactPacePerDay * 10) / 10,
         doneToday,
+        totalBacklogCount,
         isTargetMetToday,
         recommendedBooks,
         allActiveSubjects,

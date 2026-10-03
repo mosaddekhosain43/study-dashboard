@@ -291,10 +291,18 @@ export async function deleteCustomSubjectAction(subjectId: number) {
 
 // ── Topics / syllabus ───────────────────────────────────────────────────────
 
-export async function setTopicStatusAction(topicId: number, status: string) {
-  await applyStatusToTopic(topicId, validStatus(status), todayKey());
-  refresh();
-  return ok();
+export async function setTopicStatusAction(
+  topicId: number,
+  status: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await applyStatusToTopic(topicId, validStatus(status), todayKey());
+    refresh();
+    return ok();
+  } catch (err: any) {
+    console.error("setTopicStatusAction error:", err);
+    return fail(err?.message || "Failed to update topic status.");
+  }
 }
 
 export async function addTopicAction(

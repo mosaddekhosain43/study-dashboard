@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   AlarmClockCheck,
@@ -21,6 +21,9 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Clock,
+  AlertTriangle,
+  PlayCircle,
 } from "lucide-react";
 import type {
   StudentDailyTargetPlanData,
@@ -32,78 +35,135 @@ import {
   toggleTopicCompleteAction,
   markTopicRevisedAction,
 } from "@/actions/planner";
+import { setTopicStatusAction } from "@/actions/index";
 import { formatLong, toBnDigits } from "@/lib/dates";
 
 interface Props {
   initialData: StudentDailyTargetPlanData;
 }
 
+const STATUS_OPTIONS = [
+  { value: "completed", label: "Completed", labelBn: "সম্পন্ন", color: "emerald", dot: "bg-emerald-500" },
+  { value: "in_progress", label: "In Progress", labelBn: "চলমান", color: "amber", dot: "bg-amber-500" },
+  { value: "not_completed", label: "Not Completed", labelBn: "অসম্পূর্ণ", color: "rose", dot: "bg-rose-500" },
+  { value: "not_started", label: "Not Started", labelBn: "শুরু হয়নি", color: "slate", dot: "bg-slate-400" },
+];
+
 export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   const [data, setData] = useState<StudentDailyTargetPlanData>(initialData);
   const [isPending, startTransition] = useTransition();
   const [showPreviewFriday, setShowPreviewFriday] = useState(false);
-  const [swappingSubjectId, setSwappingSubjectId] = useState<number | null>(null);
+  const [openStatusMenuTopicId, setOpenStatusMenuTopicId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Close status menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".status-dropdown-container")) {
+        setOpenStatusMenuTopicId(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  // Toggle topic completion (Today's recommendations)
-  const handleToggleTopic = (subjectId: number, topicId: number, currentStatus: string) => {
-    const isCurrentlyDone = currentStatus === "completed";
-    const nextStatus = isCurrentlyDone ? "not_started" : "completed";
+  // Change topic status to any of the 4 options: completed, in_progress, not_completed, not_started
+  const handleSetTopicStatus = (subjectId: number, topicId: number, newStatus: string) => {
+    setOpenStatusMenuTopicId(null);
 
     // Optimistic state update
     setData((prev) => {
+      let isNewlyCompleted = false;
+      let wasPreviouslyCompleted = false;
+
       const updatedBooks = prev.recommendedBooks.map((book) => {
         if (book.subjectId !== subjectId) return book;
         const updatedTopics = book.topics.map((t) => {
           if (t.id !== topicId) return t;
+          wasPreviouslyCompleted = t.status === "completed";
+          isNewlyCompleted = newStatus === "completed";
           return {
             ...t,
-            status: nextStatus,
-            isCompletedToday: !isCurrentlyDone,
+            status: newStatus,
+            isCompletedToday: isNewlyCompleted,
+            isBacklog: newStatus === "in_progress" || newStatus === "not_completed",
           };
         });
-        const completedDelta = isCurrentlyDone ? -1 : 1;
+
+        const completedDelta =
+          isNewlyCompleted && !wasPreviouslyCompleted
+            ? 1
+            : !isNewlyCompleted && wasPreviouslyCompleted
+            ? -1
+            : 0;
         const newCompleted = Math.max(0, book.completedTopics + completedDelta);
+
         return {
           ...book,
           completedTopics: newCompleted,
           progress: book.totalTopics > 0 ? newCompleted / book.totalTopics : 0,
           topics: updatedTopics,
+          hasBacklog: updatedTopics.some((t) => t.isBacklog),
         };
       });
 
-      const todayDelta = isCurrentlyDone ? -1 : 1;
+      const todayDelta =
+        isNewlyCompleted && !wasPreviouslyCompleted
+          ? 1
+          : !isNewlyCompleted && wasPreviouslyCompleted
+          ? -1
+          : 0;
       const newDoneToday = Math.max(0, prev.doneToday + todayDelta);
       const newCompletedTopics = Math.max(0, prev.completedTopics + todayDelta);
       const newRemaining = Math.max(0, prev.remainingTopics - todayDelta);
+
+      // Re-count total backlog
+      const newBacklogCount = updatedBooks.reduce(
+        (acc, b) =>
+          acc +
+          b.topics.filter(
+            (t) => t.status === "in_progress" || t.status === "not_completed"
+          ).length,
+        0
+      );
 
       return {
         ...prev,
         doneToday: newDoneToday,
         completedTopics: newCompletedTopics,
         remainingTopics: newRemaining,
+        totalBacklogCount: newBacklogCount,
         isTargetMetToday: newDoneToday >= prev.requiredTopicsPerDay,
         recommendedBooks: updatedBooks,
       };
     });
 
     startTransition(async () => {
-      const res = await toggleTopicCompleteAction(topicId);
+      const res = await setTopicStatusAction(topicId, newStatus);
       if (res.ok) {
-        showToast(
-          res.newStatus === "completed"
-            ? "টপিকটি সম্পন্ন হয়েছে হিসেবে চিহ্নিত করা হয়েছে! 🎉"
-            : "টপিকটি আবার অপঠিত হিসেবে চিহ্নিত করা হয়েছে।"
-        );
+        const labels: Record<string, string> = {
+          completed: "টপিকটি সম্পন্ন হয়েছে হিসেবে চিহ্নিত! 🎉",
+          in_progress: "টপিকটি চলমান (In Progress) হিসেবে চিহ্নিত। এটি শেষ না হওয়া পর্যন্ত ড্যাশবোর্ডে জমা থাকবে।",
+          not_completed: "টপিকটি অসম্পূর্ণ (Not Completed) হিসেবে চিহ্নিত। এটি পরবর্তী দিনের জন্য জমা থাকবে।",
+          not_started: "টপিকটি শুরু হয়নি হিসেবে রাখা হলো।",
+        };
+        showToast(labels[newStatus] || "স্ট্যাটাস আপডেট সম্পন্ন হয়েছে।");
       } else {
         showToast(res.error || "আপডেট করা সম্ভব হয়নি।");
       }
     });
+  };
+
+  // Quick toggle between completed and not_started / in_progress
+  const handleQuickToggle = (subjectId: number, topicId: number, currentStatus: string) => {
+    const nextStatus = currentStatus === "completed" ? "not_started" : "completed";
+    handleSetTopicStatus(subjectId, topicId, nextStatus);
   };
 
   // Mark topic as revised (Friday Revision)
@@ -150,6 +210,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   const fridaySubjects = data.fridayRevision.subjects;
   const totalWeeklyCompleted = data.fridayRevision.totalCompletedThisWeek;
   const totalWeeklyRevised = data.fridayRevision.totalRevisedThisWeek;
+  const totalBacklog = data.totalBacklogCount || 0;
 
   return (
     <div className="space-y-6">
@@ -407,7 +468,27 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         </div>
 
         {/* ─────────────────────────────────────────────────────────── */}
-        {/* 3. TODAY'S RECOMMENDED BOOKS & TOPICS                      */}
+        {/* 3. CUMULATIVE BACKLOG NOTICE (বকেয়া টপিক নোটিস)           */}
+        {/* ─────────────────────────────────────────────────────────── */}
+        {totalBacklog > 0 && (
+          <div className="mt-5 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4 text-xs">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-900 dark:text-amber-200">
+                  বকেয়া টপিক অ্যালার্ট: {toBnDigits(totalBacklog)}টি টপিক জমা আছে
+                </p>
+                <p className="text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
+                  আগের দিনে শুরু করে শেষ না করা টপিকগুলো (In Progress / Not Completed) নিচের বইয়ের তালিকায় জমা রয়েছে।
+                  প্রতিদিনের পড়ার সাথে এগুলো সম্পন্ন না করা পর্যন্ত জমা থাকবে।
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────────────────────────────────────────────────────── */}
+        {/* 4. TODAY'S RECOMMENDED BOOKS & TOPICS                      */}
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -417,7 +498,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                 <span>আজকের পড়ার জন্য প্রস্তাবিত বই ও টপিক</span>
               </h3>
               <p className="text-xs text-ink-faint">
-                সবগুলো বিষয় যেন ধারাবাহিকভাবে পড়া হয় সেজন্য আজকের নির্বাচিত বইসমূহ:
+                সবগুলো বিষয় যেন ধারাবাহিকভাবে নিয়মিত পড়া হয় সেজন্য আজকের নির্বাচিত বিষয়সমূহ:
               </p>
             </div>
             <Link
@@ -441,13 +522,14 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {data.recommendedBooks.map((book) => {
-                const bookCompletedTopics = book.topics.filter(
-                  (t) => t.status === "completed"
-                ).length;
+                const isBangla = book.isBanglaFirstPaper;
+
                 return (
                   <div
                     key={book.subjectId}
-                    className="card flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group"
+                    className={`card flex flex-col justify-between p-4 transition-all hover:border-leaf/50 hover:shadow-xs group ${
+                      book.hasBacklog ? "border-amber-300/60 dark:border-amber-800/40" : ""
+                    }`}
                   >
                     <div>
                       {/* Book Header */}
@@ -462,54 +544,164 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 rounded-lg bg-leaf-soft px-2 py-0.5 text-[11px] font-bold text-leaf font-bengali">
-                          {toBnDigits(Math.round(book.progress * 100))}% সম্পন্ন
-                        </span>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="rounded-lg bg-leaf-soft px-2 py-0.5 text-[11px] font-bold text-leaf font-bengali">
+                            {toBnDigits(Math.round(book.progress * 100))}% সম্পন্ন
+                          </span>
+                          {isBangla && (
+                            <span className="rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.5 text-[10px] font-bold">
+                              ৩ দিনের টপিক (গদ্য/পদ্য)
+                            </span>
+                          )}
+                        </div>
                       </div>
 
+                      {/* Bangla 1st paper explanatory tip */}
+                      {isBangla && (
+                        <div className="mt-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 p-2 text-[11px] text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+                          <Clock className="size-3.5 shrink-0" />
+                          <span>গদ্য ও পদ্যের পরিধি বড় হওয়ায় প্রতিটি ১টি টপিক ৩ দিনে শেষ করার লক্ষ্যমাত্রা।</span>
+                        </div>
+                      )}
+
                       {/* Recommended Topics for this book */}
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-3 space-y-2.5">
                         {book.topics.map((topic) => {
                           const isDone = topic.status === "completed";
+                          const isInProgress = topic.status === "in_progress";
+                          const isNotCompleted = topic.status === "not_completed";
+                          const isNotStarted = topic.status === "not_started";
+                          const isMenuOpen = openStatusMenuTopicId === topic.id;
+
+                          // Current status label and colors
+                          const currentOpt =
+                            STATUS_OPTIONS.find((o) => o.value === topic.status) ||
+                            STATUS_OPTIONS[3];
+
                           return (
                             <div
                               key={topic.id}
-                              className={`flex items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-colors ${
+                              className={`relative rounded-xl border p-2.5 text-xs transition-all ${
                                 isDone
                                   ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                                  : isInProgress
+                                  ? "border-amber-200 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20"
+                                  : isNotCompleted
+                                  ? "border-rose-200 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20"
                                   : "border-line bg-paper/40 hover:bg-paper"
                               }`}
                             >
-                              <button
-                                onClick={() =>
-                                  handleToggleTopic(book.subjectId, topic.id, topic.status)
-                                }
-                                disabled={isPending}
-                                className={`mt-0.5 grid size-5 place-items-center rounded-lg border transition-all shrink-0 ${
-                                  isDone
-                                    ? "border-emerald-600 bg-emerald-600 text-white"
-                                    : "border-line bg-white hover:border-leaf text-transparent hover:text-leaf/40"
-                                }`}
-                                aria-label="Toggle completion"
-                              >
-                                <Check className="size-3.5 stroke-[3]" />
-                              </button>
-
-                              <div className="min-w-0 flex-1">
-                                <p
-                                  className={`font-medium leading-snug ${
+                              <div className="flex items-start gap-2.5">
+                                {/* Quick toggle completion button */}
+                                <button
+                                  onClick={() =>
+                                    handleQuickToggle(book.subjectId, topic.id, topic.status)
+                                  }
+                                  disabled={isPending}
+                                  className={`mt-0.5 grid size-5 place-items-center rounded-lg border transition-all shrink-0 ${
                                     isDone
-                                      ? "line-through text-ink-faint font-normal"
-                                      : "text-ink"
+                                      ? "border-emerald-600 bg-emerald-600 text-white"
+                                      : isInProgress
+                                      ? "border-amber-500 bg-amber-100 text-amber-700"
+                                      : isNotCompleted
+                                      ? "border-rose-500 bg-rose-100 text-rose-700"
+                                      : "border-line bg-white hover:border-leaf text-transparent hover:text-leaf/40"
                                   }`}
+                                  aria-label="Quick toggle completion"
+                                  title="সম্পন্ন হিসেবে চিহ্নিত করতে ক্লিক করুন"
                                 >
-                                  {topic.name}
-                                </p>
-                                {topic.chapter && (
-                                  <p className="text-[10px] text-ink-faint mt-0.5 truncate">
-                                    {topic.chapter}
+                                  <Check className="size-3.5 stroke-[3]" />
+                                </button>
+
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className={`font-medium leading-snug ${
+                                      isDone
+                                        ? "line-through text-ink-faint font-normal"
+                                        : "text-ink"
+                                    }`}
+                                  >
+                                    {topic.name}
                                   </p>
-                                )}
+                                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                                    {topic.chapter && (
+                                      <span className="text-ink-faint truncate">
+                                        {topic.chapter}
+                                      </span>
+                                    )}
+                                    {topic.isBacklog && (
+                                      <span className="rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-1.5 py-0.2 font-semibold">
+                                        বকেয়া জমা
+                                      </span>
+                                    )}
+                                    {topic.isMultiDay && (
+                                      <span className="rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 px-1.5 py-0.2 font-semibold">
+                                        ৩ দিন
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Status Dropdown Menu (Matching Image 2) */}
+                                <div className="status-dropdown-container relative shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenStatusMenuTopicId(
+                                        isMenuOpen ? null : topic.id
+                                      );
+                                    }}
+                                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition shadow-2xs ${
+                                      isDone
+                                        ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                                        : isInProgress
+                                        ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                                        : isNotCompleted
+                                        ? "border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200"
+                                        : "border-line bg-white text-ink-soft hover:bg-paper dark:bg-card dark:text-ink-faint"
+                                    }`}
+                                  >
+                                    <span className={`size-1.5 rounded-full ${currentOpt.dot}`} />
+                                    <span>{currentOpt.label}</span>
+                                    <ChevronDown className="size-3 text-ink-faint ml-0.5" />
+                                  </button>
+
+                                  {/* Dropdown popup menu */}
+                                  {isMenuOpen && (
+                                    <div className="absolute right-0 top-full mt-1.5 z-40 w-36 rounded-xl border border-line bg-white dark:bg-card p-1 shadow-lg animate-in fade-in zoom-in-95">
+                                      {STATUS_OPTIONS.map((opt) => {
+                                        const isSelected = topic.status === opt.value;
+                                        return (
+                                          <button
+                                            key={opt.value}
+                                            onClick={() =>
+                                              handleSetTopicStatus(
+                                                book.subjectId,
+                                                topic.id,
+                                                opt.value
+                                              )
+                                            }
+                                            className={`w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition ${
+                                              isSelected
+                                                ? "bg-paper font-bold text-ink"
+                                                : "text-ink-soft hover:bg-paper/70 hover:text-ink"
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <span
+                                                className={`size-2 rounded-full ${opt.dot}`}
+                                              />
+                                              <span>{opt.label}</span>
+                                            </div>
+                                            {isSelected && (
+                                              <Check className="size-3 text-leaf" />
+                                            )}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
