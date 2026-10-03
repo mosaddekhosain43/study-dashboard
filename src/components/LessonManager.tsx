@@ -72,6 +72,11 @@ export default function LessonManager({
   // Topic Quick add per lesson: { [lessonId]: string }
   const [quickTopicInputs, setQuickTopicInputs] = useState<Record<number, string>>({});
 
+  // Dedicated Add Topic modal state
+  const [addTopicModalLessonId, setAddTopicModalLessonId] = useState<number | null>(null);
+  const [newTopicTitle, setNewTopicTitle] = useState("");
+  const [newTopicNotes, setNewTopicNotes] = useState("");
+
   // Topic bulk add modal
   const [bulkLessonId, setBulkLessonId] = useState<number | null>(null);
   const [bulkText, setBulkText] = useState("");
@@ -134,10 +139,16 @@ export default function LessonManager({
     startTransition(async () => {
       const res = await addLessonAction(subjectId, newLessonName.trim());
       if (res.ok) {
+        const newId = (res as any).id || (res as any).lesson?.id;
+        if (newId) {
+          setOpenLessons((prev) => ({ ...prev, [newId]: true }));
+        }
         setNewLessonName("");
         setShowAddLesson(false);
+        setMsg("নতুন অধ্যায় সফলভাবে তৈরি হয়েছে! এবার এতে টপিক যুক্ত করুন। ✓");
+        setTimeout(() => setMsg(null), 5000);
       } else {
-        setMsg(res.error || "Failed to add lesson");
+        setMsg(res.error || "অধ্যায় তৈরি করতে সমস্যা হয়েছে");
       }
       refresh();
     });
@@ -168,6 +179,36 @@ export default function LessonManager({
       const res = await addTopicAction(subjectId, val, lessonId > 0 ? lessonId : null);
       if (res.ok) {
         setQuickTopicInputs((prev) => ({ ...prev, [lessonId]: "" }));
+        setOpenLessons((prev) => ({ ...prev, [lessonId]: true }));
+        setMsg("টপিক সফলভাবে যুক্ত হয়েছে! ✓");
+        setTimeout(() => setMsg(null), 4000);
+      } else {
+        setMsg(res.error || "টপিক যুক্ত করতে সমস্যা হয়েছে");
+      }
+      refresh();
+    });
+  };
+
+  const handleModalAddTopic = () => {
+    if (!newTopicTitle.trim() || addTopicModalLessonId === null) return;
+    const lessonId = addTopicModalLessonId;
+    startTransition(async () => {
+      const res = await addTopicAction(
+        subjectId,
+        newTopicTitle.trim(),
+        lessonId > 0 ? lessonId : null,
+        undefined,
+        newTopicNotes.trim() || null
+      );
+      if (res.ok) {
+        setOpenLessons((prev) => ({ ...prev, [lessonId]: true }));
+        setAddTopicModalLessonId(null);
+        setNewTopicTitle("");
+        setNewTopicNotes("");
+        setMsg("টপিক সফলভাবে যুক্ত হয়েছে! ✓");
+        setTimeout(() => setMsg(null), 4000);
+      } else {
+        setMsg(res.error || "টপিক যুক্ত করতে সমস্যা হয়েছে");
       }
       refresh();
     });
@@ -180,9 +221,13 @@ export default function LessonManager({
       if (res.ok) {
         const created = "created" in res ? res.created : 0;
         const skipped = "skipped" in res ? res.skipped : 0;
-        setMsg(`Added ${created} topic(s)${skipped ? `, skipped ${skipped} duplicate(s)` : ""}.`);
+        setMsg(`Added ${created} topic(s)${skipped ? `, skipped ${skipped} duplicate(s)` : ""}. ✓`);
         setBulkText("");
         setBulkLessonId(null);
+        if (lessonId > 0) {
+          setOpenLessons((prev) => ({ ...prev, [lessonId]: true }));
+        }
+        setTimeout(() => setMsg(null), 5000);
       } else {
         setMsg(res.error || "Failed to import topics");
       }
@@ -273,13 +318,13 @@ export default function LessonManager({
             </button>
           </div>
           <p className="text-[12px] text-ink-soft mb-2">
-            Paste topics below, one topic per line:
+            নিচে প্রতি লাইনে একটি করে টপিক লিখুন। চাইলে পাইপ <code className="font-mono bg-paper px-1 rounded">|</code> দিয়ে টপিকের নোট বা প্রশ্নও যুক্ত করতে পারেন (যেমন: <code className="font-mono bg-paper px-1 rounded">আয়াত ০১-০৩ | ১. শানে নুযুল ২. ব্যাখ্যা</code>):
           </p>
           <textarea
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             rows={5}
-            placeholder={"Topic 1: Overview\nTopic 2: Deep Dive\nTopic 3: Exam questions…"}
+            placeholder={`আয়াত: ০১-০৩ | ১. بين سبب نزول هذه الآيات\nআয়াত: ০৪-০৫ | ১. ব্যাখ্যা ও শিক্ষণীয় বিষয়\nTopic 3: Exam questions`}
             className="w-full rounded-xl border border-line bg-white px-3 py-2 text-[13px] outline-none focus:border-leaf"
           />
           <div className="mt-2.5 flex gap-2">
@@ -391,7 +436,18 @@ export default function LessonManager({
 
                 {/* Lesson Actions */}
                 {!isOrphan && !isEditing && (
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      title="Add topic with questions & notes"
+                      onClick={() => {
+                        setAddTopicModalLessonId(lesson.id);
+                        setNewTopicTitle("");
+                        setNewTopicNotes("");
+                      }}
+                      className="inline-flex items-center gap-1 rounded-lg border border-leaf/30 bg-leaf-soft/70 px-2 py-1 text-[11.5px] font-semibold text-leaf hover:bg-leaf hover:text-white transition"
+                    >
+                      <Plus className="size-3.5" /> Topic
+                    </button>
                     <button
                       title="Bulk add topics to this lesson"
                       onClick={() => {
@@ -441,31 +497,45 @@ export default function LessonManager({
                 )}
               </div>
 
-              {/* Lesson Body: Topics List + Quick Add Topic */}
+              {/* Lesson Body: Topics List + Add Topic */}
               {isOpen && (
                 <div className="p-3 sm:p-4 space-y-3">
-                  {/* Inline quick add topic for this lesson */}
-                  <div className="flex items-center gap-2 rounded-xl border border-line bg-paper/50 p-1.5 sm:p-2">
-                    <Plus className="ml-1 size-4 text-leaf shrink-0" />
-                    <input
-                      value={quickTopicInputs[lesson.id] ?? ""}
-                      onChange={(e) =>
-                        setQuickTopicInputs((prev) => ({
-                          ...prev,
-                          [lesson.id]: e.target.value,
-                        }))
-                      }
-                      onKeyDown={(e) => e.key === "Enter" && handleAddTopic(lesson.id)}
-                      placeholder={`Add topic to ${lesson.name}…`}
-                      className="min-w-0 flex-1 bg-transparent px-1 text-[13px] outline-none placeholder:text-ink-faint/60"
-                    />
-                    <button
-                      onClick={() => handleAddTopic(lesson.id)}
-                      disabled={pending || !quickTopicInputs[lesson.id]?.trim()}
-                      className="shrink-0 rounded-lg bg-leaf px-3 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
-                    >
-                      Add Topic
-                    </button>
+                  {/* Action bar inside lesson: Quick Add + Full Topic with Notes button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-xl border border-line bg-paper/60 p-2 sm:p-2.5">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Plus className="ml-1 size-4 text-leaf shrink-0" />
+                      <input
+                        value={quickTopicInputs[lesson.id] ?? ""}
+                        onChange={(e) =>
+                          setQuickTopicInputs((prev) => ({
+                            ...prev,
+                            [lesson.id]: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && handleAddTopic(lesson.id)}
+                        placeholder={`Add quick topic title to ${lesson.name}…`}
+                        className="min-w-0 flex-1 bg-white rounded-lg border border-line/80 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-leaf placeholder:text-ink-faint/60"
+                      />
+                      <button
+                        onClick={() => handleAddTopic(lesson.id)}
+                        disabled={pending || !quickTopicInputs[lesson.id]?.trim()}
+                        className="shrink-0 rounded-lg bg-leaf px-3 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-leaf-deep disabled:opacity-50"
+                      >
+                        Add Topic
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0 justify-end pt-1 sm:pt-0 border-t border-line/50 sm:border-0">
+                      <button
+                        onClick={() => {
+                          setAddTopicModalLessonId(lesson.id);
+                          setNewTopicTitle("");
+                          setNewTopicNotes("");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg bg-leaf px-3 py-1.5 text-[11.5px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep"
+                      >
+                        <BookOpen className="size-3.5" /> + Topic with Notes (নোটসহ)
+                      </button>
+                    </div>
                   </div>
 
                   {/* Topics in this lesson */}
@@ -663,32 +733,43 @@ export default function LessonManager({
 
                             {/* Topic Note Editor */}
                             {noteTopicId === t.id && (
-                              <div className="mt-2 flex items-center gap-2 rounded-xl bg-paper p-2">
-                                <input
+                              <div className="mt-2.5 rounded-xl border border-line bg-paper/90 p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11.5px] font-bold text-ink">প্রশ্নসমূহ ও বিবরণ সম্পাদনা করুন (Edit Notes):</span>
+                                  <button onClick={() => setNoteTopicId(null)} className="text-ink-faint hover:text-ink">
+                                    <X className="size-3.5" />
+                                  </button>
+                                </div>
+                                <textarea
                                   autoFocus
                                   value={noteText}
                                   onChange={(e) => setNoteText(e.target.value)}
-                                  placeholder="Add notes for this topic…"
-                                  className="flex-1 rounded-lg border border-line bg-white px-2.5 py-1 text-[12px] outline-none focus:border-leaf"
+                                  rows={4}
+                                  placeholder="টপিকের বিস্তারিত নোট ও সম্ভাব্য প্রশ্নসমূহ লিখুন..."
+                                  className="w-full rounded-lg border border-line bg-white p-2.5 text-[12.5px] leading-relaxed outline-none focus:border-leaf"
                                 />
-                                <button
-                                  onClick={() =>
-                                    startTransition(async () => {
-                                      await updateTopicNotesAction(t.id, noteText);
-                                      setNoteTopicId(null);
-                                      refresh();
-                                    })
-                                  }
-                                  className="rounded-lg bg-leaf px-3 py-1 text-xs font-semibold text-white"
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  onClick={() => setNoteTopicId(null)}
-                                  className="rounded-lg bg-paper-deep border border-line px-2.5 py-1 text-xs font-semibold text-ink-soft"
-                                >
-                                  Cancel
-                                </button>
+                                <div className="flex gap-2 justify-end">
+                                  <button
+                                    onClick={() =>
+                                      startTransition(async () => {
+                                        await updateTopicNotesAction(t.id, noteText);
+                                        setNoteTopicId(null);
+                                        setMsg("নোট আপডেট করা হয়েছে! ✓");
+                                        setTimeout(() => setMsg(null), 3000);
+                                        refresh();
+                                      })
+                                    }
+                                    className="rounded-lg bg-leaf px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-leaf-deep transition"
+                                  >
+                                    Save Notes
+                                  </button>
+                                  <button
+                                    onClick={() => setNoteTopicId(null)}
+                                    className="rounded-lg bg-paper-deep border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft hover:bg-line transition"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </li>
@@ -696,10 +777,24 @@ export default function LessonManager({
                       })}
                     </ul>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-line/80 py-4 text-center text-[12.5px] text-ink-faint">
-                      {lesson.topics.length === 0
-                        ? "No topics in this lesson yet. Type above to add one!"
-                        : "No topics match the selected filter."}
+                    <div className="rounded-xl border border-dashed border-line/80 p-5 text-center space-y-2">
+                      <p className="text-[12.5px] text-ink-faint">
+                        {lesson.topics.length === 0
+                          ? "এই অধ্যায়ে এখনও কোনো টপিক যুক্ত করা হয়নি।"
+                          : "No topics match the selected filter."}
+                      </p>
+                      {lesson.topics.length === 0 && (
+                        <button
+                          onClick={() => {
+                            setAddTopicModalLessonId(lesson.id);
+                            setNewTopicTitle("");
+                            setNewTopicNotes("");
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep"
+                        >
+                          <Plus className="size-3.5" /> প্রথম টপিক যুক্ত করুন
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -715,6 +810,80 @@ export default function LessonManager({
           </div>
         )}
       </div>
+
+      {/* Add Topic with Notes Modal */}
+      {addTopicModalLessonId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="card w-full max-w-lg p-5 sm:p-6 shadow-xl rise border-leaf/30 bg-white space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-display text-[16.5px] font-bold text-ink">
+                  নতুন টপিক যুক্ত করুন (Add Topic)
+                </h3>
+                <p className="text-[12px] text-ink-faint mt-0.5">
+                  অধ্যায়: <span className="font-semibold text-leaf">{lessons.find((l) => l.id === addTopicModalLessonId)?.name || "অধ্যায়"}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setAddTopicModalLessonId(null)}
+                className="text-ink-faint hover:text-ink transition p-1"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-[12px] font-semibold text-ink mb-1">
+                  টপিক বা আয়াত শিরোনাম <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  autoFocus
+                  value={newTopicTitle}
+                  onChange={(e) => setNewTopicTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleModalAddTopic()}
+                  placeholder="e.g. আয়াত: ০১-০৩ অথবা পাঠ ১: নাহু পরিচিতি"
+                  className="w-full rounded-xl border border-line bg-paper px-3 py-2 text-[13px] outline-none focus:border-leaf focus:bg-white transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-semibold text-ink mb-1">
+                  সম্ভাব্য প্রশ্নসমূহ ও বিস্তারিত নোট (Questions & Study Notes) <span className="text-ink-faint font-normal">(ঐচ্ছিক)</span>
+                </label>
+                <textarea
+                  value={newTopicNotes}
+                  onChange={(e) => setNewTopicNotes(e.target.value)}
+                  rows={5}
+                  placeholder={`যেভাবে সিলেবাসে প্রশ্ন ও নোট সাজানো রয়েছে, সেভাবে লিখুন... যেমন:\n১. بين سبب نزول هذه الآيات الكريمة-\n২. ما المراد بقوله تعالى "اتقوا ربكم"؟\n৩. এই পাঠের মূল শিক্ষণীয় বিষয়সমূহ...`}
+                  className="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-[12.5px] leading-relaxed outline-none focus:border-leaf focus:bg-white transition"
+                />
+                <p className="text-[11px] text-ink-faint mt-1">
+                  টিপস: প্রতিটি প্রশ্ন বা পয়েন্ট নতুন লাইনে লিখুন। এটি টপিকের নিচে সুন্দরভাবে প্রদর্শিত হবে।
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-line/60 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setAddTopicModalLessonId(null)}
+                className="rounded-xl border border-line bg-paper-deep px-4 py-2 text-[12px] font-semibold text-ink-soft hover:bg-line transition"
+              >
+                বাতিল (Cancel)
+              </button>
+              <button
+                type="button"
+                disabled={pending || !newTopicTitle.trim()}
+                onClick={handleModalAddTopic}
+                className="rounded-xl bg-leaf px-5 py-2 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {pending ? "সংরক্ষণ হচ্ছে..." : "টপিক সংরক্ষণ করুন (Save Topic)"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

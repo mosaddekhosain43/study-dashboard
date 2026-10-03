@@ -30,11 +30,20 @@ import { getCurrentUser } from "@/lib/auth";
 import { ensureStudentHasPersonalCurriculum } from "@/lib/studentCurriculum";
 
 function refresh() {
-  revalidatePath("/", "layout");
-  revalidatePath("/");
-  revalidatePath("/planner");
-  revalidatePath("/weekly");
-  revalidatePath("/subjects");
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/");
+    revalidatePath("/planner");
+    revalidatePath("/weekly");
+    revalidatePath("/subjects");
+    revalidatePath("/subjects/[id]", "page");
+    revalidatePath("/syllabus");
+    revalidatePath("/remaining");
+    revalidatePath("/search");
+    revalidatePath("/log");
+  } catch (err) {
+    console.warn("revalidatePath error in refresh():", err);
+  }
 }
 
 function ok<T extends object>(extra?: T) {
@@ -207,45 +216,75 @@ export async function deleteItemAction(itemId: number) {
 // ── Lesson Management ───────────────────────────────────────────────────────
 
 export async function addLessonAction(subjectId: number, name: string) {
-  const user = await getCurrentUser();
-  const userId = user?.id ?? null;
-  const clean = name.trim();
-  if (!clean) return fail("Lesson name cannot be empty.");
+  try {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
+    const clean = name.trim();
+    if (!clean) return fail("Lesson name cannot be empty.");
 
-  const max = await db
-    .select({ m: sql<number>`coalesce(max(${lessons.sortOrder}), 0)` })
-    .from(lessons)
-    .where(eq(lessons.subjectId, subjectId));
+    const max = await db
+      .select({ m: sql<number>`coalesce(max(${lessons.sortOrder}), 0)` })
+      .from(lessons)
+      .where(eq(lessons.subjectId, subjectId));
 
-  const [created] = await db
-    .insert(lessons)
-    .values({
-      userId,
-      subjectId,
-      name: clean,
-      sortOrder: Number(max[0]?.m ?? 0) + 1,
-    })
-    .returning();
+    const [created] = await db
+      .insert(lessons)
+      .values({
+        userId,
+        subjectId,
+        name: clean,
+        sortOrder: Number(max[0]?.m ?? 0) + 1,
+      })
+      .returning();
 
-  refresh();
-  return ok({ lesson: created });
+    refresh();
+    try {
+      revalidatePath(`/subjects/${subjectId}`);
+    } catch {}
+    return ok({ lesson: created, id: created.id });
+  } catch (err: any) {
+    console.error("addLessonAction error:", err);
+    return fail(err?.message || "Failed to add chapter.");
+  }
 }
 
 export async function renameLessonAction(lessonId: number, name: string) {
-  const clean = name.trim();
-  if (!clean) return fail("Lesson name cannot be empty.");
-  await db
-    .update(lessons)
-    .set({ name: clean, updatedAt: new Date() })
-    .where(eq(lessons.id, lessonId));
-  refresh();
-  return ok();
+  try {
+    const clean = name.trim();
+    if (!clean) return fail("Lesson name cannot be empty.");
+    const [l] = await db.select({ subjectId: lessons.subjectId }).from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    await db
+      .update(lessons)
+      .set({ name: clean, updatedAt: new Date() })
+      .where(eq(lessons.id, lessonId));
+    refresh();
+    if (l) {
+      try {
+        revalidatePath(`/subjects/${l.subjectId}`);
+      } catch {}
+    }
+    return ok();
+  } catch (err: any) {
+    console.error("renameLessonAction error:", err);
+    return fail(err?.message || "Failed to rename chapter.");
+  }
 }
 
 export async function deleteLessonAction(lessonId: number) {
-  await db.delete(lessons).where(eq(lessons.id, lessonId));
-  refresh();
-  return ok();
+  try {
+    const [l] = await db.select({ subjectId: lessons.subjectId }).from(lessons).where(eq(lessons.id, lessonId)).limit(1);
+    await db.delete(lessons).where(eq(lessons.id, lessonId));
+    refresh();
+    if (l) {
+      try {
+        revalidatePath(`/subjects/${l.subjectId}`);
+      } catch {}
+    }
+    return ok();
+  } catch (err: any) {
+    console.error("deleteLessonAction error:", err);
+    return fail(err?.message || "Failed to delete chapter.");
+  }
 }
 
 // ── Custom Subject Management ──────────────────────────────────────────────
@@ -414,52 +453,82 @@ export async function addTopicAction(
   subjectId: number,
   name: string,
   lessonId?: number | null,
-  chapter?: string
+  chapter?: string,
+  notes?: string | null
 ) {
-  const user = await getCurrentUser();
-  const userId = user?.id ?? null;
-  const clean = name.trim();
-  if (!clean) return fail("Topic name is empty.");
+  try {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
+    const clean = name.trim();
+    if (!clean) return fail("Topic name is empty.");
 
-  let finalLessonId = lessonId ?? null;
-  if (!finalLessonId) {
-    const firstLesson = await db
-      .select({ id: lessons.id })
-      .from(lessons)
-      .where(eq(lessons.subjectId, subjectId))
-      .orderBy(lessons.sortOrder)
-      .limit(1);
-    if (firstLesson[0]) {
-      finalLessonId = firstLesson[0].id;
-    } else {
-      const [newLesson] = await db
-        .insert(lessons)
-        .values({
-          userId,
-          subjectId,
-          name: chapter?.trim() || "Chapter 1 / অধ্যায় ১",
-          sortOrder: 1,
-        })
-        .returning();
-      finalLessonId = newLesson.id;
+    let finalLessonId = lessonId ?? null;
+    let chapterName = chapter?.trim() || null;
+
+    if (finalLessonId && !chapterName) {
+      const lRow = await db
+        .select({ name: lessons.name })
+        .from(lessons)
+        .where(eq(lessons.id, finalLessonId))
+        .limit(1);
+      if (lRow[0]) {
+        chapterName = lRow[0].name;
+      }
     }
+
+    if (!finalLessonId) {
+      const firstLesson = await db
+        .select({ id: lessons.id, name: lessons.name })
+        .from(lessons)
+        .where(eq(lessons.subjectId, subjectId))
+        .orderBy(lessons.sortOrder)
+        .limit(1);
+      if (firstLesson[0]) {
+        finalLessonId = firstLesson[0].id;
+        chapterName = chapterName || firstLesson[0].name;
+      } else {
+        const [newLesson] = await db
+          .insert(lessons)
+          .values({
+            userId,
+            subjectId,
+            name: chapterName || "Chapter 1 / অধ্যায় ১",
+            sortOrder: 1,
+          })
+          .returning();
+        finalLessonId = newLesson.id;
+        chapterName = newLesson.name;
+      }
+    }
+
+    const max = await db
+      .select({ m: sql<number>`coalesce(max(${topics.sortOrder}), 0)` })
+      .from(topics)
+      .where(eq(topics.subjectId, subjectId));
+
+    const [created] = await db
+      .insert(topics)
+      .values({
+        userId,
+        subjectId,
+        lessonId: finalLessonId,
+        name: clean,
+        chapter: chapterName,
+        notes: notes?.trim() || null,
+        sortOrder: Number(max[0]?.m ?? 0) + 1,
+        status: "not_started",
+      })
+      .returning();
+
+    refresh();
+    try {
+      revalidatePath(`/subjects/${subjectId}`);
+    } catch {}
+    return ok({ topic: created, id: created.id });
+  } catch (err: any) {
+    console.error("addTopicAction error:", err);
+    return fail(err?.message || "Failed to add topic.");
   }
-
-  const max = await db
-    .select({ m: sql<number>`coalesce(max(${topics.sortOrder}), 0)` })
-    .from(topics)
-    .where(eq(topics.subjectId, subjectId));
-
-  await db.insert(topics).values({
-    userId,
-    subjectId,
-    lessonId: finalLessonId,
-    name: clean,
-    chapter: chapter?.trim() || null,
-    sortOrder: Number(max[0]?.m ?? 0) + 1,
-  });
-  refresh();
-  return ok();
 }
 
 export async function bulkAddTopicsAction(
@@ -467,94 +536,175 @@ export async function bulkAddTopicsAction(
   text: string,
   lessonId?: number | null
 ) {
-  const user = await getCurrentUser();
-  const userId = user?.id ?? null;
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-    .slice(0, 200);
-  if (lines.length === 0) return fail("No topics found.");
+  try {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
+    const lines = text
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
+      .slice(0, 300);
+    if (lines.length === 0) return fail("No topics found.");
 
-  let finalLessonId = lessonId ?? null;
-  if (!finalLessonId) {
-    const firstLesson = await db
-      .select({ id: lessons.id })
-      .from(lessons)
-      .where(eq(lessons.subjectId, subjectId))
-      .orderBy(lessons.sortOrder)
-      .limit(1);
-    if (firstLesson[0]) {
-      finalLessonId = firstLesson[0].id;
+    let finalLessonId = lessonId ?? null;
+    let chapterName: string | null = null;
+
+    if (finalLessonId) {
+      const lRow = await db
+        .select({ name: lessons.name })
+        .from(lessons)
+        .where(eq(lessons.id, finalLessonId))
+        .limit(1);
+      if (lRow[0]) {
+        chapterName = lRow[0].name;
+      }
     } else {
-      const [newLesson] = await db
-        .insert(lessons)
-        .values({
-          userId,
-          subjectId,
-          name: "Chapter 1 / অধ্যায় ১",
-          sortOrder: 1,
-        })
-        .returning();
-      finalLessonId = newLesson.id;
+      const firstLesson = await db
+        .select({ id: lessons.id, name: lessons.name })
+        .from(lessons)
+        .where(eq(lessons.subjectId, subjectId))
+        .orderBy(lessons.sortOrder)
+        .limit(1);
+      if (firstLesson[0]) {
+        finalLessonId = firstLesson[0].id;
+        chapterName = firstLesson[0].name;
+      } else {
+        const [newLesson] = await db
+          .insert(lessons)
+          .values({
+            userId,
+            subjectId,
+            name: "Chapter 1 / অধ্যায় ১",
+            sortOrder: 1,
+          })
+          .returning();
+        finalLessonId = newLesson.id;
+        chapterName = newLesson.name;
+      }
     }
-  }
 
-  const existing = await db.select().from(topics).where(eq(topics.subjectId, subjectId));
-  const canon = new Set(existing.map((t) => canonicalTopic(t.name)));
-  let maxOrder = existing.reduce((a, t) => Math.max(a, t.sortOrder), 0);
-  let created = 0;
-  for (const line of lines) {
-    if (canon.has(canonicalTopic(line))) continue;
-    await db.insert(topics).values({
-      userId,
-      subjectId,
-      lessonId: finalLessonId,
-      name: line,
-      sortOrder: ++maxOrder,
-    });
-    canon.add(canonicalTopic(line));
-    created++;
+    const existing = await db.select().from(topics).where(eq(topics.subjectId, subjectId));
+    const canon = new Set(existing.map((t) => canonicalTopic(t.name)));
+    let maxOrder = existing.reduce((a, t) => Math.max(a, t.sortOrder), 0);
+    let created = 0;
+
+    for (const rawLine of lines) {
+      // Support "Topic Name | Notes / Questions" or "Topic Name :: Notes"
+      let topicName = rawLine;
+      let topicNotes: string | null = null;
+      if (rawLine.includes(" | ")) {
+        const parts = rawLine.split(" | ");
+        topicName = parts[0].trim();
+        topicNotes = parts.slice(1).join(" | ").trim();
+      } else if (rawLine.includes(" :: ")) {
+        const parts = rawLine.split(" :: ");
+        topicName = parts[0].trim();
+        topicNotes = parts.slice(1).join(" :: ").trim();
+      }
+
+      if (!topicName || canon.has(canonicalTopic(topicName))) continue;
+
+      await db.insert(topics).values({
+        userId,
+        subjectId,
+        lessonId: finalLessonId,
+        name: topicName,
+        chapter: chapterName,
+        notes: topicNotes || null,
+        sortOrder: ++maxOrder,
+        status: "not_started",
+      });
+      canon.add(canonicalTopic(topicName));
+      created++;
+    }
+
+    refresh();
+    try {
+      revalidatePath(`/subjects/${subjectId}`);
+    } catch {}
+    return ok({ created, skipped: lines.length - created });
+  } catch (err: any) {
+    console.error("bulkAddTopicsAction error:", err);
+    return fail(err?.message || "Failed to bulk import topics.");
   }
-  refresh();
-  return ok({ created, skipped: lines.length - created });
 }
 
 export async function renameTopicAction(topicId: number, name: string) {
-  const clean = name.trim();
-  if (!clean) return fail("Name cannot be empty.");
-  await db.update(topics).set({ name: clean, updatedAt: new Date() }).where(eq(topics.id, topicId));
-  refresh();
-  return ok();
+  try {
+    const clean = name.trim();
+    if (!clean) return fail("Name cannot be empty.");
+    const [t] = await db.select({ subjectId: topics.subjectId }).from(topics).where(eq(topics.id, topicId)).limit(1);
+    await db.update(topics).set({ name: clean, updatedAt: new Date() }).where(eq(topics.id, topicId));
+    refresh();
+    if (t) {
+      try {
+        revalidatePath(`/subjects/${t.subjectId}`);
+      } catch {}
+    }
+    return ok();
+  } catch (err: any) {
+    console.error("renameTopicAction error:", err);
+    return fail(err?.message || "Failed to rename topic.");
+  }
 }
 
 export async function updateTopicNotesAction(topicId: number, notes: string) {
-  await db.update(topics).set({ notes: notes.trim() || null, updatedAt: new Date() }).where(eq(topics.id, topicId));
-  refresh();
-  return ok();
+  try {
+    const [t] = await db.select({ subjectId: topics.subjectId }).from(topics).where(eq(topics.id, topicId)).limit(1);
+    await db.update(topics).set({ notes: notes.trim() || null, updatedAt: new Date() }).where(eq(topics.id, topicId));
+    refresh();
+    if (t) {
+      try {
+        revalidatePath(`/subjects/${t.subjectId}`);
+      } catch {}
+    }
+    return ok();
+  } catch (err: any) {
+    console.error("updateTopicNotesAction error:", err);
+    return fail(err?.message || "Failed to update topic notes.");
+  }
 }
 
 export async function deleteTopicAction(topicId: number) {
-  await db.delete(topics).where(eq(topics.id, topicId));
-  refresh();
-  return ok();
+  try {
+    const [t] = await db.select({ subjectId: topics.subjectId }).from(topics).where(eq(topics.id, topicId)).limit(1);
+    await db.delete(topics).where(eq(topics.id, topicId));
+    refresh();
+    if (t) {
+      try {
+        revalidatePath(`/subjects/${t.subjectId}`);
+      } catch {}
+    }
+    return ok();
+  } catch (err: any) {
+    console.error("deleteTopicAction error:", err);
+    return fail(err?.message || "Failed to delete topic.");
+  }
 }
 
 export async function moveTopicAction(topicId: number, direction: "up" | "down") {
-  const [t] = await db.select().from(topics).where(eq(topics.id, topicId));
-  if (!t) return fail("Topic not found.");
-  const siblings = await db
-    .select()
-    .from(topics)
-    .where(eq(topics.subjectId, t.subjectId))
-    .orderBy(topics.sortOrder, topics.id);
-  const idx = siblings.findIndex((s) => s.id === topicId);
-  const swapWith = direction === "up" ? siblings[idx - 1] : siblings[idx + 1];
-  if (!swapWith) return ok();
-  await db.update(topics).set({ sortOrder: swapWith.sortOrder }).where(eq(topics.id, t.id));
-  await db.update(topics).set({ sortOrder: t.sortOrder }).where(eq(topics.id, swapWith.id));
-  refresh();
-  return ok();
+  try {
+    const [t] = await db.select().from(topics).where(eq(topics.id, topicId));
+    if (!t) return fail("Topic not found.");
+    const siblings = await db
+      .select()
+      .from(topics)
+      .where(eq(topics.subjectId, t.subjectId))
+      .orderBy(topics.sortOrder, topics.id);
+    const idx = siblings.findIndex((s) => s.id === topicId);
+    const swapWith = direction === "up" ? siblings[idx - 1] : siblings[idx + 1];
+    if (!swapWith) return ok();
+    await db.update(topics).set({ sortOrder: swapWith.sortOrder }).where(eq(topics.id, t.id));
+    await db.update(topics).set({ sortOrder: t.sortOrder }).where(eq(topics.id, swapWith.id));
+    refresh();
+    try {
+      revalidatePath(`/subjects/${t.subjectId}`);
+    } catch {}
+    return ok();
+  } catch (err: any) {
+    console.error("moveTopicAction error:", err);
+    return fail(err?.message || "Failed to move topic.");
+  }
 }
 
 // ── Study timer ─────────────────────────────────────────────────────────────
