@@ -470,15 +470,10 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
-                <BookOpen className="size-4 text-leaf" />
-                <span>Today&apos;s Recommended Books & Topics</span>
-              </h3>
-              <p className="text-xs text-ink-faint">
-                Balanced daily distribution across your subjects to maintain steady progress.
-              </p>
-            </div>
+            <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
+              <BookOpen className="size-4 text-leaf" />
+              <span>Today&apos;s Recommended Books & Topics</span>
+            </h3>
             <Link
               href="/planner"
               className="inline-flex items-center gap-1 text-xs font-semibold text-leaf hover:underline shrink-0"
