@@ -818,10 +818,10 @@ export default function LessonManager({
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-display text-[16.5px] font-bold text-ink">
-                  নতুন টপিক যুক্ত করুন (Add Topic)
+                  Add Topic
                 </h3>
                 <p className="text-[12px] text-ink-faint mt-0.5">
-                  অধ্যায়: <span className="font-semibold text-leaf">{lessons.find((l) => l.id === addTopicModalLessonId)?.name || "অধ্যায়"}</span>
+                  Chapter: <span className="font-semibold text-leaf">{lessons.find((l) => l.id === addTopicModalLessonId)?.name || "Chapter"}</span>
                 </p>
               </div>
               <button
@@ -835,32 +835,29 @@ export default function LessonManager({
             <div className="space-y-3.5">
               <div>
                 <label className="block text-[12px] font-semibold text-ink mb-1">
-                  টপিক বা আয়াত শিরোনাম <span className="text-rose-500">*</span>
+                  Topic Title <span className="text-rose-500">*</span>
                 </label>
                 <input
                   autoFocus
                   value={newTopicTitle}
                   onChange={(e) => setNewTopicTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleModalAddTopic()}
-                  placeholder="e.g. আয়াত: ০১-০৩ অথবা পাঠ ১: নাহু পরিচিতি"
+                  placeholder="e.g. Ayat 01-03 or Lesson 1: Introduction"
                   className="w-full rounded-xl border border-line bg-paper px-3 py-2 text-[13px] outline-none focus:border-leaf focus:bg-white transition"
                 />
               </div>
 
               <div>
                 <label className="block text-[12px] font-semibold text-ink mb-1">
-                  সম্ভাব্য প্রশ্নসমূহ ও বিস্তারিত নোট (Questions & Study Notes) <span className="text-ink-faint font-normal">(ঐচ্ছিক)</span>
+                  Questions & Study Notes <span className="text-ink-faint font-normal">(optional)</span>
                 </label>
                 <textarea
                   value={newTopicNotes}
                   onChange={(e) => setNewTopicNotes(e.target.value)}
                   rows={5}
-                  placeholder={`যেভাবে সিলেবাসে প্রশ্ন ও নোট সাজানো রয়েছে, সেভাবে লিখুন... যেমন:\n১. بين سبب نزول هذه الآيات الكريمة-\n২. ما المراد بقوله تعالى "اتقوا ربكم"؟\n৩. এই পাঠের মূল শিক্ষণীয় বিষয়সমূহ...`}
+                  placeholder={`Write each question or point on a new line, e.g.:\n1. بين سبب نزول هذه الآيات الكريمة-\n2. ما المراد بقوله تعالى "اتقوا ربكم"؟\n3. Key takeaways from this lesson...`}
                   className="w-full rounded-xl border border-line bg-paper px-3 py-2.5 text-[12.5px] leading-relaxed outline-none focus:border-leaf focus:bg-white transition"
                 />
-                <p className="text-[11px] text-ink-faint mt-1">
-                  টিপস: প্রতিটি প্রশ্ন বা পয়েন্ট নতুন লাইনে লিখুন। এটি টপিকের নিচে সুন্দরভাবে প্রদর্শিত হবে।
-                </p>
               </div>
             </div>
 
@@ -870,7 +867,7 @@ export default function LessonManager({
                 onClick={() => setAddTopicModalLessonId(null)}
                 className="rounded-xl border border-line bg-paper-deep px-4 py-2 text-[12px] font-semibold text-ink-soft hover:bg-line transition"
               >
-                বাতিল (Cancel)
+                Cancel
               </button>
               <button
                 type="button"
@@ -878,7 +875,7 @@ export default function LessonManager({
                 onClick={handleModalAddTopic}
                 className="rounded-xl bg-leaf px-5 py-2 text-[12.5px] font-semibold text-white shadow-xs transition hover:bg-leaf-deep disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                {pending ? "সংরক্ষণ হচ্ছে..." : "টপিক সংরক্ষণ করুন (Save Topic)"}
+                {pending ? "Saving..." : "Save Topic"}
               </button>
             </div>
           </div>
