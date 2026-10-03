@@ -82,14 +82,6 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="rise">
-        <h1 className="font-display text-[26px] font-bold tracking-tight text-ink">
-          Student Profile & Settings
-        </h1>
-        <p className="mt-1 text-[13.5px] text-ink-faint">
-          Manage your personal details, academic information, and account security.
-        </p>
-      </header>
       <div className="rise rise-1">
         <SettingsClient
           profile={profile}
