@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WifiOff, Wifi, Download, Check, CheckCircle2 } from "lucide-react";
+import { WifiOff, Wifi, Download, Check, CheckCircle2, X } from "lucide-react";
 import { processOfflineSyncQueue } from "@/lib/offlineSync";
 
 export default function OfflineManager() {
   const [isOffline, setIsOffline] = useState(false);
+  const [showOfflineToast, setShowOfflineToast] = useState(false);
   const [showReconnected, setShowReconnected] = useState(false);
   const [syncedCount, setSyncedCount] = useState<number | null>(null);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
@@ -64,19 +65,31 @@ export default function OfflineManager() {
     }
 
     // 2. Online / Offline status tracking and Auto-Sync
-    const updateOnlineStatus = () => {
-      const offline = !navigator.onLine;
-      setIsOffline(offline);
-      if (!offline) {
-        setShowReconnected(true);
-        // Automatically sync any queued offline actions
-        processOfflineSyncQueue().catch(() => {});
-        const timer = setTimeout(() => setShowReconnected(false), 4000);
-        return () => clearTimeout(timer);
-      }
+    let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleOnline = () => {
+      setIsOffline(false);
+      setShowOfflineToast(false);
+      setShowReconnected(true);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => setShowReconnected(false), 3500);
+      processOfflineSyncQueue().catch(() => {});
     };
 
-    updateOnlineStatus();
+    const handleOffline = () => {
+      setIsOffline(true);
+      setShowReconnected(false);
+      setShowOfflineToast(true);
+      if (offlineTimer) clearTimeout(offlineTimer);
+      offlineTimer = setTimeout(() => setShowOfflineToast(false), 3500);
+    };
+
+    // Initial check without popping up intrusive banner
+    if (typeof navigator !== "undefined") {
+      setIsOffline(!navigator.onLine);
+    }
+
     // Also try syncing on startup if online
     if (typeof navigator !== "undefined" && navigator.onLine) {
       processOfflineSyncQueue().catch(() => {});
@@ -86,12 +99,12 @@ export default function OfflineManager() {
       const count = e.detail?.count || 0;
       if (count > 0) {
         setSyncedCount(count);
-        setTimeout(() => setSyncedCount(null), 5000);
+        setTimeout(() => setSyncedCount(null), 4000);
       }
     };
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     window.addEventListener("alim-offline-synced", handleSyncedEvent);
 
     // 3. PWA Install Prompt Capture
@@ -109,8 +122,11 @@ export default function OfflineManager() {
     window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
+      if (offlineTimer) clearTimeout(offlineTimer);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("alim-offline-synced", handleSyncedEvent);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
@@ -128,19 +144,25 @@ export default function OfflineManager() {
 
   return (
     <>
-      {/* Offline Status Floating Banner */}
-      {isOffline && (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rise">
-          <div className="flex items-center gap-3 rounded-2xl bg-amber-500/95 dark:bg-amber-600/95 px-4 py-3 text-white shadow-xl backdrop-blur-sm ring-1 ring-white/20">
-            <WifiOff className="size-5 shrink-0 animate-pulse text-amber-100" />
+      {/* Offline Status Brief Toast (Auto-dismisses in 3.5s or tap close) */}
+      {showOfflineToast && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-sm rise">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-amber-600/95 px-3.5 py-2.5 text-white shadow-xl backdrop-blur-sm ring-1 ring-white/20">
+            <WifiOff className="size-4 shrink-0 text-amber-200" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold leading-tight">
-                Offline Mode
-              </p>
+              <p className="text-xs font-bold leading-tight">Offline Mode</p>
               <p className="text-[11px] text-amber-100 leading-tight mt-0.5">
                 No internet connection. Viewing cached data.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowOfflineToast(false)}
+              className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/15 transition cursor-pointer"
+              title="Close"
+            >
+              <X className="size-3.5" />
+            </button>
           </div>
         </div>
       )}
