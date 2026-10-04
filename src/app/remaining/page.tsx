@@ -8,9 +8,18 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Still Remaining — Study Dashboard" };
 
 export default async function RemainingPage() {
-  const [groups, stats] = await Promise.all([getRemaining(), getSubjectStats()]);
+  const [rawGroups, stats] = await Promise.all([getRemaining(), getSubjectStats()]);
   const totalRemaining = stats.reduce((a, s) => a + s.remaining, 0);
   const totalTopics = stats.reduce((a, s) => a + s.total, 0);
+
+  // Guarantee no duplicate subject cards can appear
+  const seenSubjectNames = new Set<string>();
+  const groups = rawGroups.filter((g) => {
+    const key = (g.subject.name || "").trim().toLowerCase();
+    if (seenSubjectNames.has(key)) return false;
+    seenSubjectNames.add(key);
+    return true;
+  });
 
   return (
     <div className="space-y-6">

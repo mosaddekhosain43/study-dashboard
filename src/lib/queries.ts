@@ -156,6 +156,7 @@ export async function getSubjects(): Promise<SubjectDto[]> {
   await ensureSeeded();
   const user = await getCurrentUser();
 
+  let rawSubs: SubjectDto[] = [];
   if (user) {
     const userPersonalSubs = await db
       .select()
@@ -163,17 +164,25 @@ export async function getSubjects(): Promise<SubjectDto[]> {
       .where(eq(subjects.userId, user.id))
       .orderBy(subjects.sortOrder, subjects.id);
     if (userPersonalSubs.length > 0) {
-      return userPersonalSubs as SubjectDto[];
+      rawSubs = userPersonalSubs as SubjectDto[];
     }
   }
 
-  const masterSubs = (await db
-    .select()
-    .from(subjects)
-    .where(isNull(subjects.userId))
-    .orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
+  if (rawSubs.length === 0) {
+    rawSubs = (await db
+      .select()
+      .from(subjects)
+      .where(isNull(subjects.userId))
+      .orderBy(subjects.sortOrder, subjects.id)) as SubjectDto[];
+  }
 
-  return masterSubs;
+  const seenNames = new Set<string>();
+  return rawSubs.filter((s) => {
+    const key = (s.name || "").trim().toLowerCase();
+    if (seenNames.has(key)) return false;
+    seenNames.add(key);
+    return true;
+  });
 }
 
 function toStatus(s: string): StudyStatus {
@@ -217,11 +226,29 @@ export async function getSubjectStats(): Promise<SubjectStats[]> {
     .where(isNull(subjects.userId))
     .orderBy(subjects.sortOrder, subjects.id);
 
-  const subRows = usePersonal ? userPersonalSubs : fallbackSubs;
+  const rawSubRows = usePersonal ? userPersonalSubs : fallbackSubs;
+  const seenSubNames = new Set<string>();
+  const subRows = rawSubRows.filter((s) => {
+    const key = (s.name || "").trim().toLowerCase();
+    if (seenSubNames.has(key)) return false;
+    seenSubNames.add(key);
+    return true;
+  });
 
-  const topRows = usePersonal && user
-    ? await db.select().from(topics).where(eq(topics.userId, user.id))
-    : await db.select().from(topics).where(isNull(topics.userId));
+  const subIds = subRows.map((s) => s.id);
+
+  const topRows =
+    subIds.length === 0
+      ? []
+      : usePersonal && user
+      ? await db
+          .select()
+          .from(topics)
+          .where(and(inArray(topics.subjectId, subIds), eq(topics.userId, user.id)))
+      : await db
+          .select()
+          .from(topics)
+          .where(and(inArray(topics.subjectId, subIds), isNull(topics.userId)));
 
   const [itemActs, sessActs, sessMins] = await Promise.all([
     db
@@ -770,19 +797,63 @@ export interface RemainingGroup {
 
 export async function getRemaining(): Promise<RemainingGroup[]> {
   await ensureSeeded();
-  const subs = await db.select().from(subjects).orderBy(subjects.sortOrder, subjects.id);
+  const user = await getCurrentUser();
+
+  let userPersonalSubs: any[] = [];
+  if (user) {
+    userPersonalSubs = await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user.id))
+      .orderBy(subjects.sortOrder, subjects.id);
+  }
+
+  const usePersonal = userPersonalSubs.length > 0;
+  const fallbackSubs = await db
+    .select()
+    .from(subjects)
+    .where(isNull(subjects.userId))
+    .orderBy(subjects.sortOrder, subjects.id);
+
+  const rawSubs = usePersonal ? userPersonalSubs : fallbackSubs;
+  const seenSubNames = new Set<string>();
+  const subs = rawSubs.filter((s) => {
+    const key = (s.name || "").trim().toLowerCase();
+    if (seenSubNames.has(key)) return false;
+    seenSubNames.add(key);
+    return true;
+  });
+
+  const subIds = subs.map((s) => s.id);
+  if (subIds.length === 0) return [];
+
   const tops = await db
     .select()
     .from(topics)
-    .where(inArray(topics.status, ["not_started", "in_progress", "not_completed"]))
+    .where(
+      and(
+        inArray(topics.subjectId, subIds),
+        usePersonal && user ? eq(topics.userId, user.id) : isNull(topics.userId),
+        inArray(topics.status, ["not_started", "in_progress", "not_completed"])
+      )
+    )
     .orderBy(topics.sortOrder, topics.id);
+
   const groups: RemainingGroup[] = [];
   for (const s of subs) {
-    const mine = tops.filter((t) => t.subjectId === s.id).map((t): TopicDto => ({
-      id: t.id, subjectId: t.subjectId, subjectName: s.name,
-      name: t.name, chapter: t.chapter, status: toStatus(t.status),
-      notes: t.notes, completedAt: t.completedAt, updatedAt: t.updatedAt.toISOString(),
-    }));
+    const mine = tops
+      .filter((t) => t.subjectId === s.id)
+      .map((t): TopicDto => ({
+        id: t.id,
+        subjectId: t.subjectId,
+        subjectName: s.name,
+        name: t.name,
+        chapter: t.chapter,
+        status: toStatus(t.status),
+        notes: t.notes,
+        completedAt: t.completedAt,
+        updatedAt: t.updatedAt.toISOString(),
+      }));
     if (mine.length > 0) groups.push({ subject: s, items: mine });
   }
   return groups;
@@ -884,6 +955,7 @@ export interface WeekReview {
 
 export async function getWeekReview(weekStart: string): Promise<WeekReview> {
   await ensureSeeded();
+  const user = await getCurrentUser();
   const days = weekDates(weekStart);
   const to = days[6];
   const minuteMap = await getMinutesByDay(days[0], to);
@@ -901,22 +973,68 @@ export async function getWeekReview(weekStart: string): Promise<WeekReview> {
     .from(updateItems)
     .leftJoin(subjects, eq(updateItems.subjectId, subjects.id))
     .leftJoin(topics, eq(updateItems.topicId, topics.id))
-    .where(and(gte(updateItems.date, days[0]), lte(updateItems.date, to), eq(updateItems.status, "completed")))
+    .where(
+      and(
+        user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId),
+        gte(updateItems.date, days[0]),
+        lte(updateItems.date, to),
+        eq(updateItems.status, "completed")
+      )
+    )
     .orderBy(updateItems.date);
 
-  const subs = await db.select().from(subjects).orderBy(subjects.sortOrder, subjects.id);
-  const activeRows = await db
+  let userPersonalSubs: any[] = [];
+  if (user) {
+    userPersonalSubs = await db
+      .select()
+      .from(subjects)
+      .where(eq(subjects.userId, user.id))
+      .orderBy(subjects.sortOrder, subjects.id);
+  }
+  const usePersonal = userPersonalSubs.length > 0;
+  const rawSubs = usePersonal
+    ? userPersonalSubs
+    : await db
+        .select()
+        .from(subjects)
+        .where(isNull(subjects.userId))
+        .orderBy(subjects.sortOrder, subjects.id);
+
+  const seenSubNames = new Set<string>();
+  const subs = rawSubs.filter((s) => {
+    const key = (s.name || "").trim().toLowerCase();
+    if (seenSubNames.has(key)) return false;
+    seenSubNames.add(key);
+    return true;
+  });
+
+  const subIds = subs.map((s) => s.id);
+
+  const activeRows = subIds.length === 0 ? [] : await db
     .select({
       subjectId: updateItems.subjectId,
       m: sql<number>`coalesce(sum(${updateItems.minutes}),0)`,
     })
     .from(updateItems)
-    .where(and(gte(updateItems.date, days[0]), lte(updateItems.date, to)))
+    .where(
+      and(
+        user ? eq(updateItems.userId, user.id) : isNull(updateItems.userId),
+        gte(updateItems.date, days[0]),
+        lte(updateItems.date, to)
+      )
+    )
     .groupBy(updateItems.subjectId);
-  const sessRows = await db
+
+  const sessRows = subIds.length === 0 ? [] : await db
     .select({ subjectId: sessions.subjectId, m: sql<number>`coalesce(sum(${sessions.minutes}),0)` })
     .from(sessions)
-    .where(and(gte(sessions.date, days[0]), lte(sessions.date, to)))
+    .where(
+      and(
+        user ? eq(sessions.userId, user.id) : isNull(sessions.userId),
+        gte(sessions.date, days[0]),
+        lte(sessions.date, to)
+      )
+    )
     .groupBy(sessions.subjectId);
 
   const minutesBySubject = new Map<number, number>();
@@ -932,7 +1050,18 @@ export async function getWeekReview(weekStart: string): Promise<WeekReview> {
     else neglected.push({ id: s.id, name: s.name });
   }
 
-  const allTopics = await db.select({ status: topics.status }).from(topics);
+  const allTopics = subIds.length === 0
+    ? []
+    : usePersonal && user
+    ? await db
+        .select({ status: topics.status })
+        .from(topics)
+        .where(and(inArray(topics.subjectId, subIds), eq(topics.userId, user.id)))
+    : await db
+        .select({ status: topics.status })
+        .from(topics)
+        .where(and(inArray(topics.subjectId, subIds), isNull(topics.userId)));
+
   const total = allTopics.length;
   const remaining = allTopics.filter((t) => t.status !== "completed").length;
 
@@ -1031,9 +1160,25 @@ export async function searchAll(
   subjectId?: number,
 ): Promise<SearchResults> {
   await ensureSeeded();
+  const user = await getCurrentUser();
   const q = query.trim();
   const like = `%${q}%`;
+
+  let userPersonalSubs: any[] = [];
+  if (user) {
+    userPersonalSubs = await db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(eq(subjects.userId, user.id));
+  }
+  const usePersonal = userPersonalSubs.length > 0;
+
   const topicConds = [];
+  if (usePersonal && user) {
+    topicConds.push(eq(topics.userId, user.id));
+  } else {
+    topicConds.push(isNull(topics.userId));
+  }
   if (q) topicConds.push(ilike(topics.name, like));
   if (status) topicConds.push(eq(topics.status, status));
   if (subjectId) topicConds.push(eq(topics.subjectId, subjectId));
@@ -1048,6 +1193,11 @@ export async function searchAll(
     : [];
 
   const itemConds = [];
+  if (user) {
+    itemConds.push(eq(updateItems.userId, user.id));
+  } else {
+    itemConds.push(isNull(updateItems.userId));
+  }
   if (q) {
     itemConds.push(
       or(
