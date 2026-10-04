@@ -1,11 +1,14 @@
-"use client";
-
-import { setTopicStatusAction, saveStudySessionAction } from "@/actions/index";
+import {
+  setTopicStatusAction,
+  saveStudySessionAction,
+  updateTopicNotesAction,
+  saveUpdateAction,
+} from "@/actions/index";
 import { markTopicRevisedAction } from "@/actions/planner";
 
 export interface OfflineQueueItem {
   id: string;
-  type: "SET_TOPIC_STATUS" | "LOG_TIMER" | "MARK_REVISED";
+  type: "SET_TOPIC_STATUS" | "LOG_TIMER" | "MARK_REVISED" | "UPDATE_TOPIC_NOTE" | "SAVE_STUDY_UPDATE";
   payload: any;
   timestamp: number;
 }
@@ -95,6 +98,20 @@ export async function processOfflineSyncQueue(): Promise<{
         }
       } else if (item.type === "LOG_TIMER") {
         const res = await saveStudySessionAction(item.payload);
+        if (res.ok) {
+          syncedCount++;
+        } else {
+          remainingQueue.push(item);
+        }
+      } else if (item.type === "UPDATE_TOPIC_NOTE") {
+        const res = await updateTopicNotesAction(item.payload.topicId, item.payload.notes);
+        if (res.ok) {
+          syncedCount++;
+        } else {
+          remainingQueue.push(item);
+        }
+      } else if (item.type === "SAVE_STUDY_UPDATE") {
+        const res = await saveUpdateAction(item.payload);
         if (res.ok) {
           syncedCount++;
         } else {

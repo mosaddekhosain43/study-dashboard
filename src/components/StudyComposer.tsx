@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { parseUpdateAction, saveUpdateAction } from "@/actions";
 import type { ParseResult, ParsedItem } from "@/lib/parser";
-import { EXAMPLE_INPUTS } from "@/lib/parser";
+import { EXAMPLE_INPUTS, parseStudyUpdate } from "@/lib/parser";
+import { enqueueOfflineAction } from "@/lib/offlineSync";
 import { STATUS_META, STATUSES, type StudyStatus } from "@/lib/constants";
 import { StatusIcon } from "@/components/ui";
 import { todayKey } from "@/lib/dates";
@@ -86,15 +87,42 @@ export default function StudyComposer({
       return;
     }
     setMessage(null);
+
+    // If offline, use local in-browser parser immediately
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      try {
+        const result = parseStudyUpdate(text, subjects as any, syllabus as any);
+        setParseResult(result);
+        setDate(result.date);
+        setDrafts(result.items.map(draftFromParsed));
+        if (result.items.length === 0) {
+          setMessage(
+            "Could not detect a subject. Try naming the paper, e.g. Bangla 1st, English 2nd, Arabic 2nd.",
+          );
+        }
+        return;
+      } catch (err) {
+        console.warn("Local parse error:", err);
+      }
+    }
+
     startTransition(async () => {
-      const result = await parseUpdateAction(text);
-      setParseResult(result);
-      setDate(result.date);
-      setDrafts(result.items.map(draftFromParsed));
-      if (result.items.length === 0) {
-        setMessage(
-          "Could not detect a subject. Try naming the paper, e.g. Bangla 1st, English 2nd, Arabic 2nd.",
-        );
+      try {
+        const result = await parseUpdateAction(text);
+        setParseResult(result);
+        setDate(result.date);
+        setDrafts(result.items.map(draftFromParsed));
+        if (result.items.length === 0) {
+          setMessage(
+            "Could not detect a subject. Try naming the paper, e.g. Bangla 1st, English 2nd, Arabic 2nd.",
+          );
+        }
+      } catch {
+        // Fallback to client parser if server call fails or connection dropped
+        const result = parseStudyUpdate(text, subjects as any, syllabus as any);
+        setParseResult(result);
+        setDate(result.date);
+        setDrafts(result.items.map(draftFromParsed));
       }
     });
   };
@@ -125,23 +153,42 @@ export default function StudyComposer({
   const save = async () => {
     setSaving(true);
     setMessage(null);
+
+    const payload = {
+      rawText: text,
+      date,
+      addToSyllabus,
+      items: drafts.map((d) => ({
+        subjectId: d.subjectId,
+        topicId: d.topicId,
+        topicText: d.topicId
+          ? (syllabus.find((t) => t.id === d.topicId)?.name ?? d.topicText)
+          : d.topicText,
+        status: d.status,
+        minutes: d.minutes ? Math.max(0, Math.round(Number(d.minutes))) : null,
+      })),
+    };
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("SAVE_STUDY_UPDATE", payload);
+      setText("");
+      setParseResult(null);
+      setDrafts([]);
+      setMessage("Saved offline! Will sync when connection is restored. ✓");
+      setTimeout(() => setMessage(null), 4000);
+      setSaving(false);
+      return;
+    }
+
     try {
-      const res = await saveUpdateAction({
-        rawText: text,
-        date,
-        addToSyllabus,
-        items: drafts.map((d) => ({
-          subjectId: d.subjectId,
-          topicId: d.topicId,
-          topicText: d.topicId
-            ? (syllabus.find((t) => t.id === d.topicId)?.name ?? d.topicText)
-            : d.topicText,
-          status: d.status,
-          minutes: d.minutes ? Math.max(0, Math.round(Number(d.minutes))) : null,
-        })),
-      });
+      const res = await saveUpdateAction(payload);
       if (!res.ok) {
-        setMessage(res.error);
+        enqueueOfflineAction("SAVE_STUDY_UPDATE", payload);
+        setText("");
+        setParseResult(null);
+        setDrafts([]);
+        setMessage("Saved offline! Will sync when online. ✓");
+        setTimeout(() => setMessage(null), 4000);
       } else {
         setText("");
         setParseResult(null);
@@ -149,6 +196,13 @@ export default function StudyComposer({
         setMessage("saved");
         router.refresh();
       }
+    } catch {
+      enqueueOfflineAction("SAVE_STUDY_UPDATE", payload);
+      setText("");
+      setParseResult(null);
+      setDrafts([]);
+      setMessage("Network error - saved offline! Will sync when online. ✓");
+      setTimeout(() => setMessage(null), 4000);
     } finally {
       setSaving(false);
     }

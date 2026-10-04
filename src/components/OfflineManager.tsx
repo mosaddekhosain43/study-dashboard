@@ -27,11 +27,39 @@ export default function OfflineManager() {
       // Warm offline cache for essential routes in the background
       if (navigator.onLine) {
         setTimeout(() => {
-          const routesToWarm = ["/", "/timer", "/subjects", "/remaining", "/settings"];
+          const routesToWarm = [
+            "/",
+            "/timer",
+            "/subjects",
+            "/remaining",
+            "/log",
+            "/weekly",
+            "/analytics",
+            "/syllabus",
+            "/settings",
+            "/search",
+            "/feedback",
+            "/planner",
+          ];
           routesToWarm.forEach((r) => {
             fetch(r, { credentials: "same-origin" }).catch(() => {});
+            fetch(r, { headers: { RSC: "1" }, credentials: "same-origin" }).catch(() => {});
           });
-        }, 1500);
+
+          // Also warm individual subject links visible on the page
+          setTimeout(() => {
+            try {
+              const links = Array.from(document.querySelectorAll('a[href^="/subjects/"]'))
+                .map((a) => (a as HTMLAnchorElement).pathname)
+                .filter((p) => p && p !== "/subjects");
+              const uniqueLinks = Array.from(new Set(links));
+              uniqueLinks.forEach((link) => {
+                fetch(link, { credentials: "same-origin" }).catch(() => {});
+                fetch(link, { headers: { RSC: "1" }, credentials: "same-origin" }).catch(() => {});
+              });
+            } catch {}
+          }, 3000);
+        }, 1200);
       }
     }
 

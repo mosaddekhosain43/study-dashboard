@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   BookOpen,
   Check,
@@ -28,6 +28,7 @@ import {
   setTopicStatusAction,
   updateTopicNotesAction,
 } from "@/actions";
+import { enqueueOfflineAction } from "@/lib/offlineSync";
 import type { LessonDto, TopicDto } from "@/lib/queries";
 import { STATUS_META, STATUSES, type StudyStatus } from "@/lib/constants";
 import { ProgressBar, StatusIcon } from "@/components/ui";
@@ -54,6 +55,13 @@ export default function LessonManager({
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
   const [pending, startTransition] = useTransition();
+
+  // Local optimistic state for offline & instantaneous updates
+  const [localLessons, setLocalLessons] = useState<LessonDto[]>(lessons);
+
+  useEffect(() => {
+    setLocalLessons(lessons);
+  }, [lessons]);
 
   // New Lesson state
   const [newLessonName, setNewLessonName] = useState("");
@@ -104,7 +112,7 @@ export default function LessonManager({
 
   // Filter topics inside each lesson
   const filteredLessons = useMemo(() => {
-    return lessons.map((l) => {
+    return localLessons.map((l) => {
       const filteredTopics = l.topics.filter(
         (t) => filter === "all" || t.status === filter
       );
@@ -113,7 +121,7 @@ export default function LessonManager({
         filteredTopics,
       };
     });
-  }, [lessons, filter]);
+  }, [localLessons, filter]);
 
   // Overall counts across all lessons
   const counts = useMemo(() => {
@@ -124,14 +132,111 @@ export default function LessonManager({
       not_started: 0,
       not_completed: 0,
     };
-    for (const l of lessons) {
+    for (const l of localLessons) {
       for (const t of l.topics) {
         c.all++;
         c[t.status]++;
       }
     }
     return c;
-  }, [lessons]);
+  }, [localLessons]);
+
+  // Handle topic status change with instantaneous optimistic UI and offline sync
+  const handleTopicStatusChange = (topicId: number, nextStatus: StudyStatus) => {
+    // 1. Optimistic update immediately
+    setLocalLessons((prev) =>
+      prev.map((l) => {
+        if (!l.topics.some((t) => t.id === topicId)) return l;
+        const updated = l.topics.map((t) =>
+          t.id === topicId
+            ? {
+                ...t,
+                status: nextStatus,
+                completedAt:
+                  nextStatus === "completed"
+                    ? new Date().toISOString().slice(0, 10)
+                    : null,
+              }
+            : t
+        );
+        const comp = updated.filter((t) => t.status === "completed").length;
+        const tot = updated.length;
+        return {
+          ...l,
+          topics: updated,
+          completedTopics: comp,
+          progress: tot > 0 ? comp / tot : 0,
+        };
+      })
+    );
+
+    // 2. If offline, queue for sync
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: nextStatus });
+      setMsg("Saved offline! Will sync when connection is restored. ✓");
+      setTimeout(() => setMsg(null), 4000);
+      return;
+    }
+
+    // 3. If online, invoke server action with offline fallback
+    startTransition(async () => {
+      try {
+        const res = await setTopicStatusAction(topicId, nextStatus);
+        if (!res?.ok) {
+          enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: nextStatus });
+          setMsg("Saved offline! Will sync when online. ✓");
+          setTimeout(() => setMsg(null), 4000);
+        }
+      } catch {
+        enqueueOfflineAction("SET_TOPIC_STATUS", { topicId, status: nextStatus });
+        setMsg("Saved offline! Will sync when online. ✓");
+        setTimeout(() => setMsg(null), 4000);
+      }
+    });
+  };
+
+  // Handle save topic note with optimistic update and offline queue
+  const handleSaveTopicNote = (topicId: number, text: string) => {
+    const trimmed = text.trim();
+    // 1. Optimistic update
+    setLocalLessons((prev) =>
+      prev.map((l) => {
+        if (!l.topics.some((t) => t.id === topicId)) return l;
+        return {
+          ...l,
+          topics: l.topics.map((t) =>
+            t.id === topicId ? { ...t, notes: trimmed || null } : t
+          ),
+        };
+      })
+    );
+    setNoteTopicId(null);
+
+    // 2. If offline, queue
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("UPDATE_TOPIC_NOTE", { topicId, notes: trimmed });
+      setMsg("Note saved offline! ✓");
+      setTimeout(() => setMsg(null), 3000);
+      return;
+    }
+
+    // 3. If online, invoke server action
+    startTransition(async () => {
+      try {
+        const res = await updateTopicNotesAction(topicId, trimmed);
+        if (!res?.ok) {
+          enqueueOfflineAction("UPDATE_TOPIC_NOTE", { topicId, notes: trimmed });
+          setMsg("Note saved offline! ✓");
+        } else {
+          setMsg("Note saved! ✓");
+        }
+      } catch {
+        enqueueOfflineAction("UPDATE_TOPIC_NOTE", { topicId, notes: trimmed });
+        setMsg("Note saved offline! ✓");
+      }
+      setTimeout(() => setMsg(null), 3000);
+    });
+  };
 
   // Handlers for Lessons
   const handleAddLesson = () => {
@@ -555,7 +660,21 @@ export default function LessonManager({
                                   {idx + 1}
                                 </span>
                                 <div className="pt-0.5">
-                                  <StatusIcon status={t.status} className="size-4 shrink-0" />
+                                  <button
+                                    type="button"
+                                    title="Click to toggle completed"
+                                    onClick={() =>
+                                      handleTopicStatusChange(
+                                        t.id,
+                                        t.status === "completed"
+                                          ? "not_started"
+                                          : "completed"
+                                      )
+                                    }
+                                    className="cursor-pointer transition-transform hover:scale-115 active:scale-95"
+                                  >
+                                    <StatusIcon status={t.status} className="size-4 shrink-0" />
+                                  </button>
                                 </div>
 
                                 <div className="min-w-0 flex-1">
@@ -628,12 +747,12 @@ export default function LessonManager({
                                 <select
                                   value={t.status}
                                   onChange={(e) =>
-                                    startTransition(async () => {
-                                      await setTopicStatusAction(t.id, e.target.value);
-                                      refresh();
-                                    })
+                                    handleTopicStatusChange(
+                                      t.id,
+                                      e.target.value as StudyStatus
+                                    )
                                   }
-                                  className={`rounded-lg border-0 px-2 py-1 text-[11px] font-bold ring-1 transition ${
+                                  className={`rounded-lg border-0 px-2 py-1 text-[11px] font-bold ring-1 transition cursor-pointer ${
                                     STATUS_META[t.status].bg
                                   } ${STATUS_META[t.status].text} ${
                                     STATUS_META[t.status].ring
@@ -750,16 +869,8 @@ export default function LessonManager({
                                 />
                                 <div className="flex gap-2 justify-end">
                                   <button
-                                    onClick={() =>
-                                      startTransition(async () => {
-                                        await updateTopicNotesAction(t.id, noteText);
-                                        setNoteTopicId(null);
-                                        setMsg("নোট আপডেট করা হয়েছে! ✓");
-                                        setTimeout(() => setMsg(null), 3000);
-                                        refresh();
-                                      })
-                                    }
-                                    className="rounded-lg bg-leaf px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-leaf-deep transition"
+                                    onClick={() => handleSaveTopicNote(t.id, noteText)}
+                                    className="rounded-lg bg-leaf px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-leaf-deep transition cursor-pointer"
                                   >
                                     Save Notes
                                   </button>
