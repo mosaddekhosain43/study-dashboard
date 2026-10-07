@@ -260,9 +260,21 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                   <RotateCcw className="size-4" />
                 </span>
                 <div>
-                  <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
-                    Friday Weekly Revision
-                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                      Friday Weekly Revision
+                    </h2>
+                    {!isFriday && (
+                      <button
+                        type="button"
+                        onClick={() => setModeOverride("daily")}
+                        className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-bold text-ink-soft shadow-2xs transition-all hover:border-leaf hover:text-leaf hover:bg-paper active:scale-95 cursor-pointer ml-1"
+                        title="Back to Daily Study"
+                      >
+                        ← Back to Daily Study
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs text-ink-faint mt-0.5">
                     Weekly revision day — no new lessons today. Review all topics completed throughout this week.
                   </p>
@@ -271,8 +283,8 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             </div>
 
             {/* Friday Revision Progress Box */}
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 text-center shrink-0 min-w-[200px]">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+            <div className="rounded-2xl border border-emerald-300/80 bg-emerald-50/70 p-4 text-center shrink-0 min-w-[200px]">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
                 Revision Progress
               </p>
               <div className="mt-1 flex items-baseline justify-center gap-1">
@@ -340,7 +352,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                             </p>
                           )}
                         </div>
-                        <span className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-bold shrink-0">
+                        <span className="rounded-lg bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[11px] font-bold shrink-0">
                           {sub.topics.length} {sub.topics.length === 1 ? "topic" : "topics"}
                         </span>
                       </div>
@@ -352,13 +364,13 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                             key={top.id}
                             className={`relative rounded-xl border p-2.5 text-xs transition-all ${
                               top.isRevisedToday
-                                ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                                ? "border-emerald-300 bg-emerald-50/70"
                                 : "border-line bg-paper/40 hover:bg-paper"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="min-w-0 flex-1">
-                                <p className={`font-medium truncate ${top.isRevisedToday ? "text-emerald-900 dark:text-emerald-200 font-semibold" : "text-ink"}`}>
+                                <p className={`font-medium truncate ${top.isRevisedToday ? "text-emerald-900 font-semibold" : "text-ink"}`}>
                                   {top.name}
                                 </p>
                                 {top.chapter && (
@@ -371,9 +383,9 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                               <button
                                 onClick={() => handleMarkRevised(sub.subjectId, top.id)}
                                 disabled={isPending}
-                                className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition shadow-2xs ${
+                                className={`shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-bold transition shadow-2xs cursor-pointer ${
                                   top.isRevisedToday
-                                    ? "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                                     : "bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95"
                                 }`}
                               >
@@ -416,12 +428,16 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                 </h2>
                 {totalWeeklyCompleted > 0 && (
                   <button
+                    type="button"
                     onClick={() => setModeOverride("friday")}
-                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/30 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors ml-1"
-                    title="Preview Friday Weekly Revision"
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 sm:px-3 py-1 text-[11.5px] font-bold text-emerald-800 shadow-2xs transition-all hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-xs active:scale-95 cursor-pointer ml-1"
+                    title="Open Friday Weekly Revision"
                   >
-                    <RotateCcw className="size-3" />
-                    <span>Friday Revision ({totalWeeklyCompleted})</span>
+                    <RotateCcw className="size-3 text-emerald-700 transition-transform group-hover:-rotate-45 group-hover:text-white" />
+                    <span>Friday Revision</span>
+                    <span className="grid min-w-4.5 place-items-center rounded-full bg-emerald-200/80 px-1.5 py-0.2 text-[10.5px] font-extrabold text-emerald-900 group-hover:bg-white/25 group-hover:text-white">
+                      {totalWeeklyCompleted}
+                    </span>
                   </button>
                 )}
               </div>
@@ -531,7 +547,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                               key={topic.id}
                               className={`relative rounded-xl border p-2.5 text-xs transition-all ${
                                 isDone
-                                  ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900/50 dark:bg-emerald-950/20"
+                                  ? "border-emerald-300 bg-emerald-50/70"
                                   : "border-line bg-paper/40 hover:bg-paper"
                               }`}
                             >
@@ -581,14 +597,14 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                         isMenuOpen ? null : topic.id
                                       );
                                     }}
-                                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition shadow-2xs ${
+                                    className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold transition shadow-2xs cursor-pointer ${
                                       isDone
-                                        ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                                         : isInProgress
-                                        ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+                                        ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
                                         : isNotCompleted
-                                        ? "border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200"
-                                        : "border-line bg-white text-ink-soft hover:bg-paper dark:bg-card dark:text-ink-faint"
+                                        ? "border-rose-300 bg-rose-50 text-rose-800 hover:bg-rose-100"
+                                        : "border-line bg-white text-ink-soft hover:bg-paper"
                                     }`}
                                   >
                                     <span className={`size-1.5 rounded-full ${currentOpt.dot}`} />
@@ -598,7 +614,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
 
                                   {/* Dropdown popup menu */}
                                   {isMenuOpen && (
-                                    <div className="absolute right-0 top-full mt-1.5 z-50 w-36 rounded-xl border border-line bg-white dark:bg-card p-1 shadow-xl animate-in fade-in zoom-in-95">
+                                    <div className="absolute right-0 top-full mt-1.5 z-50 w-36 rounded-xl border border-line bg-white p-1 shadow-xl animate-in fade-in zoom-in-95">
                                       {STATUS_OPTIONS.map((opt) => {
                                         const isSelected = topic.status === opt.value;
                                         return (
