@@ -46,8 +46,8 @@ export default function AppShell({ subjects, user, children }: AppShellProps) {
     <>
       <AppSplashScreen />
       <Sidebar subjects={subjects} user={user} />
-      <div className="lg:pl-[272px]">
-        <main className="mx-auto w-full max-w-[1380px] px-4 pb-12 pt-4 sm:px-6 lg:px-8 sm:pt-8 sm:pb-16">
+      <div className="lg:pl-[272px] min-w-0 max-w-full overflow-x-clip">
+        <main className="mx-auto w-full max-w-[1380px] px-3.5 pb-12 pt-4 sm:px-6 lg:px-8 sm:pt-8 sm:pb-16 min-w-0">
           {children}
         </main>
       </div>

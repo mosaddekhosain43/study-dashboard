@@ -64,36 +64,36 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ── Header ─────────────────────────────────────────── */}
-      <header className="rise flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-[22px] sm:text-[26px] font-bold tracking-tight text-ink">
+      <header className="rise flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-[20px] sm:text-[26px] font-bold tracking-tight text-ink truncate">
             {today}
           </h1>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2.5">
-          <div className="card flex items-center gap-2.5 p-3 sm:px-4 sm:py-2.5">
+          <div className="card flex items-center gap-2 sm:gap-2.5 p-2.5 sm:px-4 sm:py-2.5 min-w-0 overflow-hidden">
             <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-brand sm:size-9">
               <AlarmClockCheck className="size-4 sm:size-4.5" />
             </span>
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
+              <p className="font-display text-base sm:text-lg lg:text-[19px] font-bold leading-none tabular-nums text-ink">
                 {data.exam.daysToExam}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+              <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate">
                 {data.exam.daysToExam === 1 ? "DAY TO EXAM" : "DAYS TO EXAM"}
               </p>
             </div>
           </div>
 
-          <div className="card flex items-center gap-2.5 p-3 sm:px-4 sm:py-2.5">
+          <div className="card flex items-center gap-2 sm:gap-2.5 p-2.5 sm:px-4 sm:py-2.5 min-w-0 overflow-hidden">
             <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-brand sm:size-9">
               <Target className="size-4 sm:size-4.5" />
             </span>
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold leading-none tabular-nums text-ink sm:text-[19px]">
+              <p className="font-display text-base sm:text-lg lg:text-[19px] font-bold leading-none tabular-nums text-ink">
                 {data.exam.daysToTarget}
               </p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate sm:text-[10.5px]">
+              <p className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-ink-faint truncate">
                 {data.exam.daysToTarget === 1 ? "DAY TO TARGET" : "DAYS TO TARGET"}
               </p>
             </div>

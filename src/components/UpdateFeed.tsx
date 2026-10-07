@@ -209,9 +209,9 @@ function ItemRow({ item, subjects }: { item: ItemDto; subjects: { id: number; na
   }
 
   return (
-    <li className="group/item flex items-center gap-2.5 rounded-lg px-1 py-1 hover:bg-paper/70">
+    <li className="group/item flex items-center gap-2 sm:gap-2.5 rounded-lg px-1 py-1 hover:bg-paper/70 min-w-0">
       <StatusIcon status={item.status} />
-      <span className="w-[118px] shrink-0 truncate text-[12px] font-semibold text-ink-soft" title={item.subjectName}>
+      <span className="w-[85px] sm:w-[118px] shrink-0 truncate text-[11.5px] sm:text-[12px] font-semibold text-ink-soft" title={item.subjectName}>
         {item.subjectName}
       </span>
       <span className="font-bengali min-w-0 flex-1 truncate text-[13px] font-medium text-ink">

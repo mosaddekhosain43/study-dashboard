@@ -56,7 +56,7 @@ export default function ClassroomCard({
   return (
     <section className="card overflow-hidden border border-line bg-card p-4 sm:p-5 shadow-card transition-all hover:shadow-card-hover">
       {/* ── Header: Title, Batch Badge & File Count Badge ────── */}
-      <div className="flex items-center justify-between gap-2.5 pb-3 border-b border-line/70">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 pb-3 border-b border-line/70">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="grid size-8 sm:size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-leaf to-leaf-deep text-white shadow-sm shadow-leaf/25">
             <GraduationCap className="size-4 sm:size-4.5" strokeWidth={2.2} />
@@ -72,7 +72,7 @@ export default function ClassroomCard({
         </div>
 
         {/* Batch name and file count badges aligned side by side */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 border border-emerald-200/60 whitespace-nowrap">
             <Users className="size-3 text-emerald-600" />
             {batchName}

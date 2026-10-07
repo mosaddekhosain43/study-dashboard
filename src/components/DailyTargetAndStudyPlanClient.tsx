@@ -252,23 +252,23 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         /* ─────────────────────────────────────────────────────────── */
         /* FRIDAY WEEKLY REVISION (NO NEW LESSONS ON FRIDAY)           */
         /* ─────────────────────────────────────────────────────────── */
-        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-4 sm:p-7 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 border-b border-line/60 pb-5">
             <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-8 place-items-center rounded-xl bg-emerald-600 text-white shadow-2xs">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-2xs">
                   <RotateCcw className="size-4" />
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                    <h2 className="font-display text-lg sm:text-2xl font-bold text-ink tracking-tight">
                       Friday Weekly Revision
                     </h2>
                     {!isFriday && (
                       <button
                         type="button"
                         onClick={() => setModeOverride("daily")}
-                        className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-3 py-1 text-[11.5px] font-bold text-ink-soft shadow-2xs transition-all hover:border-leaf hover:text-leaf hover:bg-paper active:scale-95 cursor-pointer ml-1"
+                        className="inline-flex items-center gap-1 rounded-full border border-line bg-white px-2.5 sm:px-3 py-1 text-[11px] sm:text-[11.5px] font-bold text-ink-soft shadow-2xs transition-all hover:border-leaf hover:text-leaf hover:bg-paper active:scale-95 cursor-pointer ml-1"
                         title="Back to Daily Study"
                       >
                         ← Back to Daily Study
@@ -283,7 +283,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             </div>
 
             {/* Friday Revision Progress Box */}
-            <div className="rounded-2xl border border-emerald-300/80 bg-emerald-50/70 p-4 text-center shrink-0 min-w-[200px]">
+            <div className="rounded-2xl border border-emerald-300/80 bg-emerald-50/70 p-4 text-center shrink-0 w-full md:w-auto md:min-w-[200px]">
               <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-900">
                 Revision Progress
               </p>
@@ -416,21 +416,21 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         /* ─────────────────────────────────────────────────────────── */
         /* SATURDAY - THURSDAY: REGULAR DAILY STUDY & TOPICS           */
         /* ─────────────────────────────────────────────────────────── */
-        <div className="relative rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-5 sm:p-7 shadow-xs">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-line/60 pb-5">
+        <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-br from-paper via-card to-paper/90 p-4 sm:p-7 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 border-b border-line/60 pb-5">
             <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-8 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-leaf text-white shadow-2xs">
                   <Target className="size-4" />
                 </span>
-                <h2 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+                <h2 className="font-display text-lg sm:text-2xl font-bold text-ink tracking-tight">
                   Daily reach your target
                 </h2>
                 {totalWeeklyCompleted > 0 && (
                   <button
                     type="button"
                     onClick={() => setModeOverride("friday")}
-                    className="group inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 sm:px-3 py-1 text-[11.5px] font-bold text-emerald-800 shadow-2xs transition-all hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-xs active:scale-95 cursor-pointer ml-1"
+                    className="group inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 sm:px-3 py-1 text-[11px] sm:text-[11.5px] font-bold text-emerald-800 shadow-2xs transition-all hover:bg-emerald-600 hover:text-white hover:border-emerald-600 hover:shadow-xs active:scale-95 cursor-pointer"
                     title="Open Friday Weekly Revision"
                   >
                     <RotateCcw className="size-3 text-emerald-700 transition-transform group-hover:-rotate-45 group-hover:text-white" />
@@ -444,7 +444,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             </div>
 
             {/* Today's Target Progress Indicator */}
-            <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 min-w-[200px]">
+            <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 w-full md:w-auto md:min-w-[200px]">
               <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep">
                 Today&apos;s Progress
               </p>
