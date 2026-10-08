@@ -54,6 +54,7 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   const [openStatusMenuTopicId, setOpenStatusMenuTopicId] = useState<number | null>(null);
   const [expandedTopicId, setExpandedTopicId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [showCompletedList, setShowCompletedList] = useState(false);
   const [modeOverride, setModeOverride] = useState<"auto" | "friday" | "daily">("auto");
 
   // Close status menu when clicking outside
@@ -475,9 +476,9 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
             </div>
 
             {/* Today's Target Progress Indicator */}
-            <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 w-full md:w-auto md:min-w-[200px]">
+            <div className="rounded-2xl border border-leaf/30 bg-leaf-soft/20 p-4 text-center shrink-0 w-full md:w-auto md:min-w-[220px]">
               <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep">
-                Today&apos;s Progress
+                Today&apos;s Progress (আজকের লক্ষ্য)
               </p>
               <div className="mt-1 flex items-baseline justify-center gap-1">
                 <span className="font-display text-2xl sm:text-3xl font-bold text-ink">
@@ -497,6 +498,12 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                   {Math.max(0, (data.requiredTopicsPerDay || 1) - data.doneToday)} remaining today
                 </span>
               )}
+              {data.completedTopics > 0 && (
+                <div className="mt-2.5 pt-2 border-t border-leaf/20 text-[11px] text-emerald-800 font-semibold flex items-center justify-center gap-1">
+                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <span>সর্বমোট সম্পন্ন: {toBnDigits(data.completedTopics)} টি টপিক সংরক্ষিত</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -504,19 +511,77 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
         {/* 4. TODAY'S RECOMMENDED BOOKS & TOPICS                      */}
         {/* ─────────────────────────────────────────────────────────── */}
         <div className="mt-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <h3 className="font-display text-base font-bold text-ink flex items-center gap-2">
               <BookOpen className="size-4 text-leaf" />
               <span>Today&apos;s Recommended Books & Topics</span>
             </h3>
-            <Link
-              href="/planner"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-leaf hover:underline shrink-0"
-            >
-              <span>Full Routine</span>
-              <ArrowRight className="size-3.5" />
-            </Link>
+            <div className="flex items-center gap-2 flex-wrap">
+              {data.completedTopics > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowCompletedList(!showCompletedList)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition shadow-2xs cursor-pointer"
+                  title="আপনার পূর্বের সম্পন্ন করা টপিকগুলো দেখুন"
+                >
+                  <CheckCircle2 className="size-3.5 text-emerald-600 group-hover:text-white" />
+                  <span>সম্পন্ন পড়া দেখুন ({toBnDigits(data.completedTopics)})</span>
+                  <ChevronDown
+                    className={`size-3 transition-transform ${
+                      showCompletedList ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              )}
+              <Link
+                href="/planner"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-leaf hover:underline shrink-0"
+              >
+                <span>Full Routine</span>
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
           </div>
+
+          {/* Completed topics drawer */}
+          {showCompletedList && (
+            <div className="rounded-2xl border border-emerald-300/80 bg-emerald-50/70 p-4 space-y-3 animate-in fade-in slide-in-from-top-2 shadow-2xs">
+              <div className="flex items-center justify-between border-b border-emerald-200/80 pb-2">
+                <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                  <CheckCircle2 className="size-4 text-emerald-600" />
+                  <span>আপনার পূর্বের সম্পন্ন পড়াসমূহ ({toBnDigits(data.completedTopics)} টি)</span>
+                </span>
+                <span className="text-[11px] text-emerald-700 font-semibold">
+                  সবগুলো সংরক্ষিত আছে ✅
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                {(data.recentlyCompletedTopics || []).length === 0 ? (
+                  <p className="text-xs text-ink-faint col-span-full">কোনো সম্পন্ন টপিক পাওয়া যায়নি।</p>
+                ) : (
+                  (data.recentlyCompletedTopics || []).map((ct) => (
+                    <div
+                      key={ct.id}
+                      className="rounded-xl border border-emerald-200 bg-white/95 p-2.5 text-xs shadow-2xs flex items-start gap-2"
+                    >
+                      <CheckCircle2 className="size-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-ink truncate">{ct.name}</p>
+                        <p className="text-[10.5px] text-ink-faint truncate">
+                          {ct.subjectName} {ct.chapter ? `• ${ct.chapter}` : ""}
+                        </p>
+                        {ct.completedAt && (
+                          <p className="text-[9.5px] text-emerald-700 font-medium mt-0.5">
+                            সম্পন্ন: {toBnDigits(ct.completedAt)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Book Cards Grid */}
           {data.recommendedBooks.length === 0 ? (
@@ -555,7 +620,9 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span className="rounded-lg bg-leaf-soft px-2 py-0.5 text-[11px] font-bold text-leaf">
-                            {Math.round(book.progress * 100)}% done
+                            {book.completedTopics > 0
+                              ? `${toBnDigits(book.completedTopics)}/${toBnDigits(book.totalTopics)} সম্পন্ন (${toBnDigits(Math.round(book.progress * 100))}%)`
+                              : `${toBnDigits(Math.round(book.progress * 100))}% সম্পন্ন`}
                           </span>
                         </div>
                       </div>
@@ -625,13 +692,19 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                       }`}
                                     />
                                   </div>
-                                  {topic.chapter && (
-                                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                                    {topic.isBacklog && (
+                                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-100/90 text-amber-900 border border-amber-300 px-1.5 py-0.5 font-bold">
+                                        <RotateCcw className="size-2.5 text-amber-700" />
+                                        <span>বিগত দিনের বাকি পড়া (Carry forward)</span>
+                                      </span>
+                                    )}
+                                    {topic.chapter && (
                                       <span className="text-ink-faint truncate">
                                         {topic.chapter}
                                       </span>
-                                    </div>
-                                  )}
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Status Dropdown Menu */}

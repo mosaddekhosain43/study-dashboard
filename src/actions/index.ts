@@ -359,16 +359,40 @@ export async function setTopicStatusAction(
 
     if (user && targetTopic.userId === null) {
       await ensureStudentHasPersonalCurriculum(user.id);
+      // Find personal subject matching the master subject
+      const [masterSub] = await db
+        .select({ name: subjects.name })
+        .from(subjects)
+        .where(eq(subjects.id, targetTopic.subjectId))
+        .limit(1);
+
+      let personalSubId: number | null = null;
+      if (masterSub) {
+        const [pSub] = await db
+          .select({ id: subjects.id })
+          .from(subjects)
+          .where(and(eq(subjects.userId, user.id), eq(subjects.name, masterSub.name)))
+          .limit(1);
+        if (pSub) personalSubId = pSub.id;
+      }
+
+      const conditions = [
+        eq(topics.userId, user.id),
+        eq(topics.name, targetTopic.name),
+      ];
+      if (personalSubId) {
+        conditions.push(eq(topics.subjectId, personalSubId));
+      }
+      if (targetTopic.chapter) {
+        conditions.push(eq(topics.chapter, targetTopic.chapter));
+      }
+
       const [personalTopic] = await db
         .select()
         .from(topics)
-        .where(
-          and(
-            eq(topics.userId, user.id),
-            eq(topics.name, targetTopic.name)
-          )
-        )
+        .where(and(...conditions))
         .limit(1);
+
       if (personalTopic) {
         finalTopicId = personalTopic.id;
       }

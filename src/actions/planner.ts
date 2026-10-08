@@ -369,6 +369,15 @@ export interface StudentDailyTargetPlanData {
     totalRevisedThisWeek: number;
     subjects: WeeklyFridaySubjectGroup[];
   };
+  recentlyCompletedTopics?: {
+    id: number;
+    name: string;
+    chapter: string | null;
+    subjectId: number;
+    subjectName: string;
+    subjectNameBn?: string | null;
+    completedAt: string | null;
+  }[];
 }
 
 export async function getStudentDailyTargetPlanAction(): Promise<{
@@ -657,18 +666,28 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       const isBangla = isBangla1stPaper(s.name, s.nameBn);
 
       if (sPending.length > 0 || sCompletedToday.length > 0) {
-        // Balanced rotation score:
-        // Priority 0: Backlog topics that the student started earlier MUST accumulate (+1000)
-        // Priority 1: Subjects untouched longest (prevents subject neglect)
-        // Priority 2: Lower progress subjects
-        // Priority 3: Systematic daily rotation through all subjects
+        // Balanced rotation & Continuity score:
+        // Priority 1: Unfinished backlog topics that student started earlier MUST NEVER disappear (+50000)
+        // Priority 2: Continuity for books studied yesterday or in last 2 days (+25000)
+        // Priority 3: Books already started with completed topics (+8000)
+        // Priority 4: Topics completed today (+12000)
+        // Priority 5: Balanced rotation for untouched or neglected books (capped bounded days)
         const rotationTurn = (i + dayOfYear) % Math.max(1, userSubs.length);
+        const backlogBonus = sBacklog.length > 0 ? 50000 + sBacklog.length * 1000 : 0;
+        const continuityBonus =
+          lastDate && diffDays(lastDate, today) <= 2 && sPending.length > 0 ? 25000 : 0;
+        const inProgressBookBonus = sCompleted > 0 && sPending.length > 0 ? 8000 : 0;
+        const completedTodayBonus = sCompletedToday.length > 0 ? 12000 : 0;
+        const boundedDaysSince = lastDate ? Math.min(14, diffDays(lastDate, today)) : 7;
+        const rotationScore =
+          boundedDaysSince * 15 + (1 - sProgress) * 50 + rotationTurn * 5;
+
         const score =
-          (sBacklog.length > 0 ? 1000 : 0) +
-          daysSince * 20 +
-          (1 - sProgress) * 50 +
-          rotationTurn * 5 +
-          (sCompletedToday.length > 0 ? 300 : 0);
+          backlogBonus +
+          continuityBonus +
+          inProgressBookBonus +
+          completedTodayBonus +
+          rotationScore;
 
         candidateSubjects.push({
           subject: s,
@@ -701,10 +720,10 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
     // so the total suggested topics matches the student's daily target!
     const targetMap = new Map<number, number>();
     for (const cand of selectedCandidates) {
-      targetMap.set(cand.subject.id, 1);
+      targetMap.set(cand.subject.id, Math.max(1, cand.backlogTopics.length));
     }
 
-    let allocatedTotal = selectedCandidates.length;
+    let allocatedTotal = Array.from(targetMap.values()).reduce((a, b) => a + b, 0);
     let extraNeeded = Math.max(0, requiredTopicsPerDay - allocatedTotal);
 
     let loopGuard = 0;
@@ -786,6 +805,8 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       const maxFreshToAdd = Math.max(0, targetCount - recTopics.filter((t) => t.status !== "completed").length);
       for (let p = 0; p < Math.min(maxFreshToAdd, freshPending.length); p++) {
         const pt = freshPending[p];
+        const isContinuingFromYesterday =
+          (cand.daysSinceLastStudied === 1 || cand.daysSinceLastStudied === 2) && cand.completed > 0;
         recTopics.push({
           id: pt.id,
           name: pt.name,
@@ -793,7 +814,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           notes: pt.notes,
           status: pt.status,
           isCompletedToday: false,
-          isBacklog: false,
+          isBacklog: isContinuingFromYesterday,
           isMultiDay: isBangla,
           multiDayTargetDays: isBangla ? 3 : undefined,
         });
@@ -913,6 +934,23 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
       nameBn: s.nameBn,
     }));
 
+    const userSubMap = new Map(userSubs.map((s) => [s.id, s]));
+    const recentlyCompletedTopics = userTopics
+      .filter((t) => t.status === "completed")
+      .map((t) => {
+        const sub = userSubMap.get(t.subjectId);
+        return {
+          id: t.id,
+          name: t.name,
+          chapter: t.chapter,
+          subjectId: t.subjectId,
+          subjectName: sub?.name || "Subject",
+          subjectNameBn: sub?.nameBn,
+          completedAt: t.completedAt,
+        };
+      })
+      .sort((a, b) => ((b.completedAt || "") > (a.completedAt || "") ? 1 : -1));
+
     return {
       ok: true,
       data: {
@@ -940,6 +978,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           totalRevisedThisWeek,
           subjects: fridaySubjects,
         },
+        recentlyCompletedTopics,
       },
     };
   } catch (err: any) {
