@@ -19,6 +19,7 @@ import {
   SETTING_TARGET_START_DATE,
 } from "@/lib/constants";
 import { ensureStudentHasPersonalCurriculum } from "@/lib/studentCurriculum";
+import { NCTB_CURRICULUM_DATA } from "@/lib/nctbCurriculum";
 
 export async function getStudentStudyPlanAction(): Promise<{
   ok: boolean;
@@ -178,6 +179,7 @@ export interface RecommendedBookTopic {
   id: number;
   name: string;
   chapter: string | null;
+  notes?: string | null;
   status: string; // 'not_started' | 'in_progress' | 'completed' | 'not_completed'
   isCompletedToday: boolean;
   isBacklog: boolean; // carry-forward/unfinished topic from previous days
@@ -197,6 +199,52 @@ export interface RecommendedBookItem {
   targetTopicCount: number;
   hasBacklog: boolean;
   isBanglaFirstPaper: boolean;
+}
+
+let curriculumNotesCache: Map<string, string> | null = null;
+
+export function getCurriculumNotesFallback(
+  subjectName?: string | null,
+  chapter?: string | null,
+  topicName?: string | null
+): string | null {
+  if (!topicName) return null;
+  if (!curriculumNotesCache) {
+    curriculumNotesCache = new Map();
+    for (const sub of NCTB_CURRICULUM_DATA) {
+      for (const ch of sub.chaptersOrModules) {
+        for (const top of ch.topics) {
+          if (typeof top !== "string" && top.notes) {
+            const tName = top.name.trim().toLowerCase();
+            const sName = sub.name.trim().toLowerCase();
+            const sBn = (sub.nameBn || "").trim().toLowerCase();
+            const cName = ch.name.trim().toLowerCase();
+
+            curriculumNotesCache.set(`${sName}:::${cName}:::${tName}`, top.notes);
+            curriculumNotesCache.set(`${sName}:::${tName}`, top.notes);
+            if (sBn) {
+              curriculumNotesCache.set(`${sBn}:::${cName}:::${tName}`, top.notes);
+              curriculumNotesCache.set(`${sBn}:::${tName}`, top.notes);
+            }
+            if (!curriculumNotesCache.has(`:::${tName}`)) {
+              curriculumNotesCache.set(`:::${tName}`, top.notes);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const cleanTop = topicName.trim().toLowerCase();
+  const cleanSub = (subjectName || "").trim().toLowerCase();
+  const cleanCh = (chapter || "").trim().toLowerCase();
+
+  return (
+    (cleanSub && cleanCh ? curriculumNotesCache.get(`${cleanSub}:::${cleanCh}:::${cleanTop}`) : null) ||
+    (cleanSub ? curriculumNotesCache.get(`${cleanSub}:::${cleanTop}`) : null) ||
+    curriculumNotesCache.get(`:::${cleanTop}`) ||
+    null
+  );
 }
 
 function isBangla1stPaper(subjectName: string, subjectNameBn?: string | null): boolean {
@@ -227,6 +275,7 @@ export interface WeeklyFridayTopicItem {
   id: number;
   name: string;
   chapter: string | null;
+  notes?: string | null;
   completedAt: string;
   revisionCount: number;
   lastRevisedAt: string | null;
@@ -382,6 +431,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         chapter: topics.chapter,
         sortOrder: topics.sortOrder,
         status: topics.status,
+        notes: topics.notes,
         completedAt: topics.completedAt,
         lastRevisedAt: topics.lastRevisedAt,
         revisionCount: topics.revisionCount,
@@ -402,6 +452,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           chapter: topics.chapter,
           sortOrder: topics.sortOrder,
           status: topics.status,
+          notes: topics.notes,
           completedAt: topics.completedAt,
           lastRevisedAt: topics.lastRevisedAt,
           revisionCount: topics.revisionCount,
@@ -422,6 +473,15 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         .from(subjects)
         .where(isNull(subjects.userId))
         .orderBy(subjects.sortOrder, subjects.id);
+    }
+
+    // Ensure all topics have full question notes (using curriculum lookup if DB note is empty)
+    const userSubNameMap = new Map(userSubs.map((s) => [s.id, s.name]));
+    for (const t of userTopics) {
+      if (!t.notes || t.notes.trim() === "") {
+        const subName = userSubNameMap.get(t.subjectId);
+        t.notes = getCurriculumNotesFallback(subName, t.chapter, t.name);
+      }
     }
 
     // 4. Activity history for subjects (lastStudied date)
@@ -633,6 +693,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           id: ct.id,
           name: ct.name,
           chapter: ct.chapter,
+          notes: ct.notes,
           status: "completed",
           isCompletedToday: true,
           isBacklog: false,
@@ -649,6 +710,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
             id: bt.id,
             name: bt.name,
             chapter: bt.chapter,
+            notes: bt.notes,
             status: bt.status,
             isCompletedToday: false,
             isBacklog: true,
@@ -671,6 +733,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           id: pt.id,
           name: pt.name,
           chapter: pt.chapter,
+          notes: pt.notes,
           status: pt.status,
           isCompletedToday: false,
           isBacklog: false,
@@ -686,6 +749,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           id: pt.id,
           name: pt.name,
           chapter: pt.chapter,
+          notes: pt.notes,
           status: pt.status,
           isCompletedToday: false,
           isBacklog: pt.status === "in_progress" || pt.status === "not_completed",
@@ -729,6 +793,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
             id: pt.id,
             name: pt.name,
             chapter: pt.chapter,
+            notes: pt.notes,
             status: pt.status,
             isCompletedToday: false,
             isBacklog: false,
@@ -758,6 +823,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         id: t.id,
         name: t.name,
         chapter: t.chapter,
+        notes: t.notes,
         completedAt: t.completedAt!,
         revisionCount: t.revisionCount || 0,
         lastRevisedAt: t.lastRevisedAt,

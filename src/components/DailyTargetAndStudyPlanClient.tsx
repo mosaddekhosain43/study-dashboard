@@ -23,6 +23,9 @@ import {
   ChevronUp,
   Clock,
   PlayCircle,
+  HelpCircle,
+  Maximize2,
+  X,
 } from "lucide-react";
 import type {
   StudentDailyTargetPlanData,
@@ -53,6 +56,17 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
   const [data, setData] = useState<StudentDailyTargetPlanData>(initialData);
   const [isPending, startTransition] = useTransition();
   const [openStatusMenuTopicId, setOpenStatusMenuTopicId] = useState<number | null>(null);
+  const [expandedTopicId, setExpandedTopicId] = useState<number | null>(null);
+  const [modalTopic, setModalTopic] = useState<{
+    id: number;
+    name: string;
+    chapter: string | null;
+    notes?: string | null;
+    subjectName: string;
+    subjectNameBn?: string | null;
+    subjectId: number;
+    status: string;
+  } | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [modeOverride, setModeOverride] = useState<"auto" | "friday" | "daily">("auto");
 
@@ -369,12 +383,41 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className={`font-medium truncate ${top.isRevisedToday ? "text-emerald-900 font-semibold" : "text-ink"}`}>
-                                  {top.name}
-                                </p>
+                              <div
+                                className="min-w-0 flex-1 cursor-pointer select-none group/title"
+                                onClick={() =>
+                                  setExpandedTopicId(
+                                    expandedTopicId === top.id ? null : top.id
+                                  )
+                                }
+                                title="সম্পূর্ণ প্রশ্ন দেখতে ক্লিক করুন"
+                              >
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p
+                                    className={`font-medium transition-colors group-hover/title:text-emerald-700 ${
+                                      top.isRevisedToday ? "text-emerald-900 font-semibold" : "text-ink"
+                                    }`}
+                                  >
+                                    {top.name}
+                                  </p>
+                                  <span
+                                    className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                                      expandedTopicId === top.id
+                                        ? "bg-emerald-600 text-white"
+                                        : "bg-emerald-100/80 text-emerald-800 hover:bg-emerald-600 hover:text-white"
+                                    }`}
+                                  >
+                                    <HelpCircle className="size-2.5" />
+                                    <span>প্রশ্ন</span>
+                                    {expandedTopicId === top.id ? (
+                                      <ChevronUp className="size-2.5" />
+                                    ) : (
+                                      <ChevronDown className="size-2.5" />
+                                    )}
+                                  </span>
+                                </div>
                                 {top.chapter && (
-                                  <p className="text-[10.5px] text-ink-faint truncate">
+                                  <p className="text-[10.5px] text-ink-faint truncate mt-0.5">
                                     {top.chapter}
                                   </p>
                                 )}
@@ -402,6 +445,46 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                 )}
                               </button>
                             </div>
+
+                            {/* Full Question expansion for Friday Revision */}
+                            {expandedTopicId === top.id && (
+                              <div className="mt-2.5 pt-2.5 border-t border-emerald-200/60 space-y-2 animate-in fade-in slide-in-from-top-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-900">
+                                    <BookOpen className="size-3.5 text-emerald-700" />
+                                    <span>সম্পূর্ণ প্রশ্ন / বিবরণ:</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setModalTopic({
+                                        id: top.id,
+                                        name: top.name,
+                                        chapter: top.chapter,
+                                        notes: top.notes,
+                                        subjectName: sub.subjectName,
+                                        subjectNameBn: sub.subjectNameBn,
+                                        subjectId: sub.subjectId,
+                                        status: "completed",
+                                      });
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-[10.5px] font-bold text-emerald-800 border border-emerald-300 shadow-2xs hover:bg-emerald-600 hover:text-white transition cursor-pointer"
+                                    title="Open full view modal"
+                                  >
+                                    <Maximize2 className="size-3" />
+                                    <span>বড় স্ক্রিনে দেখুন</span>
+                                  </button>
+                                </div>
+
+                                <div
+                                  dir="auto"
+                                  className="font-bengali text-[13px] sm:text-[13.5px] leading-relaxed text-ink select-text whitespace-pre-line bg-white/80 rounded-xl p-3 border border-emerald-200/80 shadow-2xs"
+                                >
+                                  {top.notes || top.name}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -569,16 +652,41 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                   <Check className="size-3.5 stroke-[3]" />
                                 </button>
 
-                                <div className="min-w-0 flex-1">
-                                  <p
-                                    className={`font-medium leading-snug ${
-                                      isDone
-                                        ? "line-through text-ink-faint font-normal"
-                                        : "text-ink"
-                                    }`}
-                                  >
-                                    {topic.name}
-                                  </p>
+                                <div
+                                  className="min-w-0 flex-1 cursor-pointer select-none group/title"
+                                  onClick={() =>
+                                    setExpandedTopicId(
+                                      expandedTopicId === topic.id ? null : topic.id
+                                    )
+                                  }
+                                  title="সম্পূর্ণ প্রশ্ন দেখতে ক্লিক করুন"
+                                >
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p
+                                      className={`font-medium leading-snug transition-colors group-hover/title:text-leaf ${
+                                        isDone
+                                          ? "line-through text-ink-faint font-normal"
+                                          : "text-ink"
+                                      }`}
+                                    >
+                                      {topic.name}
+                                    </p>
+                                    <span
+                                      className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold transition ${
+                                        expandedTopicId === topic.id
+                                          ? "bg-leaf text-white"
+                                          : "bg-leaf-soft text-leaf-deep hover:bg-leaf hover:text-white"
+                                      }`}
+                                    >
+                                      <HelpCircle className="size-2.5" />
+                                      <span>প্রশ্ন</span>
+                                      {expandedTopicId === topic.id ? (
+                                        <ChevronUp className="size-2.5" />
+                                      ) : (
+                                        <ChevronDown className="size-2.5" />
+                                      )}
+                                    </span>
+                                  </div>
                                   {topic.chapter && (
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
                                       <span className="text-ink-faint truncate">
@@ -649,6 +757,46 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
                                   )}
                                 </div>
                               </div>
+
+                              {/* Full Question expansion for Daily Recommended Topic */}
+                              {expandedTopicId === topic.id && (
+                                <div className="mt-2.5 pt-2.5 border-t border-emerald-200/60 space-y-2 animate-in fade-in slide-in-from-top-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-900">
+                                      <BookOpen className="size-3.5 text-leaf" />
+                                      <span>সম্পূর্ণ প্রশ্ন / বিবরণ:</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setModalTopic({
+                                          id: topic.id,
+                                          name: topic.name,
+                                          chapter: topic.chapter,
+                                          notes: topic.notes,
+                                          subjectName: book.subjectName,
+                                          subjectNameBn: book.subjectNameBn,
+                                          subjectId: book.subjectId,
+                                          status: topic.status,
+                                        });
+                                      }}
+                                      className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-[10.5px] font-bold text-leaf border border-leaf/30 shadow-2xs hover:bg-leaf hover:text-white transition cursor-pointer"
+                                      title="Open full view modal"
+                                    >
+                                      <Maximize2 className="size-3" />
+                                      <span>বড় স্ক্রিনে দেখুন</span>
+                                    </button>
+                                  </div>
+
+                                  <div
+                                    dir="auto"
+                                    className="font-bengali text-[13px] sm:text-[13.5px] leading-relaxed text-ink select-text whitespace-pre-line bg-white/80 rounded-xl p-3 border border-emerald-200/80 shadow-2xs"
+                                  >
+                                    {topic.notes || topic.name}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -675,6 +823,83 @@ export default function DailyTargetAndStudyPlanClient({ initialData }: Props) {
           )}
         </div>
       </div>
+      )}
+
+      {/* ── Complete Question Details Modal (Opens without leaving page) ── */}
+      {modalTopic && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pine/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setModalTopic(null)}
+        >
+          <div
+            className="relative w-full max-w-xl rounded-3xl border border-line bg-card p-5 sm:p-7 shadow-2xl animate-in zoom-in-95 space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-line pb-3.5">
+              <div>
+                <span className="inline-block rounded-md bg-leaf-soft px-2.5 py-0.5 text-[11.5px] font-bold text-leaf">
+                  {modalTopic.subjectName} {modalTopic.subjectNameBn ? `(${modalTopic.subjectNameBn})` : ""}
+                </span>
+                {modalTopic.chapter && (
+                  <p className="text-xs text-ink-faint mt-1 font-medium">
+                    অধ্যায়: {modalTopic.chapter}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalTopic(null)}
+                className="grid size-8 place-items-center rounded-xl border border-line bg-paper text-ink-soft hover:bg-white hover:text-ink transition cursor-pointer"
+                title="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {/* Topic Title */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">
+                টপিকের নাম / শিরোনাম
+              </p>
+              <h3 className="font-display text-base sm:text-lg font-bold text-ink mt-0.5">
+                {modalTopic.name}
+              </h3>
+            </div>
+
+            {/* Full Question Text */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-leaf-deep flex items-center gap-1.5 mb-1.5">
+                <BookOpen className="size-3.5 text-leaf" />
+                <span>সম্পূর্ণ প্রশ্নপত্র / বিস্তারিত নির্দেশনা</span>
+              </p>
+              <div
+                dir="auto"
+                className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 font-bengali text-[15px] sm:text-base leading-relaxed text-ink select-text whitespace-pre-line shadow-inner max-h-[45vh] overflow-y-auto"
+              >
+                {modalTopic.notes || modalTopic.name}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="pt-3 border-t border-line/70 flex flex-wrap items-center justify-between gap-3">
+              <Link
+                href={`/timer?subjectId=${modalTopic.subjectId}`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-leaf px-4 py-2 text-xs font-bold text-white shadow-md shadow-leaf/20 hover:brightness-110 transition"
+              >
+                <Timer className="size-3.5" />
+                <span>টাইমারে এই টপিক পড়ুন</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setModalTopic(null)}
+                className="rounded-xl border border-line bg-paper px-4 py-2 text-xs font-bold text-ink-soft hover:bg-white hover:text-ink transition cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
