@@ -201,7 +201,18 @@ export interface RecommendedBookItem {
   isBanglaFirstPaper: boolean;
 }
 
+function normalizeText(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[\u09C2]/g, "\u09C1") // ূ -> ু
+    .replace(/[\u09C0]/g, "\u09BF") // ী -> ি
+    .replace(/[০-৯]/g, (d) => "0123456789"["০১২৩৪৫৬৭৮৯".indexOf(d)]) // Bengali digits -> ASCII
+    .replace(/[\u0660-\u0669]/g, (d) => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]) // Arabic digits -> ASCII
+    .replace(/[()\[\]{}.,:;'"\-\s_/\\]/g, ""); // strip punctuation & whitespace
+}
+
 let curriculumNotesCache: Map<string, string> | null = null;
+let allCurriculumNotesList: Array<{ sub: string; ch: string; top: string; notes: string }> | null = null;
 
 export function getCurriculumNotesFallback(
   subjectName?: string | null,
@@ -209,42 +220,86 @@ export function getCurriculumNotesFallback(
   topicName?: string | null
 ): string | null {
   if (!topicName) return null;
-  if (!curriculumNotesCache) {
+  if (!curriculumNotesCache || !allCurriculumNotesList) {
     curriculumNotesCache = new Map();
+    allCurriculumNotesList = [];
+
     for (const sub of NCTB_CURRICULUM_DATA) {
+      const sKeys = [
+        normalizeText(sub.name),
+        sub.nameBn ? normalizeText(sub.nameBn) : "",
+        sub.slug ? normalizeText(sub.slug) : "",
+      ].filter(Boolean);
+
       for (const ch of sub.chaptersOrModules) {
+        const cKey = normalizeText(ch.name);
+
         for (const top of ch.topics) {
           if (typeof top !== "string" && top.notes) {
-            const tName = top.name.trim().toLowerCase();
-            const sName = sub.name.trim().toLowerCase();
-            const sBn = (sub.nameBn || "").trim().toLowerCase();
-            const cName = ch.name.trim().toLowerCase();
+            const tKey = normalizeText(top.name);
+            allCurriculumNotesList.push({
+              sub: sKeys[0] || "",
+              ch: cKey,
+              top: tKey,
+              notes: top.notes,
+            });
 
-            curriculumNotesCache.set(`${sName}:::${cName}:::${tName}`, top.notes);
-            curriculumNotesCache.set(`${sName}:::${tName}`, top.notes);
-            if (sBn) {
-              curriculumNotesCache.set(`${sBn}:::${cName}:::${tName}`, top.notes);
-              curriculumNotesCache.set(`${sBn}:::${tName}`, top.notes);
+            // Index by Subject + Chapter + Topic
+            for (const sKey of sKeys) {
+              curriculumNotesCache.set(`${sKey}:::${cKey}:::${tKey}`, top.notes);
             }
-            if (!curriculumNotesCache.has(`:::${tName}`)) {
-              curriculumNotesCache.set(`:::${tName}`, top.notes);
-            }
+            // Index by Chapter + Topic (very reliable since chapter names are unique)
+            curriculumNotesCache.set(`${cKey}:::${tKey}`, top.notes);
           }
         }
       }
     }
   }
 
-  const cleanTop = topicName.trim().toLowerCase();
-  const cleanSub = (subjectName || "").trim().toLowerCase();
-  const cleanCh = (chapter || "").trim().toLowerCase();
+  const cleanTop = normalizeText(topicName);
+  const cleanSub = subjectName ? normalizeText(subjectName) : "";
+  const cleanCh = chapter ? normalizeText(chapter) : "";
 
-  return (
-    (cleanSub && cleanCh ? curriculumNotesCache.get(`${cleanSub}:::${cleanCh}:::${cleanTop}`) : null) ||
-    (cleanSub ? curriculumNotesCache.get(`${cleanSub}:::${cleanTop}`) : null) ||
-    curriculumNotesCache.get(`:::${cleanTop}`) ||
-    null
-  );
+  // 1. Direct match: Subject + Chapter + Topic
+  if (cleanSub && cleanCh) {
+    const direct = curriculumNotesCache.get(`${cleanSub}:::${cleanCh}:::${cleanTop}`);
+    if (direct) return direct;
+  }
+
+  // 2. Direct match: Chapter + Topic
+  if (cleanCh) {
+    const chMatch = curriculumNotesCache.get(`${cleanCh}:::${cleanTop}`);
+    if (chMatch) return chMatch;
+  }
+
+  // 3. Fuzzy search: find matching chapter substring + topic
+  if (cleanCh && cleanTop && allCurriculumNotesList) {
+    for (const item of allCurriculumNotesList) {
+      if (item.top === cleanTop) {
+        if (
+          item.ch === cleanCh ||
+          item.ch.includes(cleanCh) ||
+          cleanCh.includes(item.ch)
+        ) {
+          return item.notes;
+        }
+      }
+    }
+  }
+
+  // 4. Fallback search by subject + topic
+  if (cleanSub && cleanTop && allCurriculumNotesList) {
+    for (const item of allCurriculumNotesList) {
+      if (
+        item.top === cleanTop &&
+        (item.sub === cleanSub || item.sub.includes(cleanSub) || cleanSub.includes(item.sub))
+      ) {
+        return item.notes;
+      }
+    }
+  }
+
+  return null;
 }
 
 function isBangla1stPaper(subjectName: string, subjectNameBn?: string | null): boolean {
@@ -428,7 +483,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         subjectId: topics.subjectId,
         lessonId: topics.lessonId,
         name: topics.name,
-        chapter: topics.chapter,
+        chapter: sql<string | null>`COALESCE(${topics.chapter}, ${lessons.name})`,
         sortOrder: topics.sortOrder,
         status: topics.status,
         notes: topics.notes,
@@ -438,6 +493,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
         nextRevisionDue: topics.nextRevisionDue,
       })
       .from(topics)
+      .leftJoin(lessons, eq(topics.lessonId, lessons.id))
       .where(isPersonal ? eq(topics.userId, user.id) : isNull(topics.userId))
       .orderBy(topics.sortOrder, topics.id);
 
@@ -449,7 +505,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           subjectId: topics.subjectId,
           lessonId: topics.lessonId,
           name: topics.name,
-          chapter: topics.chapter,
+          chapter: sql<string | null>`COALESCE(${topics.chapter}, ${lessons.name})`,
           sortOrder: topics.sortOrder,
           status: topics.status,
           notes: topics.notes,
@@ -459,6 +515,7 @@ export async function getStudentDailyTargetPlanAction(): Promise<{
           nextRevisionDue: topics.nextRevisionDue,
         })
         .from(topics)
+        .leftJoin(lessons, eq(topics.lessonId, lessons.id))
         .where(isNull(topics.userId))
         .orderBy(topics.sortOrder, topics.id);
 
